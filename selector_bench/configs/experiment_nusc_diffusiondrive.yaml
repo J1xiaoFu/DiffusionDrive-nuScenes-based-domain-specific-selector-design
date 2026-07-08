@@ -1,0 +1,32 @@
+experiment:
+  name: nusc_diffusiondrive_p1_min
+  dataset: nuscenes
+  planner: diffusiondrive_nusc
+  budget_ratio: 0.20
+  seed: 1
+
+lightweight:
+  enabled: true
+  max_train_samples: 120
+  max_val_samples: 30
+  num_domains: 3
+
+selection_matrix:
+  - run_id: random20
+    baseline: random
+    score: random
+  - run_id: mosaic20_original
+    baseline: mosaic
+    score: original
+  - run_id: mosaic20_ours
+    baseline: mosaic
+    score: ours
+  - run_id: loss20_original
+    baseline: loss_mining
+    score: original
+  - run_id: loss20_ours
+    baseline: loss_mining
+    score: ours
+  - run_id: full_data
+    baseline: full_data
+    score: original

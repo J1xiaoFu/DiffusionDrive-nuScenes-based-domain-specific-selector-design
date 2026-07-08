@@ -1,0 +1,98 @@
+{
+  "disk": {
+    "/": {
+      "checked_path": "/",
+      "free_gb": 18.14,
+      "total_gb": 30.0,
+      "use_pct": 39.54,
+      "used_gb": 11.86
+    },
+    "/root/autodl-tmp/domain_selector": {
+      "checked_path": "/root/autodl-tmp/domain_selector",
+      "free_gb": 550.0,
+      "total_gb": 550.0,
+      "use_pct": 0.0,
+      "used_gb": 0.0
+    },
+    "/root/autodl-tmp/domain_selector/selector_bench/artifacts": {
+      "checked_path": "/root/autodl-tmp/domain_selector/selector_bench/artifacts",
+      "free_gb": 550.0,
+      "total_gb": 550.0,
+      "use_pct": 0.0,
+      "used_gb": 0.0
+    },
+    "/tmp": {
+      "checked_path": "/tmp",
+      "free_gb": 18.14,
+      "total_gb": 30.0,
+      "use_pct": 39.54,
+      "used_gb": 11.86
+    }
+  },
+  "gpu": {
+    "nvidia_smi": {
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "NVIDIA GeForce RTX 4090 D, 24564, 0, 580.105.08"
+    },
+    "torch_cuda": {
+      "cuda_available": true,
+      "cuda_version": "12.8",
+      "device_count": 1,
+      "device_name": "NVIDIA GeForce RTX 4090 D",
+      "torch_version": "2.7.0+cu128"
+    }
+  },
+  "python": {
+    "executable": "/root/miniconda3/bin/python",
+    "modules": {
+      "cv2": {
+        "installed": false,
+        "version": null
+      },
+      "mmcv": {
+        "installed": false,
+        "version": null
+      },
+      "mmdet": {
+        "installed": false,
+        "version": null
+      },
+      "mmdet3d": {
+        "installed": false,
+        "version": null
+      },
+      "numpy": {
+        "installed": true,
+        "version": "2.2.6"
+      },
+      "nuscenes": {
+        "installed": false,
+        "version": null
+      },
+      "pandas": {
+        "installed": false,
+        "version": null
+      },
+      "pyarrow": {
+        "installed": false,
+        "version": null
+      },
+      "torch": {
+        "installed": true,
+        "version": "2.7.0+cu128"
+      },
+      "yaml": {
+        "installed": true,
+        "version": "6.0.2"
+      }
+    },
+    "python": "3.12.3"
+  },
+  "recommendations": [
+    "Do not download full nuScenes trainval on this 500GB disk.",
+    "Start with nuScenes mini or a curated sample list capped at 200-500 samples.",
+    "Keep features as compressed npz and avoid parquet until pyarrow is installed deliberately.",
+    "Use single-GPU smoke configs first: batch_size 1, fp16, 2 dataloader workers."
+  ]
+}

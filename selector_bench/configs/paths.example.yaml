@@ -1,0 +1,8 @@
+# Copy to paths.local.yaml on the server and fill in real paths.
+workspace_root: /root/autodl-tmp/domain_selector
+artifact_root: selector_bench/artifacts
+
+# Required only after moving beyond the lightweight smoke flow.
+diffusiondrive_repo: /path/to/DiffusionDrive
+nuscenes_root: /data/nuscenes
+diffusiondrive_checkpoint: /path/to/diffusiondrive_stage2.pth

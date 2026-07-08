@@ -1,0 +1,70 @@
+# Python/runtime caches
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+*.orig
+*.rej
+
+# Local environments
+.conda/
+.venv/
+venv/
+env/
+
+# Logs and run metadata
+*.log
+*.log.json
+events.out.tfevents.*
+tf_logs/
+
+# Archives and generated bundles
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.rar
+*.7z
+
+# Model weights, datasets, and generated numeric blobs
+*.pth
+*.pt
+*.ckpt
+*.pkl
+*.pickle
+*.npz
+*.npy
+*.pcd.bin
+
+# Root-level accidental/generated files
+/iter_100.pth
+/1.55326e-10
+/-0.9999875446998394
+/1.0
+selector_bench/.write_probe
+
+# Local machine paths and private overrides
+paths.local.yaml
+*.local.yaml
+selector_bench/configs/paths.local.yaml
+
+# Heavy selector outputs
+/DiffusionDrive/.git_upstream_backup*/
+/selector_bench/work_dirs/
+/selector_bench/artifacts/
+
+# DiffusionDrive runtime outputs and embedded upstream Git metadata
+/DiffusionDrive/.git/
+/DiffusionDrive/data/
+/DiffusionDrive/ckpt/
+/DiffusionDrive/ckpts/
+/DiffusionDrive/work_dirs/
+/DiffusionDrive/projects/mmdet3d_plugin/ops/build/
+/DiffusionDrive/projects/mmdet3d_plugin/ops/*.so
+/DiffusionDrive/projects/mmdet3d_plugin/ops/*.egg-info/
+
+# Historical local upload bundle kept on the server, not part of this repo
+/autodl_upload_20260704/

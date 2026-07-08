@@ -1,0 +1,9 @@
+file,baseline,score_source,budget_ratio,selected_count,selection_hash,domain_counts
+full_data.json,full_data,random,1.0,80,f95d4f2d7493755a9d289f6542017032609f98fc4be669920d614d33458ed07d,"{'0': 27, '1': 27, '2': 26}"
+loss20_original.json,domain_stratified,teacher_loss,0.2,16,49ef6470c285be44b900b6ed28a11a6a4e07e60e7a30ed48a0482ae27eff669b,"{'0': 6, '1': 5, '2': 5}"
+loss20_ours.json,domain_stratified,ours,0.2,16,7ed5bb55caac989b955b3fb00685ac5728deb2b8966d5057c800a881781eb3a0,"{'0': 6, '1': 5, '2': 5}"
+loss20_stage2_ours.json,domain_stratified,ours,0.2,16,cda6f7172955bc204ba459a46252d296a60774768f989fbc49d7136309699ff6,"{'0': 6, '1': 5, '2': 5}"
+mosaic20_original.json,mosaic_lite,mosaic_lite_original,0.2,16,a6885bb16ebf7212f72e6387eb61f03452f50e97469655a9e9f3b4dcf4bd843c,"{'0': 5, '1': 5, '2': 6}"
+mosaic20_ours.json,mosaic_lite,ours,0.2,16,c9e6a09867d0df61c3e4b2f28a9138a59dcf4ef0dca4c07e7ba5aecb0080e213,"{'0': 5, '1': 5, '2': 6}"
+mosaic20_stage2_ours.json,mosaic_lite,ours,0.2,16,5388bb033d63bf9aaf77ce75a4f26eea985955cfde83c9741cbd8bd01f7f8ab7,"{'0': 5, '1': 5, '2': 6}"
+random20.json,domain_stratified,random,0.2,16,6304c37c3eda555555316c107ca5f2a3f3e8acc255ee8801a19469dc76e05fcd,"{'0': 6, '1': 5, '2': 5}"

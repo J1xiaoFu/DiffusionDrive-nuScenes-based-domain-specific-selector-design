@@ -1,0 +1,11 @@
+﻿item,value
+汇报主线,Stage2 selector-vs-random feedback has learnable signal; current question is better RL signal usage
+模型架构,DiffusionDrive
+基座 checkpoint,/root/autodl-tmp/domain_selector/DiffusionDrive/ckpts/sparsedrive_stage1.pth
+为什么不用 stage2 checkpoint,stage2 checkpoint had already been trained on nuScenes; continued fine-tuning risks overfitting/leakage for this validation
+数据,"nuScenes Trainval mini-scale controlled partial: 40 train scenes / 1611 train samples, 10 val scenes / 401 val samples"
+训练/验证设置,"100-iter DiffusionDrive fine-tuning, standalone planning eval, batch size 1, fp16"
+最终 planner lr,3e-5
+Stage2 high-frequency loop,"40 rounds x 8 selector samples, each round compared with 8 disjoint random samples; aggregate r40 = 320 selected samples"
+Selector update lr used in successful run,0.01
+结论,r40 selector L2 6.309916 beats 4/4 random aggregate baselines

@@ -1,0 +1,5 @@
+﻿cutoff_round,selected_count,selector_l2,random_l2,selector_advantage_l2_random_minus_selector,selector_obj_box_col_percent,random_obj_box_col_percent,selector_hash,random_hash,notes
+10,80,6.820722,6.616966,-0.203756,2.916,2.460,0168ee9daa87,c4652a44950f,positive advantage means selector better
+20,160,7.276919,7.003900,-0.273020,3.690,3.161,81c4bf252013,ea7c4cc10541,positive advantage means selector better
+30,240,6.606814,6.777496,0.170682,2.533,3.144,4b5e5d2ad40e,ce795c24c5e7,positive advantage means selector better
+40,320,6.309916,6.875033,0.565118,2.468,2.835,e5deedffb701,7c236545e490,positive advantage means selector better

@@ -1,0 +1,283 @@
+{
+  "diagnostic": "leave_one_episode_out",
+  "episode_jsonl": "/root/autodl-tmp/domain_selector/selector_bench/artifacts/stage2_feedback/partial_trainval_stage1_cluster_domain_vs_random_rho_box100_20260706.jsonl",
+  "feature_dir": "/root/autodl-tmp/domain_selector/selector_bench/artifacts/features/trainval_partial_teacher_100iter_train_20260706",
+  "folds": [
+    {
+      "checkpoint": "/root/autodl-tmp/domain_selector/selector_bench/work_dirs/stage2_generalization_rho100_loo_20260706/fold_00/selector.json",
+      "fold": 0,
+      "heldout": {
+        "episode_id": "partial_trainval_stage1_cluster_domain_vs_random_100iter_20260706_rho_box100",
+        "predicted_gap_selector_minus_random": 2.011849284172058,
+        "predicted_gap_sign": 1,
+        "preference_correct": false,
+        "random_count": 323,
+        "random_hash12": "5d1145d00918",
+        "random_score_mean": -0.598495364189148,
+        "reward": -1.204067084110445,
+        "reward_sign": -1,
+        "selector_count": 323,
+        "selector_hash12": "9889c8fa4af1",
+        "selector_score_mean": 1.4133539199829102,
+        "signed_margin": -2.011849284172058
+      },
+      "train_episode_count": 7,
+      "train_episode_jsonl": "/root/autodl-tmp/domain_selector/selector_bench/work_dirs/stage2_generalization_rho100_loo_20260706/fold_00/episodes_train.jsonl",
+      "train_metrics": {
+        "after_feedback_mse": 7.62061379659138e-05,
+        "after_mean_score_gap": 0.008649068360119694,
+        "after_preference_accuracy": 1.0,
+        "before_feedback_mse": 1.7343905017993335,
+        "before_mean_score_gap": -0.2020046671928142,
+        "before_preference_accuracy": 0.42857142857142855,
+        "num_feedback_episodes": 7,
+        "reward_scale": 1.342427706759838
+      }
+    },
+    {
+      "checkpoint": "/root/autodl-tmp/domain_selector/selector_bench/work_dirs/stage2_generalization_rho100_loo_20260706/fold_01/selector.json",
+      "fold": 1,
+      "heldout": {
+        "episode_id": "partial_trainval_stage2_feedback_vs_random_100iter_20260706_rho_box100",
+        "predicted_gap_selector_minus_random": 1.015541896224022,
+        "predicted_gap_sign": 1,
+        "preference_correct": true,
+        "random_count": 323,
+        "random_hash12": "5d1145d00918",
+        "random_score_mean": -0.20472823083400726,
+        "reward": 1.2153589713076745,
+        "reward_sign": 1,
+        "selector_count": 323,
+        "selector_hash12": "7614af31cc86",
+        "selector_score_mean": 0.8108136653900146,
+        "signed_margin": 1.015541896224022
+      },
+      "train_episode_count": 7,
+      "train_episode_jsonl": "/root/autodl-tmp/domain_selector/selector_bench/work_dirs/stage2_generalization_rho100_loo_20260706/fold_01/episodes_train.jsonl",
+      "train_metrics": {
+        "after_feedback_mse": 3.764383160432859e-07,
+        "after_mean_score_gap": -0.24338202476296536,
+        "after_preference_accuracy": 1.0,
+        "before_feedback_mse": 2.2670887371428545,
+        "before_mean_score_gap": 0.004749230647214989,
+        "before_preference_accuracy": 0.42857142857142855,
+        "num_feedback_episodes": 7,
+        "reward_scale": 1.342427706759838
+      }
+    },
+    {
+      "checkpoint": "/root/autodl-tmp/domain_selector/selector_bench/work_dirs/stage2_generalization_rho100_loo_20260706/fold_02/selector.json",
+      "fold": 2,
+      "heldout": {
+        "episode_id": "partial_trainval_stage2_feedback_v1_vs_random_100iter_20260706_rho_box100",
+        "predicted_gap_selector_minus_random": -0.0691808070987463,
+        "predicted_gap_sign": -1,
+        "preference_correct": false,
+        "random_count": 323,
+        "random_hash12": "5d1145d00918",
+        "random_score_mean": 0.07907470315694809,
+        "reward": 2.1468960493803015,
+        "reward_sign": 1,
+        "selector_count": 323,
+        "selector_hash12": "7b5d7fa56539",
+        "selector_score_mean": 0.00989389605820179,
+        "signed_margin": -0.0691808070987463
+      },
+      "train_episode_count": 7,
+      "train_episode_jsonl": "/root/autodl-tmp/domain_selector/selector_bench/work_dirs/stage2_generalization_rho100_loo_20260706/fold_02/episodes_train.jsonl",
+      "train_metrics": {
+        "after_feedback_mse": 3.39670847813046e-08,
+        "after_mean_score_gap": -0.34617239530619504,
+        "after_preference_accuracy": 1.0,
+        "before_feedback_mse": 2.2226972088652395,
+        "before_mean_score_gap": -0.020284312953381758,
+        "before_preference_accuracy": 0.2857142857142857,
+        "num_feedback_episodes": 7,
+        "reward_scale": 1.2585464789428649
+      }
+    },
+    {
+      "checkpoint": "/root/autodl-tmp/domain_selector/selector_bench/work_dirs/stage2_generalization_rho100_loo_20260706/fold_03/selector.json",
+      "fold": 3,
+      "heldout": {
+        "episode_id": "partial_trainval_stage2_feedback_v2_vs_random_seed2026070602_100iter_20260706_rho_box100",
+        "predicted_gap_selector_minus_random": 1.3971537351608276,
+        "predicted_gap_sign": 1,
+        "preference_correct": false,
+        "random_count": 323,
+        "random_hash12": "507b31247cb2",
+        "random_score_mean": -0.3583388328552246,
+        "reward": -1.2585464789428649,
+        "reward_sign": -1,
+        "selector_count": 323,
+        "selector_hash12": "b3d4e2cac19b",
+        "selector_score_mean": 1.038814902305603,
+        "signed_margin": -1.3971537351608276
+      },
+      "train_episode_count": 7,
+      "train_episode_jsonl": "/root/autodl-tmp/domain_selector/selector_bench/work_dirs/stage2_generalization_rho100_loo_20260706/fold_03/episodes_train.jsonl",
+      "train_metrics": {
+        "after_feedback_mse": 5.62608179082811e-05,
+        "after_mean_score_gap": 0.018238310895508553,
+        "after_preference_accuracy": 1.0,
+        "before_feedback_mse": 2.2594791341545717,
+        "before_mean_score_gap": -0.0358549553712602,
+        "before_preference_accuracy": 0.42857142857142855,
+        "num_feedback_episodes": 7,
+        "reward_scale": 1.342427706759838
+      }
+    },
+    {
+      "checkpoint": "/root/autodl-tmp/domain_selector/selector_bench/work_dirs/stage2_generalization_rho100_loo_20260706/fold_04/selector.json",
+      "fold": 4,
+      "heldout": {
+        "episode_id": "partial_trainval_stage2_feedback_v3_rho_box100_vs_random_seed2026070603_100iter_20260706_rho_box100",
+        "predicted_gap_selector_minus_random": 3.4232713878154755,
+        "predicted_gap_sign": 1,
+        "preference_correct": true,
+        "random_count": 323,
+        "random_hash12": "f897d2bd9d2f",
+        "random_score_mean": -0.2764112651348114,
+        "reward": 1.1764124852294708,
+        "reward_sign": 1,
+        "selector_count": 323,
+        "selector_hash12": "c2758d5ba469",
+        "selector_score_mean": 3.146860122680664,
+        "signed_margin": 3.4232713878154755
+      },
+      "train_episode_count": 7,
+      "train_episode_jsonl": "/root/autodl-tmp/domain_selector/selector_bench/work_dirs/stage2_generalization_rho100_loo_20260706/fold_04/episodes_train.jsonl",
+      "train_metrics": {
+        "after_feedback_mse": 2.5238462006505713e-05,
+        "after_mean_score_gap": -0.2410385087342106,
+        "after_preference_accuracy": 1.0,
+        "before_feedback_mse": 2.1709171498337123,
+        "before_mean_score_gap": 0.04922773528483015,
+        "before_preference_accuracy": 0.42857142857142855,
+        "num_feedback_episodes": 7,
+        "reward_scale": 1.342427706759838
+      }
+    },
+    {
+      "checkpoint": "/root/autodl-tmp/domain_selector/selector_bench/work_dirs/stage2_generalization_rho100_loo_20260706/fold_05/selector.json",
+      "fold": 5,
+      "heldout": {
+        "episode_id": "partial_trainval_stage2_feedback_v4_rho_box100_vs_random_seed2026070604_100iter_20260706_rho_box100",
+        "predicted_gap_selector_minus_random": 1.4827534556388855,
+        "predicted_gap_sign": 1,
+        "preference_correct": true,
+        "random_count": 323,
+        "random_hash12": "1bba02582e94",
+        "random_score_mean": -0.4812396168708801,
+        "reward": 1.342427706759838,
+        "reward_sign": 1,
+        "selector_count": 323,
+        "selector_hash12": "709895840892",
+        "selector_score_mean": 1.0015138387680054,
+        "signed_margin": 1.4827534556388855
+      },
+      "train_episode_count": 7,
+      "train_episode_jsonl": "/root/autodl-tmp/domain_selector/selector_bench/work_dirs/stage2_generalization_rho100_loo_20260706/fold_05/episodes_train.jsonl",
+      "train_metrics": {
+        "after_feedback_mse": 0.0009006438880968491,
+        "after_mean_score_gap": -0.2621959367377998,
+        "after_preference_accuracy": 1.0,
+        "before_feedback_mse": 2.3526422616442844,
+        "before_mean_score_gap": 0.028493059827510357,
+        "before_preference_accuracy": 0.42857142857142855,
+        "num_feedback_episodes": 7,
+        "reward_scale": 1.2585464789428649
+      }
+    },
+    {
+      "checkpoint": "/root/autodl-tmp/domain_selector/selector_bench/work_dirs/stage2_generalization_rho100_loo_20260706/fold_06/selector.json",
+      "fold": 6,
+      "heldout": {
+        "episode_id": "partial_trainval_stage2_feedback_v5_rho_box100_vs_random_seed2026070605_100iter_20260706_rho_box100",
+        "predicted_gap_selector_minus_random": 1.8037979751825333,
+        "predicted_gap_sign": 1,
+        "preference_correct": false,
+        "random_count": 323,
+        "random_hash12": "ef49a4d982f2",
+        "random_score_mean": -0.15286876261234283,
+        "reward": -3.0180549226287345,
+        "reward_sign": -1,
+        "selector_count": 323,
+        "selector_hash12": "d3cfca56a22b",
+        "selector_score_mean": 1.6509292125701904,
+        "signed_margin": -1.8037979751825333
+      },
+      "train_episode_count": 7,
+      "train_episode_jsonl": "/root/autodl-tmp/domain_selector/selector_bench/work_dirs/stage2_generalization_rho100_loo_20260706/fold_06/episodes_train.jsonl",
+      "train_metrics": {
+        "after_feedback_mse": 0.00037562679523510866,
+        "after_mean_score_gap": 0.18435506977053112,
+        "after_preference_accuracy": 1.0,
+        "before_feedback_mse": 2.188544930461979,
+        "before_mean_score_gap": 0.0202021863869595,
+        "before_preference_accuracy": 0.2857142857142857,
+        "num_feedback_episodes": 7,
+        "reward_scale": 1.2585464789428649
+      }
+    },
+    {
+      "checkpoint": "/root/autodl-tmp/domain_selector/selector_bench/work_dirs/stage2_generalization_rho100_loo_20260706/fold_07/selector.json",
+      "fold": 7,
+      "heldout": {
+        "episode_id": "partial_trainval_stage2_feedback_v6_rho_box100_vs_random_seed2026070606_100iter_20260706_rho_box100",
+        "predicted_gap_selector_minus_random": 2.600738912820816,
+        "predicted_gap_sign": 1,
+        "preference_correct": false,
+        "random_count": 323,
+        "random_hash12": "8acd111dcdf3",
+        "random_score_mean": -0.22616472840309143,
+        "reward": -1.8047857226596928,
+        "reward_sign": -1,
+        "selector_count": 323,
+        "selector_hash12": "d6306e617e92",
+        "selector_score_mean": 2.3745741844177246,
+        "signed_margin": -2.600738912820816
+      },
+      "train_episode_count": 7,
+      "train_episode_jsonl": "/root/autodl-tmp/domain_selector/selector_bench/work_dirs/stage2_generalization_rho100_loo_20260706/fold_07/episodes_train.jsonl",
+      "train_metrics": {
+        "after_feedback_mse": 0.0009457846155396808,
+        "after_mean_score_gap": 0.09370019015574416,
+        "after_preference_accuracy": 1.0,
+        "before_feedback_mse": 2.4753977755696406,
+        "before_mean_score_gap": 0.04303724457212678,
+        "before_preference_accuracy": 0.2857142857142857,
+        "num_feedback_episodes": 7,
+        "reward_scale": 1.2585464789428649
+      }
+    }
+  ],
+  "init_selector_path": "/root/autodl-tmp/domain_selector/selector_bench/artifacts/selectors/stage1_cluster_domain_neural_v0_normfix_trainval_partial_teacher_100iter_20260706.json",
+  "run_id": "stage2_generalization_rho100_loo_20260706",
+  "schema": "selector_bench.stage2_feedback_generalization.v0",
+  "summary": {
+    "episode_count": 8,
+    "fold_count": 8,
+    "max_signed_margin": 3.4232713878154755,
+    "mean_signed_margin": -0.2451442468445748,
+    "median_signed_margin": -0.733167271129787,
+    "min_signed_margin": -2.600738912820816,
+    "negative_preference_accuracy": 0.0,
+    "negative_reward_fold_count": 4,
+    "nonzero_reward_fold_count": 8,
+    "num_wrong_sign": 5,
+    "positive_preference_accuracy": 0.75,
+    "positive_reward_fold_count": 4,
+    "preference_accuracy": 0.375
+  },
+  "training_config": {
+    "epochs": 300,
+    "l2": 0.0001,
+    "lr": 0.01,
+    "min_abs_reward": 0.0,
+    "reward_scale": null,
+    "seed": 20260706,
+    "target_clip": 2.0
+  },
+  "work_dir": "/root/autodl-tmp/domain_selector/selector_bench/work_dirs/stage2_generalization_rho100_loo_20260706"
+}

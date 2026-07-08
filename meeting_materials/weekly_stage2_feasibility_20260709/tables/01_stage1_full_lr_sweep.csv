@@ -1,0 +1,6 @@
+﻿run,lr,train_samples,l2,obj_box_col_percent,obj_col_percent,train_runtime_s,eval_runtime_s,notes
+stage1_base_no_finetune,n/a,0,7.553510,3.706,0.310,,107.940,original stage1 checkpoint eval
+full_data_finetune_100iter,0.0003,all_train_partial_1611,7.228593,3.185,0.310,78.572,104.467,full train partial lr sweep
+full_data_finetune_100iter,0.0001,all_train_partial_1611,7.412924,3.576,0.310,77.347,105.222,full train partial lr sweep
+full_data_finetune_100iter,3e-05,all_train_partial_1611,6.470825,2.444,0.310,75.019,105.094,full train partial lr sweep
+full_data_finetune_100iter,1e-05,all_train_partial_1611,7.173102,3.348,0.310,77.905,104.410,full train partial lr sweep

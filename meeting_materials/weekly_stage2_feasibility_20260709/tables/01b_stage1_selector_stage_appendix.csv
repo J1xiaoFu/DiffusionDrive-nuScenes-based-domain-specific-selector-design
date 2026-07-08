@@ -1,0 +1,4 @@
+﻿stage,selection_count,l2,obj_box_col_percent,train_runtime_s,eval_runtime_s,selection
+1,323,6.838831,2.835,78.269,106.353,/root/autodl-tmp/domain_selector/selector_bench/artifacts/stage1_init_selector_experiments/selections/stage1_init_partial100_selector3_20260707_selector_stage01_323.json
+2,323,6.519804,2.656,68.548,105.022,/root/autodl-tmp/domain_selector/selector_bench/artifacts/stage1_init_selector_experiments/selections/stage1_init_partial100_selector3_20260707_selector_stage02_323.json
+3,323,3.604876,3.201,77.755,108.447,/root/autodl-tmp/domain_selector/selector_bench/artifacts/stage1_init_selector_experiments/selections/stage1_init_partial100_selector3_20260707_selector_stage03_323.json

@@ -1,0 +1,12 @@
+[project]
+name = "selector-bench"
+version = "0.1.0"
+description = "Lightweight scaffold for domain-aware data selector validation."
+requires-python = ">=3.10"
+dependencies = [
+  "numpy>=1.23",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["selector_bench*"]

@@ -1,0 +1,49 @@
+schema: selector_bench.stage1_target_config.v0
+run_id: stage1_cluster_domains_v0_normfix_real_mini_teacher_20260706
+feature_dir: /root/autodl-tmp/domain_selector/selector_bench/artifacts/features/real_mini_teacher_mini100iter_train_20260705
+split: train
+clustering:
+  num_clusters: 4
+  seed: 29
+  max_iter: 100
+  tolerance: 1.0e-06
+  label_prefix: cluster_
+cluster_features:
+  ego_speed:
+    kind: ego_speed_norm
+    scale: 30.0
+    normalization: standard
+    cluster_weight: 1.0
+  agent_density:
+    kind: agent_count_norm
+    scale: 96.0
+    normalization: standard
+    cluster_weight: 1.0
+  interaction_complexity:
+    kind: interaction_norm
+    normalization: standard
+    cluster_weight: 0.8
+  traj_accel_abs_mean:
+    kind: traj_accel_abs_mean
+    normalization: standard
+    cluster_weight: 0.7
+  traj_jerk_abs_mean:
+    kind: traj_jerk_abs_mean
+    normalization: standard
+    cluster_weight: 0.7
+  route_curvature:
+    kind: traj_curvature_abs_mean
+    normalization: standard
+    cluster_weight: 0.8
+  teacher_loss:
+    kind: teacher_loss
+    normalization: standard
+    cluster_weight: 0.4
+  teacher_uncertainty:
+    kind: teacher_uncertainty
+    normalization: standard
+    cluster_weight: 0.4
+outputs:
+  labels_path: /root/autodl-tmp/domain_selector/selector_bench/artifacts/stage1_targets/cluster_domains_v0_normfix_real_mini_teacher_20260706_labels.jsonl
+  cluster_model_path: /root/autodl-tmp/domain_selector/selector_bench/artifacts/stage1_targets/cluster_domains_v0_normfix_real_mini_teacher_20260706_model.json
+  cluster_profile_path: /root/autodl-tmp/domain_selector/selector_bench/artifacts/stage1_targets/cluster_domains_v0_normfix_real_mini_teacher_20260706_profile.md

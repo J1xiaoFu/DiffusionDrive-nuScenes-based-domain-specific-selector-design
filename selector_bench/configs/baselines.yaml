@@ -1,0 +1,16 @@
+baselines:
+  random:
+    adapter: domain_stratified
+    score_provider: random
+  mosaic:
+    adapter: mosaic_lite
+    score_provider: mosaic_lite_original
+  loss_mining:
+    adapter: domain_stratified
+    score_provider: teacher_loss
+  uncertainty:
+    adapter: domain_stratified
+    score_provider: teacher_uncertainty
+  full_data:
+    adapter: full_data
+    score_provider: none

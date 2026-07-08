@@ -1,0 +1,27 @@
+profile:
+  name: single_4090d_500gb
+  gpu_count: 1
+  gpu_memory_gb: 24
+  disk_budget_gb: 500
+
+storage_policy:
+  keep_raw_dataset_max_gb: 260
+  keep_feature_cache_max_gb: 40
+  keep_work_dirs_max_gb: 120
+  keep_reports_max_gb: 10
+  reserve_free_gb: 60
+  avoid_system_disk: true
+
+experiment_policy:
+  first_real_smoke_train_samples: 200
+  first_real_smoke_val_samples: 50
+  first_training_subset_ratio: 0.05
+  first_training_max_iters: 200
+  target_budget_ratio_after_smoke: 0.10
+
+diffusiondrive_single_gpu:
+  total_batch_size: 1
+  workers_per_gpu: 2
+  fp16: true
+  gradient_accumulation: recommended
+  note: "Use smoke configs first; full nuScenes trainval is not suitable for 500GB disk."

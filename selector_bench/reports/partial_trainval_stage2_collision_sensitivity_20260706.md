@@ -1,0 +1,13 @@
+# Stage 2 Collision-Weight Sensitivity
+
+Source: `selector_bench/artifacts/stage2_feedback/partial_trainval_stage1_cluster_domain_vs_random_20260706.jsonl`
+
+Collision metrics are stored as fractions. A +1 percentage point box-collision gap changes the scalar cost by `0.01 * rho_box`.
+
+Decision: keep `rho_box=0.05` for the already-trained v2 comparison so it is directly comparable to the first three feedback rows. If v2 still has higher box collision than fresh random, use `rho_box=100` as the next collision-aware Stage 2 training/reporting candidate.
+
+| episode | selector | dL2 sel-rand | dBox pp | break-even rho_box | R@0 | R@0.05 | R@10 | R@50 | R@100 | R@250 | R@500 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| partial_trainval_stage1_cluster_domain_vs_random_100iter_20260706 | 9889c8fa4af1 | 0.731601 | 0.472 | n/a | -0.731601 | -0.731837 | -0.778847 | -0.967834 | -1.204067 | -1.912767 | -3.093933 |
+| partial_trainval_stage2_feedback_vs_random_100iter_20260706 | 7614af31cc86 | -2.942306 | 1.727 | 170.376 | 2.942306 | 2.941442 | 2.769611 | 2.078832 | 1.215359 | -1.375061 | -5.692428 |
+| partial_trainval_stage2_feedback_v1_vs_random_100iter_20260706 | 7b5d7fa56539 | -2.863742 | 0.717 | 399.492 | 2.863742 | 2.863383 | 2.792057 | 2.505319 | 2.146896 | 1.071627 | -0.720487 |

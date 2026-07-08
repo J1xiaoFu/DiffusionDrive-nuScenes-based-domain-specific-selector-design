@@ -1,0 +1,20 @@
+{
+  "branch": "nusc",
+  "commit": "ae54fd87b32b3762f20e63ffd0af91d343cade85",
+  "exists": true,
+  "is_git_repo": true,
+  "key_files": {
+    "docs/train_eval.md": {
+      "exists": true,
+      "size_bytes": 817
+    },
+    "projects/configs/diffusiondrive_configs/diffusiondrive_small_stage2.py": {
+      "exists": true,
+      "size_bytes": 23988
+    }
+  },
+  "recommendations": [
+    "DiffusionDrive repo layout looks ready for smoke integration."
+  ],
+  "repo_path": "../DiffusionDrive"
+}

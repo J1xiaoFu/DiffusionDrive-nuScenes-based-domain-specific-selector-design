@@ -1,0 +1,39 @@
+{
+  "created_for": "2026-07-09 weekly meeting",
+  "main_claim": "High-frequency Stage 2 selector-vs-random feedback is learnable; r40 selector beats 4/4 random aggregate baselines.",
+  "model": "DiffusionDrive architecture, stage1 base checkpoint",
+  "dataset": {
+    "name": "nuScenes Trainval mini-scale controlled partial",
+    "train_scenes": 40,
+    "train_samples": 1611,
+    "val_scenes": 10,
+    "val_samples": 401
+  },
+  "base_checkpoint": "/root/autodl-tmp/domain_selector/DiffusionDrive/ckpts/sparsedrive_stage1.pth",
+  "best_full_finetune_lr": 3e-05,
+  "best_full_finetune_l2": 6.47082542710834,
+  "stage1_base_l2": 7.5535099373923416,
+  "successful_stage2": {
+    "selector_lr": 0.01,
+    "rounds": 40,
+    "selection_count_per_round": 8,
+    "aggregate_selected_count": 320,
+    "planner_lr": 3e-05,
+    "planner_max_iters": 100,
+    "selector_l2": 6.309916,
+    "random_l2s": [
+      6.875033,
+      6.818086,
+      6.579508,
+      6.565195
+    ],
+    "random_l2_mean": 6.7094555,
+    "selector_better_count": 4,
+    "selector_better_total": 4
+  },
+  "failed_ablation": {
+    "selector_lr": 0.003,
+    "selector_l2": 7.280338366826375,
+    "random_l2": 6.605227020051745
+  }
+}

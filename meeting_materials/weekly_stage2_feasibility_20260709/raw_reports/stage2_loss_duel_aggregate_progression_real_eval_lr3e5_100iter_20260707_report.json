@@ -1,0 +1,155 @@
+{
+  "config": {
+    "allow_random_overlap": false,
+    "eval_seed": 0,
+    "loss_episodes": "/root/autodl-tmp/domain_selector/selector_bench/artifacts/stage2_loss_duel_inprocess/stage2_loss_duel_inprocess_stage1_lr3e5_r40x8_train_test_20260707_episodes.jsonl",
+    "planner_init_checkpoint": "/root/autodl-tmp/domain_selector/DiffusionDrive/ckpts/sparsedrive_stage1.pth",
+    "planner_lr": 3e-05,
+    "planner_max_iters": 100,
+    "random_seed": 7100,
+    "rho_box": 0.0,
+    "rho_obj": 0.0,
+    "round_cutoffs": [
+      10,
+      20,
+      30
+    ],
+    "split": "train",
+    "train_seed": 0
+  },
+  "episode_jsonl": "/root/autodl-tmp/domain_selector/selector_bench/artifacts/stage2_aggregate_selected_real_eval/stage2_loss_duel_aggregate_progression_real_eval_lr3e5_100iter_20260707_episodes.jsonl",
+  "results": [
+    {
+      "cutoff_round": 10,
+      "random_config": "/root/autodl-tmp/domain_selector/selector_bench/artifacts/diffusiondrive_configs/dd_stage2_loss_duel_aggregate_progression_real_eval_lr3e5_100iter_20260707_r10_80_random.py",
+      "random_cost": 6.616966346899669,
+      "random_eval_work_dir": "/root/autodl-tmp/domain_selector/selector_bench/work_dirs/stage2_loss_duel_aggregate_progression_real_eval_lr3e5_100iter_20260707_r10_80_random_subset_100iter_eval_standalone",
+      "random_hash": "c4652a44950f31bf49af0b0b571804736bf2bcf073a6d91de439643e51c76466",
+      "random_info": "/root/autodl-tmp/domain_selector/DiffusionDrive/data/infos/trainval_partial_selector_subsets/nuscenes_partial_1600_400_infos_train_stage2_loss_duel_aggregate_progression_real_eval_lr3e5_100iter_20260707_r10_80_random.pkl",
+      "random_metrics": {
+        "eval_runtime_s": 108.13,
+        "l2": 6.616966346899669,
+        "obj_box_col": 0.02460084710684088,
+        "obj_col": 0.0030954708345234394,
+        "peak_gpu_mb": 11469.0,
+        "runtime_s": 108.13,
+        "train_runtime_s": 73.106
+      },
+      "random_selection": "/root/autodl-tmp/domain_selector/selector_bench/artifacts/stage2_aggregate_selected_real_eval/selections/stage2_loss_duel_aggregate_progression_real_eval_lr3e5_100iter_20260707_r10_80_random.json",
+      "random_work_dir": "/root/autodl-tmp/domain_selector/selector_bench/work_dirs/stage2_loss_duel_aggregate_progression_real_eval_lr3e5_100iter_20260707_r10_80_random_subset_100iter",
+      "reward": -0.20375562376446243,
+      "selected_count": 80,
+      "selector_config": "/root/autodl-tmp/domain_selector/selector_bench/artifacts/diffusiondrive_configs/dd_stage2_loss_duel_aggregate_progression_real_eval_lr3e5_100iter_20260707_r10_80_selector.py",
+      "selector_cost": 6.820721970664131,
+      "selector_eval_work_dir": "/root/autodl-tmp/domain_selector/selector_bench/work_dirs/stage2_loss_duel_aggregate_progression_real_eval_lr3e5_100iter_20260707_r10_80_selector_subset_100iter_eval_standalone",
+      "selector_hash": "0168ee9daa87ed1a3874efebb4897de070482964aae6dd2fa85f00b9a1888b47",
+      "selector_info": "/root/autodl-tmp/domain_selector/DiffusionDrive/data/infos/trainval_partial_selector_subsets/nuscenes_partial_1600_400_infos_train_stage2_loss_duel_aggregate_progression_real_eval_lr3e5_100iter_20260707_r10_80_selector.pkl",
+      "selector_metrics": {
+        "eval_runtime_s": 110.075,
+        "l2": 6.820721970664131,
+        "obj_box_col": 0.02916259359982279,
+        "obj_col": 0.0030954708345234394,
+        "peak_gpu_mb": 11469.0,
+        "runtime_s": 110.075,
+        "train_runtime_s": 75.782
+      },
+      "selector_random_overlap_count": 0,
+      "selector_random_overlap_tokens": [],
+      "selector_selection": "/root/autodl-tmp/domain_selector/selector_bench/artifacts/stage2_aggregate_selected_real_eval/selections/stage2_loss_duel_aggregate_progression_real_eval_lr3e5_100iter_20260707_r10_80_selector.json",
+      "selector_work_dir": "/root/autodl-tmp/domain_selector/selector_bench/work_dirs/stage2_loss_duel_aggregate_progression_real_eval_lr3e5_100iter_20260707_r10_80_selector_subset_100iter"
+    },
+    {
+      "cutoff_round": 20,
+      "random_config": "/root/autodl-tmp/domain_selector/selector_bench/artifacts/diffusiondrive_configs/dd_stage2_loss_duel_aggregate_progression_real_eval_lr3e5_100iter_20260707_r20_160_random.py",
+      "random_cost": 7.003899521297879,
+      "random_eval_work_dir": "/root/autodl-tmp/domain_selector/selector_bench/work_dirs/stage2_loss_duel_aggregate_progression_real_eval_lr3e5_100iter_20260707_r20_160_random_subset_100iter_eval_standalone",
+      "random_hash": "ea7c4cc10541e51498a85d374a025f59742dd199f8a8204d9b30baf777af72db",
+      "random_info": "/root/autodl-tmp/domain_selector/DiffusionDrive/data/infos/trainval_partial_selector_subsets/nuscenes_partial_1600_400_infos_train_stage2_loss_duel_aggregate_progression_real_eval_lr3e5_100iter_20260707_r20_160_random.pkl",
+      "random_metrics": {
+        "eval_runtime_s": 108.725,
+        "l2": 7.003899521297879,
+        "obj_box_col": 0.03160638745046324,
+        "obj_col": 0.0030954708345234394,
+        "peak_gpu_mb": 11469.0,
+        "runtime_s": 108.725,
+        "train_runtime_s": 82.397
+      },
+      "random_selection": "/root/autodl-tmp/domain_selector/selector_bench/artifacts/stage2_aggregate_selected_real_eval/selections/stage2_loss_duel_aggregate_progression_real_eval_lr3e5_100iter_20260707_r20_160_random.json",
+      "random_work_dir": "/root/autodl-tmp/domain_selector/selector_bench/work_dirs/stage2_loss_duel_aggregate_progression_real_eval_lr3e5_100iter_20260707_r20_160_random_subset_100iter",
+      "reward": -0.2730198767450105,
+      "selected_count": 160,
+      "selector_config": "/root/autodl-tmp/domain_selector/selector_bench/artifacts/diffusiondrive_configs/dd_stage2_loss_duel_aggregate_progression_real_eval_lr3e5_100iter_20260707_r20_160_selector.py",
+      "selector_cost": 7.27691939804289,
+      "selector_eval_work_dir": "/root/autodl-tmp/domain_selector/selector_bench/work_dirs/stage2_loss_duel_aggregate_progression_real_eval_lr3e5_100iter_20260707_r20_160_selector_subset_100iter_eval_standalone",
+      "selector_hash": "81c4bf2520139c38e459bad550f48f94f5427ad8a9de61864dbf095d5015bf2f",
+      "selector_info": "/root/autodl-tmp/domain_selector/DiffusionDrive/data/infos/trainval_partial_selector_subsets/nuscenes_partial_1600_400_infos_train_stage2_loss_duel_aggregate_progression_real_eval_lr3e5_100iter_20260707_r20_160_selector.pkl",
+      "selector_metrics": {
+        "eval_runtime_s": 104.024,
+        "l2": 7.27691939804289,
+        "obj_box_col": 0.0369012705826511,
+        "obj_col": 0.0030954708345234394,
+        "peak_gpu_mb": 11469.0,
+        "runtime_s": 104.024,
+        "train_runtime_s": 78.065
+      },
+      "selector_random_overlap_count": 0,
+      "selector_random_overlap_tokens": [],
+      "selector_selection": "/root/autodl-tmp/domain_selector/selector_bench/artifacts/stage2_aggregate_selected_real_eval/selections/stage2_loss_duel_aggregate_progression_real_eval_lr3e5_100iter_20260707_r20_160_selector.json",
+      "selector_work_dir": "/root/autodl-tmp/domain_selector/selector_bench/work_dirs/stage2_loss_duel_aggregate_progression_real_eval_lr3e5_100iter_20260707_r20_160_selector_subset_100iter"
+    },
+    {
+      "cutoff_round": 30,
+      "random_config": "/root/autodl-tmp/domain_selector/selector_bench/artifacts/diffusiondrive_configs/dd_stage2_loss_duel_aggregate_progression_real_eval_lr3e5_100iter_20260707_r30_240_random.py",
+      "random_cost": 6.777495953771802,
+      "random_eval_work_dir": "/root/autodl-tmp/domain_selector/selector_bench/work_dirs/stage2_loss_duel_aggregate_progression_real_eval_lr3e5_100iter_20260707_r30_240_random_subset_100iter_eval_standalone",
+      "random_hash": "ce795c24c5e789767ce73431f8f2fff79427fe70ecbcf2f0d8824d2081b86144",
+      "random_info": "/root/autodl-tmp/domain_selector/DiffusionDrive/data/infos/trainval_partial_selector_subsets/nuscenes_partial_1600_400_infos_train_stage2_loss_duel_aggregate_progression_real_eval_lr3e5_100iter_20260707_r30_240_random.pkl",
+      "random_metrics": {
+        "eval_runtime_s": 107.19,
+        "l2": 6.777495953771802,
+        "obj_box_col": 0.031443466846313745,
+        "obj_col": 0.0030954708345234394,
+        "peak_gpu_mb": 11469.0,
+        "runtime_s": 107.19,
+        "train_runtime_s": 72.146
+      },
+      "random_selection": "/root/autodl-tmp/domain_selector/selector_bench/artifacts/stage2_aggregate_selected_real_eval/selections/stage2_loss_duel_aggregate_progression_real_eval_lr3e5_100iter_20260707_r30_240_random.json",
+      "random_work_dir": "/root/autodl-tmp/domain_selector/selector_bench/work_dirs/stage2_loss_duel_aggregate_progression_real_eval_lr3e5_100iter_20260707_r30_240_random_subset_100iter",
+      "reward": 0.17068196005291192,
+      "selected_count": 240,
+      "selector_config": "/root/autodl-tmp/domain_selector/selector_bench/artifacts/diffusiondrive_configs/dd_stage2_loss_duel_aggregate_progression_real_eval_lr3e5_100iter_20260707_r30_240_selector.py",
+      "selector_cost": 6.60681399371889,
+      "selector_eval_work_dir": "/root/autodl-tmp/domain_selector/selector_bench/work_dirs/stage2_loss_duel_aggregate_progression_real_eval_lr3e5_100iter_20260707_r30_240_selector_subset_100iter_eval_standalone",
+      "selector_hash": "4b5e5d2ad40e7e3e025727294e0a05bae7c5f0b32693a95fb22683481b7b5d81",
+      "selector_info": "/root/autodl-tmp/domain_selector/DiffusionDrive/data/infos/trainval_partial_selector_subsets/nuscenes_partial_1600_400_infos_train_stage2_loss_duel_aggregate_progression_real_eval_lr3e5_100iter_20260707_r30_240_selector.pkl",
+      "selector_metrics": {
+        "eval_runtime_s": 110.893,
+        "l2": 6.60681399371889,
+        "obj_box_col": 0.02533398465149932,
+        "obj_col": 0.0030954708345234394,
+        "peak_gpu_mb": 11469.0,
+        "runtime_s": 110.893,
+        "train_runtime_s": 77.348
+      },
+      "selector_random_overlap_count": 0,
+      "selector_random_overlap_tokens": [],
+      "selector_selection": "/root/autodl-tmp/domain_selector/selector_bench/artifacts/stage2_aggregate_selected_real_eval/selections/stage2_loss_duel_aggregate_progression_real_eval_lr3e5_100iter_20260707_r30_240_selector.json",
+      "selector_work_dir": "/root/autodl-tmp/domain_selector/selector_bench/work_dirs/stage2_loss_duel_aggregate_progression_real_eval_lr3e5_100iter_20260707_r30_240_selector_subset_100iter"
+    }
+  ],
+  "run_id": "stage2_loss_duel_aggregate_progression_real_eval_lr3e5_100iter_20260707",
+  "schema": "selector_bench.stage2_aggregate_selected_real_eval.v0",
+  "summary": {
+    "best_selector_cost_cutoff": 30,
+    "completed_cutoffs": 3,
+    "cutoffs": [
+      10,
+      20,
+      30
+    ],
+    "last_random_l2": 6.777495953771802,
+    "last_reward": 0.17068196005291192,
+    "last_selector_l2": 6.60681399371889,
+    "status": "complete"
+  }
+}

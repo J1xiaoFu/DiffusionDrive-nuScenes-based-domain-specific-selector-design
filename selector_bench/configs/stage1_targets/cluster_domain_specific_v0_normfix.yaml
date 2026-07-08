@@ -1,0 +1,85 @@
+schema: selector_bench.stage1_target_config.v0
+run_id: stage1_cluster_domain_specific_v0_normfix_real_mini_teacher_20260706
+feature_dir: /root/autodl-tmp/domain_selector/selector_bench/artifacts/features/real_mini_teacher_mini100iter_train_20260705
+split: train
+domain_source:
+  type: cluster
+  labels_path: /root/autodl-tmp/domain_selector/selector_bench/artifacts/stage1_targets/cluster_domains_v0_normfix_real_mini_teacher_20260706_labels.jsonl
+default_domain: default
+features:
+  teacher_loss:
+    kind: teacher_loss
+    normalization: standard
+  teacher_uncertainty:
+    kind: teacher_uncertainty
+    normalization: standard
+  agent_density:
+    kind: agent_count_norm
+    scale: 96.0
+    normalization: minmax
+  ego_speed:
+    kind: ego_speed_norm
+    scale: 30.0
+    normalization: minmax
+  interaction_complexity:
+    kind: interaction_norm
+    normalization: standard
+  traj_speed:
+    kind: traj_speed_mean
+    normalization: standard
+  traj_accel_abs_mean:
+    kind: traj_accel_abs_mean
+    normalization: standard
+  traj_jerk_abs_mean:
+    kind: traj_jerk_abs_mean
+    normalization: standard
+  route_curvature:
+    kind: traj_curvature_abs_mean
+    normalization: standard
+heuristics:
+  cluster_0:
+    weights:
+      teacher_loss: 0.35
+      teacher_uncertainty: 0.25
+      ego_speed: 0.2
+      traj_accel_abs_mean: -0.1
+      traj_jerk_abs_mean: -0.1
+      interaction_complexity: 0.1
+  cluster_1:
+    weights:
+      interaction_complexity: 0.35
+      agent_density: 0.25
+      teacher_uncertainty: 0.25
+      teacher_loss: 0.15
+      route_curvature: 0.15
+  cluster_2:
+    weights:
+      route_curvature: 0.35
+      traj_accel_abs_mean: 0.15
+      interaction_complexity: 0.2
+      teacher_loss: 0.2
+      teacher_uncertainty: 0.2
+  cluster_3:
+    weights:
+      teacher_loss: 0.4
+      teacher_uncertainty: 0.3
+      agent_density: 0.15
+      traj_speed: 0.15
+      interaction_complexity: 0.1
+  default:
+    weights:
+      teacher_loss: 0.45
+      teacher_uncertainty: 0.3
+      agent_density: 0.15
+      interaction_complexity: 0.1
+outputs:
+  target_scores_path: /root/autodl-tmp/domain_selector/selector_bench/artifacts/stage1_targets/cluster_domain_specific_v0_normfix_real_mini_teacher_20260706_target_scores.jsonl
+  selector_checkpoint_path: /root/autodl-tmp/domain_selector/selector_bench/artifacts/selectors/stage1_cluster_domain_neural_v0_normfix_real_mini_teacher_20260706.json
+  selection_path: /root/autodl-tmp/domain_selector/selector_bench/artifacts/selections/stage1_cluster_domain_neural_v0_normfix_gumbel20_real_mini_teacher_20260706.json
+  token_list_path: /root/autodl-tmp/domain_selector/selector_bench/artifacts/diffusiondrive_subsets/stage1_cluster_domain_neural_v0_normfix_gumbel20_real_mini_teacher_20260706_tokens.txt
+selection:
+  budget: 0.2
+  domain_budget_policy: proportional_manifest_domain
+  sampler: domain_stratified_gumbel_topk
+  temperature: 0.15
+  seed: 31

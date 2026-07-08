@@ -1,0 +1,107 @@
+{
+  "collision_units": "fractions, not percentages",
+  "decision": {
+    "future_collision_aware_candidate_rho_box": 100.0,
+    "immediate_v2_episode_rho_box": 0.05,
+    "rationale": "Keep the already-trained v2 comparison on the same rho_box=0.05 reward scale for direct comparability, but treat rho_box=100 as the next collision-aware setting if v2 still raises box collision versus fresh random."
+  },
+  "episode_count": 4,
+  "episodes": [
+    {
+      "break_even_rho_box": null,
+      "current_reward": -0.7318367628949805,
+      "current_rho_box": 0.05,
+      "delta_l2_selector_minus_random": 0.7316005296177339,
+      "delta_obj_box_col_fraction_selector_minus_random": 0.004724665544927113,
+      "delta_obj_box_col_percentage_points_selector_minus_random": 0.47246655449271135,
+      "delta_obj_col_fraction_selector_minus_random": 0.0,
+      "episode_id": "partial_trainval_stage1_cluster_domain_vs_random_100iter_20260706",
+      "random_hash12": "5d1145d00918",
+      "reward_by_rho_box": {
+        "0.0": -0.7316005296177339,
+        "0.05": -0.7318367628949805,
+        "10.0": -0.7788471850670051,
+        "100.0": -1.204067084110445,
+        "250.0": -1.912766915849513,
+        "50.0": -0.9678338068640908,
+        "500.0": -3.093933302081293
+      },
+      "selector_hash12": "9889c8fa4af1"
+    },
+    {
+      "break_even_rho_box": 170.3761655814634,
+      "current_reward": 2.9414423431218073,
+      "current_rho_box": 0.05,
+      "delta_l2_selector_minus_random": -2.942305816544426,
+      "delta_obj_box_col_fraction_selector_minus_random": 0.017269468452367515,
+      "delta_obj_box_col_percentage_points_selector_minus_random": 1.7269468452367516,
+      "delta_obj_col_fraction_selector_minus_random": 0.0,
+      "episode_id": "partial_trainval_stage2_feedback_vs_random_100iter_20260706",
+      "random_hash12": "5d1145d00918",
+      "reward_by_rho_box": {
+        "0.0": 2.942305816544426,
+        "0.05": 2.9414423431218073,
+        "10.0": 2.769611132020751,
+        "100.0": 1.2153589713076745,
+        "250.0": -1.3750612965474538,
+        "50.0": 2.0788323939260502,
+        "500.0": -5.692428409639334
+      },
+      "selector_hash12": "7614af31cc86"
+    },
+    {
+      "break_even_rho_box": 399.4920251073782,
+      "current_reward": 2.863383441853025,
+      "current_rho_box": 0.05,
+      "delta_l2_selector_minus_random": -2.8637418647607156,
+      "delta_obj_box_col_fraction_selector_minus_random": 0.007168458153804146,
+      "delta_obj_box_col_percentage_points_selector_minus_random": 0.7168458153804146,
+      "delta_obj_col_fraction_selector_minus_random": 0.0,
+      "episode_id": "partial_trainval_stage2_feedback_v1_vs_random_100iter_20260706",
+      "random_hash12": "5d1145d00918",
+      "reward_by_rho_box": {
+        "0.0": 2.8637418647607156,
+        "0.05": 2.863383441853025,
+        "10.0": 2.7920572832226744,
+        "100.0": 2.1468960493803015,
+        "250.0": 1.0716273263096774,
+        "50.0": 2.505318957070508,
+        "500.0": -0.7204872121413608
+      },
+      "selector_hash12": "7b5d7fa56539"
+    },
+    {
+      "break_even_rho_box": null,
+      "current_reward": -0.3059438405338559,
+      "current_rho_box": 0.05,
+      "delta_l2_selector_minus_random": 0.30546730094485675,
+      "delta_obj_box_col_fraction_selector_minus_random": 0.00953079177998007,
+      "delta_obj_box_col_percentage_points_selector_minus_random": 0.953079177998007,
+      "delta_obj_col_fraction_selector_minus_random": 0.0,
+      "episode_id": "partial_trainval_stage2_feedback_v2_vs_random_seed2026070602_100iter_20260706",
+      "random_hash12": "507b31247cb2",
+      "reward_by_rho_box": {
+        "0.0": -0.30546730094485675,
+        "0.05": -0.3059438405338559,
+        "10.0": -0.4007752187446574,
+        "100.0": -1.2585464789428649,
+        "250.0": -2.6881652459398726,
+        "50.0": -0.7820068899438599,
+        "500.0": -5.07086319093489
+      },
+      "selector_hash12": "b3d4e2cac19b"
+    }
+  ],
+  "rho_box_interpretation": "One +1 percentage point obj_box_col gap changes cost by 0.01*rho_box.",
+  "rho_boxes": [
+    0.0,
+    0.05,
+    10.0,
+    50.0,
+    100.0,
+    250.0,
+    500.0
+  ],
+  "rho_obj": 0.05,
+  "source_episode_jsonl": "selector_bench/artifacts/stage2_feedback/partial_trainval_stage1_cluster_domain_vs_random_20260706.jsonl"
+}

@@ -1,0 +1,5 @@
+﻿comparison,random_seed,selector_l2,random_l2,selector_advantage_l2_random_minus_selector,selector_obj_box_col_percent,random_obj_box_col_percent,selector_hash,random_hash
+paired_random_original,7140/original,6.309916,6.875033,0.565118,2.468,2.835,e5deedffb701,7c236545e490
+additional_random_variance,7200,6.309916,6.818086,0.508170,2.468,2.949,320_selector,92f3fee6b97f
+additional_random_variance,7201,6.309916,6.579508,0.269592,2.468,3.161,320_selector,31871b43adbc
+additional_random_variance,7202,6.309916,6.565195,0.255279,2.468,2.444,320_selector,251730e302e7

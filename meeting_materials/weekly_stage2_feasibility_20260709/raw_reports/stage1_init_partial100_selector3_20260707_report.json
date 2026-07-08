@@ -1,0 +1,186 @@
+{
+  "config": {
+    "base_config": "/root/autodl-tmp/domain_selector/selector_bench/artifacts/diffusiondrive_configs/diffusiondrive_small_stage2_trainval_partial_1600_400_real_anchor_100iter.py",
+    "budget": 0.2,
+    "features": "/root/autodl-tmp/domain_selector/selector_bench/artifacts/features/trainval_partial_teacher_100iter_train_20260706",
+    "init_selector": "/root/autodl-tmp/domain_selector/selector_bench/artifacts/selectors/stage2_feedback_partial_trainval_neural_v7_tiny_rho_box100_normfix_20260706.json",
+    "lr_sweep": [
+      0.0003,
+      0.0001,
+      3e-05,
+      1e-05
+    ],
+    "planner_max_iters": 100,
+    "rho_box": 100.0,
+    "rho_obj": 0.05,
+    "rounds": 3,
+    "selection_count": 323,
+    "source_info": "/root/autodl-tmp/domain_selector/DiffusionDrive/data/infos/trainval_partial_20260706/nuscenes_partial_1600_400_infos_train.pkl",
+    "stage1_checkpoint": "/root/autodl-tmp/domain_selector/DiffusionDrive/ckpts/sparsedrive_stage1.pth"
+  },
+  "full_lr_sweep": [
+    {
+      "config": "/root/autodl-tmp/domain_selector/selector_bench/artifacts/diffusiondrive_configs/dd_stage1_init_partial100_selector3_20260707_full_lr3em04.py",
+      "cost": 10.413823962772991,
+      "eval_work_dir": "/root/autodl-tmp/domain_selector/selector_bench/work_dirs/stage1_init_partial100_selector3_20260707_full_lr3em04_100iter_eval_standalone",
+      "lr": 0.0003,
+      "metrics": {
+        "eval_runtime_s": 104.467,
+        "l2": 7.228592581219144,
+        "obj_box_col": 0.0318507660801212,
+        "obj_col": 0.0030954708345234394,
+        "peak_gpu_mb": 11469.0,
+        "runtime_s": 104.467,
+        "train_runtime_s": 78.572
+      },
+      "train_work_dir": "/root/autodl-tmp/domain_selector/selector_bench/work_dirs/stage1_init_partial100_selector3_20260707_full_lr3em04_100iter"
+    },
+    {
+      "config": "/root/autodl-tmp/domain_selector/selector_bench/artifacts/diffusiondrive_configs/dd_stage1_init_partial100_selector3_20260707_full_lr1em04.py",
+      "cost": 10.989162443560135,
+      "eval_work_dir": "/root/autodl-tmp/domain_selector/selector_bench/work_dirs/stage1_init_partial100_selector3_20260707_full_lr1em04_100iter_eval_standalone",
+      "lr": 0.0001,
+      "metrics": {
+        "eval_runtime_s": 105.222,
+        "l2": 7.412924230098724,
+        "obj_box_col": 0.03576083439919684,
+        "obj_col": 0.0030954708345234394,
+        "peak_gpu_mb": 11469.0,
+        "runtime_s": 105.222,
+        "train_runtime_s": 77.347
+      },
+      "train_work_dir": "/root/autodl-tmp/domain_selector/selector_bench/work_dirs/stage1_init_partial100_selector3_20260707_full_lr1em04_100iter"
+    },
+    {
+      "config": "/root/autodl-tmp/domain_selector/selector_bench/artifacts/diffusiondrive_configs/dd_stage1_init_partial100_selector3_20260707_full_lr3em05.py",
+      "cost": 8.914772975095548,
+      "eval_work_dir": "/root/autodl-tmp/domain_selector/selector_bench/work_dirs/stage1_init_partial100_selector3_20260707_full_lr3em05_100iter_eval_standalone",
+      "lr": 3e-05,
+      "metrics": {
+        "eval_runtime_s": 105.094,
+        "l2": 6.47082542710834,
+        "obj_box_col": 0.024437927744454812,
+        "obj_col": 0.0030954708345234394,
+        "peak_gpu_mb": 11469.0,
+        "runtime_s": 105.094,
+        "train_runtime_s": 75.019
+      },
+      "train_work_dir": "/root/autodl-tmp/domain_selector/selector_bench/work_dirs/stage1_init_partial100_selector3_20260707_full_lr3em05_100iter"
+    },
+    {
+      "config": "/root/autodl-tmp/domain_selector/selector_bench/artifacts/diffusiondrive_configs/dd_stage1_init_partial100_selector3_20260707_full_lr1em05.py",
+      "cost": 10.52125282248534,
+      "eval_work_dir": "/root/autodl-tmp/domain_selector/selector_bench/work_dirs/stage1_init_partial100_selector3_20260707_full_lr1em05_100iter_eval_standalone",
+      "lr": 1e-05,
+      "metrics": {
+        "eval_runtime_s": 104.41,
+        "l2": 7.173101928499011,
+        "obj_box_col": 0.033479961204446025,
+        "obj_col": 0.0030954708345234394,
+        "peak_gpu_mb": 11469.0,
+        "runtime_s": 104.41,
+        "train_runtime_s": 77.905
+      },
+      "train_work_dir": "/root/autodl-tmp/domain_selector/selector_bench/work_dirs/stage1_init_partial100_selector3_20260707_full_lr1em05_100iter"
+    }
+  ],
+  "run_id": "stage1_init_partial100_selector3_20260707",
+  "schema": "selector_bench.stage1_init_selector_experiments.v0",
+  "selected_lr": 3e-05,
+  "selector_stages": [
+    {
+      "config": "/root/autodl-tmp/domain_selector/selector_bench/artifacts/diffusiondrive_configs/dd_stage1_init_partial100_selector3_20260707_selector_stage01_323.py",
+      "cost": 9.673785785981455,
+      "eval_work_dir": "/root/autodl-tmp/domain_selector/selector_bench/work_dirs/stage1_init_partial100_selector3_20260707_selector_stage01_323_100iter_eval_standalone",
+      "init_checkpoint": "/root/autodl-tmp/domain_selector/DiffusionDrive/ckpts/sparsedrive_stage1.pth",
+      "metrics": {
+        "eval_runtime_s": 106.353,
+        "l2": 6.838831457826825,
+        "obj_box_col": 0.028347995546129018,
+        "obj_col": 0.0030954708345234394,
+        "peak_gpu_mb": 11469.0,
+        "runtime_s": 106.353,
+        "train_runtime_s": 78.269
+      },
+      "selected_count": 323,
+      "selection": "/root/autodl-tmp/domain_selector/selector_bench/artifacts/stage1_init_selector_experiments/selections/stage1_init_partial100_selector3_20260707_selector_stage01_323.json",
+      "selection_hash": "c75fd98a63f6faaf210d5e7f42de4ae05f8822f97ae3565dabe01e92770a0574",
+      "stage": 1,
+      "subset_info": "/root/autodl-tmp/domain_selector/DiffusionDrive/data/infos/trainval_partial_selector_subsets/nuscenes_partial_1600_400_infos_train_stage1_init_partial100_selector3_20260707_selector_stage01_323.pkl",
+      "train_work_dir": "/root/autodl-tmp/domain_selector/selector_bench/work_dirs/stage1_init_partial100_selector3_20260707_selector_stage01_323_100iter"
+    },
+    {
+      "config": "/root/autodl-tmp/domain_selector/selector_bench/artifacts/diffusiondrive_configs/dd_stage1_init_partial100_selector3_20260707_selector_stage02_323.py",
+      "cost": 9.175547174842926,
+      "eval_work_dir": "/root/autodl-tmp/domain_selector/selector_bench/work_dirs/stage1_init_partial100_selector3_20260707_selector_stage02_323_100iter_eval_standalone",
+      "init_checkpoint": "/root/autodl-tmp/domain_selector/selector_bench/work_dirs/stage1_init_partial100_selector3_20260707_selector_stage01_323_100iter/latest.pth",
+      "metrics": {
+        "eval_runtime_s": 105.022,
+        "l2": 6.519804259141286,
+        "obj_box_col": 0.02655588142159912,
+        "obj_col": 0.0030954708345234394,
+        "peak_gpu_mb": 11469.0,
+        "runtime_s": 105.022,
+        "train_runtime_s": 68.548
+      },
+      "selected_count": 323,
+      "selection": "/root/autodl-tmp/domain_selector/selector_bench/artifacts/stage1_init_selector_experiments/selections/stage1_init_partial100_selector3_20260707_selector_stage02_323.json",
+      "selection_hash": "1f1db02a4ec6f4514c0b45ebfa6ac8115c1537f56c76e416ebe808856c63f7c6",
+      "stage": 2,
+      "subset_info": "/root/autodl-tmp/domain_selector/DiffusionDrive/data/infos/trainval_partial_selector_subsets/nuscenes_partial_1600_400_infos_train_stage1_init_partial100_selector3_20260707_selector_stage02_323.pkl",
+      "train_work_dir": "/root/autodl-tmp/domain_selector/selector_bench/work_dirs/stage1_init_partial100_selector3_20260707_selector_stage02_323_100iter"
+    },
+    {
+      "config": "/root/autodl-tmp/domain_selector/selector_bench/artifacts/diffusiondrive_configs/dd_stage1_init_partial100_selector3_20260707_selector_stage03_323.py",
+      "cost": 6.80639920905491,
+      "eval_work_dir": "/root/autodl-tmp/domain_selector/selector_bench/work_dirs/stage1_init_partial100_selector3_20260707_selector_stage03_323_100iter_eval_standalone",
+      "init_checkpoint": "/root/autodl-tmp/domain_selector/selector_bench/work_dirs/stage1_init_partial100_selector3_20260707_selector_stage02_323_100iter/latest.pth",
+      "metrics": {
+        "eval_runtime_s": 108.447,
+        "l2": 3.6048758990234795,
+        "obj_box_col": 0.03201368536489705,
+        "obj_col": 0.0030954708345234394,
+        "peak_gpu_mb": 11467.0,
+        "runtime_s": 108.447,
+        "train_runtime_s": 77.755
+      },
+      "selected_count": 323,
+      "selection": "/root/autodl-tmp/domain_selector/selector_bench/artifacts/stage1_init_selector_experiments/selections/stage1_init_partial100_selector3_20260707_selector_stage03_323.json",
+      "selection_hash": "93c457439129f82ee24ece5b24ecd66e272de8ff20784a658e673dac25690160",
+      "stage": 3,
+      "subset_info": "/root/autodl-tmp/domain_selector/DiffusionDrive/data/infos/trainval_partial_selector_subsets/nuscenes_partial_1600_400_infos_train_stage1_init_partial100_selector3_20260707_selector_stage03_323.pkl",
+      "train_work_dir": "/root/autodl-tmp/domain_selector/selector_bench/work_dirs/stage1_init_partial100_selector3_20260707_selector_stage03_323_100iter"
+    }
+  ],
+  "stage1_eval": {
+    "checkpoint": "/root/autodl-tmp/domain_selector/DiffusionDrive/ckpts/sparsedrive_stage1.pth",
+    "cost": 11.26008382702712,
+    "eval_work_dir": "/root/autodl-tmp/domain_selector/selector_bench/work_dirs/stage1_init_partial100_selector3_20260707_stage1_checkpoint_eval",
+    "metrics": {
+      "cost": 11.26008382702712,
+      "l2": 7.5535099373923416,
+      "obj_box_col": 0.03706419116093053,
+      "obj_col": 0.0030954708345234394,
+      "peak_gpu_mb": 4593.0,
+      "runtime_s": 107.94
+    }
+  },
+  "summary": {
+    "best_full_cost": 8.914772975095548,
+    "best_full_l2": 6.47082542710834,
+    "completed_selector_stages": 3,
+    "selected_lr": 3e-05,
+    "selector_stage_cost": [
+      9.673785785981455,
+      9.175547174842926,
+      6.80639920905491
+    ],
+    "selector_stage_l2": [
+      6.838831457826825,
+      6.519804259141286,
+      3.6048758990234795
+    ],
+    "stage1_eval_cost": 11.26008382702712,
+    "stage1_eval_l2": 7.5535099373923416
+  }
+}

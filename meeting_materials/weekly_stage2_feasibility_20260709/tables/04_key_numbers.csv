@@ -1,0 +1,8 @@
+﻿metric,value,notes
+selector_l2_r40,6.309916,same selector evaluated against all random aggregate baselines
+random_l2_mean_4seeds,6.709455,paired original + seeds 7200/7201/7202
+random_l2_min_4seeds,6.565195,strongest random baseline
+random_l2_max_4seeds,6.875033,weakest random baseline
+selector_advantage_mean_l2,0.399539,positive means selector lower L2
+selector_better_count,4/4,selector lower L2 than every tested random aggregate
+selected_samples_r40,320,40 rounds x 8 selector samples

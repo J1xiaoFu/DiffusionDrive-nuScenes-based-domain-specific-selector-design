@@ -1,0 +1,2 @@
+﻿rounds,selection_count_per_arm,used_selector_tokens,mean_reward,median_reward,positive_reward_rounds,selector_loss_proxy_mean,random_loss_proxy_mean,mean_selector_arm_runtime_s,mean_random_arm_runtime_s,mean_two_arm_round_runtime_s
+40,8,320,2.252191,0.079681,20,1.960451,4.212642,7.695,7.643,15.338

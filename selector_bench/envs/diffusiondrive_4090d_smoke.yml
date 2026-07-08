@@ -1,0 +1,28 @@
+name: diffusiondrive-smoke
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.9
+  - pip
+  - numpy=1.23.5
+  - pytorch
+  - torchvision
+  - pytorch-cuda=12.1
+  - pip:
+      - mmdet==2.28.2
+      - nuscenes-devkit==1.1.10
+      - pyquaternion==0.9.9
+      - yapf==0.33.0
+      - tensorboard==2.14.0
+      - motmetrics==1.1.3
+      - pandas==1.1.5
+      - opencv-python==4.8.1.78
+      - prettytable==3.7.0
+      - scikit-learn==1.3.0
+
+# mmcv-full and mmdet3d are intentionally not pinned here because their
+# wheels depend tightly on the chosen torch/CUDA build. Install them only
+# after confirming the torch build in the created environment.

@@ -1,0 +1,73 @@
+{
+  "config": {
+    "allow_random_overlap": false,
+    "eval_seed": 0,
+    "loss_episodes": "/root/autodl-tmp/domain_selector/selector_bench/artifacts/stage2_loss_duel_inprocess/stage2_loss_duel_inprocess_stage1_lr3e5_r40x8_train_test_20260707_episodes.jsonl",
+    "planner_init_checkpoint": "/root/autodl-tmp/domain_selector/DiffusionDrive/ckpts/sparsedrive_stage1.pth",
+    "planner_lr": 3e-05,
+    "planner_max_iters": 100,
+    "random_seed": 7100,
+    "rho_box": 0.0,
+    "rho_obj": 0.0,
+    "round_cutoffs": [
+      40
+    ],
+    "split": "train",
+    "train_seed": 0
+  },
+  "episode_jsonl": "/root/autodl-tmp/domain_selector/selector_bench/artifacts/stage2_aggregate_selected_real_eval/stage2_loss_duel_aggregate320_real_eval_lr3e5_100iter_20260707_episodes.jsonl",
+  "results": [
+    {
+      "cutoff_round": 40,
+      "random_config": "/root/autodl-tmp/domain_selector/selector_bench/artifacts/diffusiondrive_configs/dd_stage2_loss_duel_aggregate320_real_eval_lr3e5_100iter_20260707_r40_320_random.py",
+      "random_cost": 6.8750332660145235,
+      "random_eval_work_dir": "/root/autodl-tmp/domain_selector/selector_bench/work_dirs/stage2_loss_duel_aggregate320_real_eval_lr3e5_100iter_20260707_r40_320_random_subset_100iter_eval_standalone",
+      "random_hash": "7c236545e490c21462bfde8787e169cc5034638f05749c52e424aa969b8ed142",
+      "random_info": "/root/autodl-tmp/domain_selector/DiffusionDrive/data/infos/trainval_partial_selector_subsets/nuscenes_partial_1600_400_infos_train_stage2_loss_duel_aggregate320_real_eval_lr3e5_100iter_20260707_r40_320_random.pkl",
+      "random_metrics": {
+        "eval_runtime_s": 104.6,
+        "l2": 6.8750332660145235,
+        "obj_box_col": 0.028347995546129018,
+        "obj_col": 0.0030954708345234394,
+        "peak_gpu_mb": 11469.0,
+        "runtime_s": 104.6,
+        "train_runtime_s": 75.897
+      },
+      "random_selection": "/root/autodl-tmp/domain_selector/selector_bench/artifacts/stage2_aggregate_selected_real_eval/selections/stage2_loss_duel_aggregate320_real_eval_lr3e5_100iter_20260707_r40_320_random.json",
+      "random_work_dir": "/root/autodl-tmp/domain_selector/selector_bench/work_dirs/stage2_loss_duel_aggregate320_real_eval_lr3e5_100iter_20260707_r40_320_random_subset_100iter",
+      "reward": 0.5651176571846008,
+      "selected_count": 320,
+      "selector_config": "/root/autodl-tmp/domain_selector/selector_bench/artifacts/diffusiondrive_configs/dd_stage2_loss_duel_aggregate320_real_eval_lr3e5_100iter_20260707_r40_320_selector.py",
+      "selector_cost": 6.309915608829923,
+      "selector_eval_work_dir": "/root/autodl-tmp/domain_selector/selector_bench/work_dirs/stage2_loss_duel_aggregate320_real_eval_lr3e5_100iter_20260707_r40_320_selector_subset_100iter_eval_standalone",
+      "selector_hash": "e5deedffb701168d071b1aa40e8bd54f46929511924042ea92f7ff7430996bb6",
+      "selector_info": "/root/autodl-tmp/domain_selector/DiffusionDrive/data/infos/trainval_partial_selector_subsets/nuscenes_partial_1600_400_infos_train_stage2_loss_duel_aggregate320_real_eval_lr3e5_100iter_20260707_r40_320_selector.pkl",
+      "selector_metrics": {
+        "eval_runtime_s": 106.836,
+        "l2": 6.309915608829923,
+        "obj_box_col": 0.02468230735717548,
+        "obj_col": 0.0030954708345234394,
+        "peak_gpu_mb": 11469.0,
+        "runtime_s": 106.836,
+        "train_runtime_s": 70.858
+      },
+      "selector_random_overlap_count": 0,
+      "selector_random_overlap_tokens": [],
+      "selector_selection": "/root/autodl-tmp/domain_selector/selector_bench/artifacts/stage2_aggregate_selected_real_eval/selections/stage2_loss_duel_aggregate320_real_eval_lr3e5_100iter_20260707_r40_320_selector.json",
+      "selector_work_dir": "/root/autodl-tmp/domain_selector/selector_bench/work_dirs/stage2_loss_duel_aggregate320_real_eval_lr3e5_100iter_20260707_r40_320_selector_subset_100iter"
+    }
+  ],
+  "run_id": "stage2_loss_duel_aggregate320_real_eval_lr3e5_100iter_20260707",
+  "schema": "selector_bench.stage2_aggregate_selected_real_eval.v0",
+  "summary": {
+    "best_selector_cost_cutoff": 40,
+    "completed_cutoffs": 1,
+    "cutoffs": [
+      40
+    ],
+    "last_random_l2": 6.8750332660145235,
+    "last_reward": 0.5651176571846008,
+    "last_selector_l2": 6.309915608829923,
+    "status": "complete"
+  }
+}

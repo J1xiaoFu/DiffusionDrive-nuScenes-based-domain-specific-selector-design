@@ -1,0 +1,20 @@
+{
+  "current_usage": {
+    "feature_cache_gb": 0.0,
+    "raw_data_gb": 0.0,
+    "work_dirs_gb": 0.0
+  },
+  "disk_free_gb": 550.0,
+  "disk_total_gb": 550.0,
+  "free_after_projection_gb": 525.0,
+  "ok": true,
+  "projected_extra": {
+    "feature_cache_gb": 5.0,
+    "raw_data_gb": 0.0,
+    "work_dirs_gb": 20.0
+  },
+  "projected_total_experiment_gb": 25.0,
+  "recommendation": "Storage projection is within the configured reserve.",
+  "reserve_free_gb": 60.0,
+  "workspace_root": "/root/autodl-tmp/domain_selector"
+}
