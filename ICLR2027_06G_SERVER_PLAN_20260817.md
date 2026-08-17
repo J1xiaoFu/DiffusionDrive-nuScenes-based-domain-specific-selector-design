@@ -71,7 +71,11 @@ baseline 公平预算或最终测试边界。发现问题时先报告证据，�
 
 ### R1：精确缓存与协议映射（8月20日前）
 
-- 只使用 portable manifest 指定的训练 token；审计/测试 token 不得进入训练 cache。
+- **阻塞门**：先对齐本机 14,951-token cache inventory、portable manifest 的 10,444
+  train token 与 06G 官方 103,288-token raw inventory；逐 session/log/token 解释所有
+  纳入和排除。在对齐完成并由当前服务器冻结前，不得把 portable manifest 当作 pristine
+  官方主实验数据，也不得启动 claim-bearing 训练。
+- 只在对齐后使用冻结 manifest 指定的训练 token；审计/测试 token 不得进入训练 cache。
 - 构建官方 training/metric cache，并对 token 集合、数量、重复和缺失做 SHA 审计。
 - 将 Failure-Patch-CL 与 Chronological-CL 映射到完整 log 原子边界。
 
@@ -79,6 +83,8 @@ baseline 公平预算或最终测试边界。发现问题时先报告证据，�
 
 ### R2：T0 与 Seed-0 漏斗（8月21日至8月28日）
 
+- 在任何蒸馏训练前，完成 scheduler-consistent 状态/时间合同和官方模型负对照；OPD 与
+  LwF 输入同一状态时，response/mode loss 与梯度必须在容差内相同。
 - 使用同一官方训练脚本、初始化、AdamW、学习率、batch、增强和总步数训练 Stage-1 T0。
 - 在 Stage-2 运行最小四臂：顺序训练、LwF、固定教师 OPD、`m=0.99` EMA-OPD。
 - 所有方法保持一次联合 forward/backward 和一次 AdamW 更新；LwF 与 OPD 只允许查询

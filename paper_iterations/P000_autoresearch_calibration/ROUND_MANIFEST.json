@@ -1,0 +1,27 @@
+{
+  "schema": "drive_opd.autoresearch_round_manifest.v1",
+  "round_id": "P000",
+  "round_kind": "process_calibration_not_claim_bearing",
+  "title": "ICLR blind-review calibration of the Drive-OPD research program",
+  "candidate_commit": "cfac3ce4a411493bb31828ca8fee4cb7f83e7ce7",
+  "candidate_branch": "codex/iclr2027-drive-opd-controller",
+  "reviewer": {
+    "provider": "openai_codex_cli",
+    "model": "gpt-5.6-sol",
+    "reasoning_effort": "xhigh",
+    "conversation_id": "01a00ed5-44c3-7d02-90dc-3bdd7713ac6c",
+    "context_policy": "fresh_session_no_parent_conversation_read_only_frozen_commit"
+  },
+  "internal_review_sha256": "7e2f9f77b539aaf7a03c4f2c5c43a0b5d9d6633eae4b784277cf2a5318c5eff7",
+  "review_rating": {
+    "overall_score": 3,
+    "confidence": 4,
+    "leaning": "reject"
+  },
+  "pre_review_verification": {
+    "command": "/home/khwang/domain-selector/.conda/diffusiondrive_py310/bin/python -m pytest -q selector_bench/tests/test_navsim_continual_protocol.py selector_bench/tests/test_drive_opd_losses.py selector_bench/tests/test_drive_cl_baselines.py selector_bench/tests/test_drive_cl_statistics.py",
+    "result": "16 passed in 2.14s"
+  },
+  "scientific_round_complete": false,
+  "reason": "P000 calibrates governance; P001 is the first claim-bearing paper iteration"
+}

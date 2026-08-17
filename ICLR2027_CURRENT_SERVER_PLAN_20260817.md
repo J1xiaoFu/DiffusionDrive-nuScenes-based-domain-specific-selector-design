@@ -94,21 +94,25 @@ paper_iterations/P###_<claim>/
 
 交付：本文件、06G 规划、共享结果合同、清洁或已解释的 `git status --short`。
 
-### C1 / P001：旧域正迁移与新域塑性论文迭代（8月18日前）
+### C1 / P001：调度一致的支持蒸馏与会话原子协议（8月20日前）
 
-- 在冻结的 343-token Stage-2 审计集上统一评测 T0 和四个 Stage-2 终点。
-- 报告旧能力保持、新能力增益、逐指标 NC/DAC/TTC/comfort/progress、日志聚类
-  paired bootstrap 95% CI；不得只报告平均分。
-- 将“无旧域遗忘但有正迁移”与“新域收益是否被蒸馏抑制”分开解释。
-- 形成完整 `P001` 章节包、配对置信区间表、训练/新旧域折线图、数学审计、两阶段
-  文献检索、证据边界和下一轮决策。
+- 推导并实现 scheduler-consistent 的学生 rollout；生成、查询和转移 timestep 必须一致，
+  并用“OPD/LwF 输入同一状态时 loss/gradient 相同”的官方模型负对照冻结公平性。
+- 对齐本机 14,951-token cache inventory 与 06G 官方 103,288-token raw inventory，逐
+  session/log/token 解释纳入与排除；在完成前禁止用 10,444-token portable manifest 定义
+  pristine 官方主实验。
+- 把主要统计单位从 segmented log 改为时间戳×车辆 session；预注册主 estimand、
+  seed/session 层级汇总、无效行、最小效应量和多重比较规则。
+- 修复或降级 EWC batch-gradient Fisher，并阻止 A-GEM replay forward 更新 BN buffer。
+- 形成完整 `P001` 章节包、调度机制图、token 覆盖表、数学审计、两阶段文献检索、
+  证据边界和下一轮决策。旧四臂性能评测不再占用论文关键路径。
 - 冻结并推送章节包后，新建无上下文 GPT-5.6-sol ICLR reviewer 任务；保存 review 和
   Author Response，再向用户展示同一版本以获得额外 feedback。
 
-论文决策：真实新域收益和旧域保持同时可比时，才能支持“稳定—塑性权衡”主张；否则
-本轮必须收缩主张并定位失效机制，不能写成方法有效。
+论文决策：只有状态/时间、公平预算、数据覆盖与统计单位四项均可识别，P002 才能产生
+性能主张；否则继续收缩协议，不能运行或解释新的 OPD/LwF 排名。
 
-### C2：智驾原生因果与 Seed-0 漏斗（8月19日至8月25日）
+### C2 / P002：pristine 官方 Seed-0 稳定—塑性主表（8月21日至8月25日）
 
 - 完成四种感知/规划上下文互换，判断感知漂移是否因果改变规划响应。
 - 统一一次 forward/backward/AdamW 更新，保证 LwF 与 OPD 仅在查询状态分布上不同。
