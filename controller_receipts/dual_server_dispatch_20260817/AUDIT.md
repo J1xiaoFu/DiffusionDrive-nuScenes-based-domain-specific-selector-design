@@ -284,6 +284,31 @@ be forward-only, add the four reproductions to its frozen harness, and pass a ne
 review. Dataset/raw-data access, provenance/adapter work, session-atomic CL manifests, cache,
 real-model preflight, T0, model, CUDA/GPU, training, evaluation and performance claims remain stopped.
 
+## RC3 forward-only source/CPU authorization
+
+- authoritative basis: fresh context-free exact-RC2 `gpt-5.6-sol` `xhigh` review task
+  `01a0106d-4a96-72d2-aa90-da0acd5f72c3`, verdict **3/10 REJECT / FAIL**, confidence 5/5
+- immutable base: exact RC2 `d527274d368b6d6def5809b002324b31e88ae1bd`, parent
+  `7edaaa05c199174e5b7d5f0cf46e45f50cd7e9f4`, tree
+  `dce36d261b8a0f4bde4519a3a393471c54b05356`
+- authorized destination: existing clean branch `codex/iclr2027-drive-opd-07g-p0-rc3` at exact RC2 in
+  `/home/khwang/domain-selector-p0-rc3`, with exactly one new non-merge commit whose sole parent is RC2
+- scoped P0 closure: monotonic raw-Git committer chronology plus strict four-time inequality; sealed
+  final-test evidence bound to the active comparison family; mandatory two-or-more-candidate shared
+  cells against one exact common baseline; finite-only seed-design inputs, replay and outputs
+- frozen attacks: add all four executable reviewer reproductions after the 15 existing families;
+  require at least 19 families and 36 mutation receipts, all nonzero/no-claim, plus one simultaneously
+  valid strict/family-bound/multi-candidate/finite/order-invariant positive fixture
+- non-regression: measured main/A-GEM budgets, ALER query capture, measured transient storage and all
+  historical P0 closures remain mandatory
+- authorized activity: scoped source/config/test/paper-response edits, synthetic temporary-Git fixtures,
+  CUDA-hidden source-only CPU tests, temporary receipts and one auditable commit
+
+Decision: **AUTHORIZED FOR RC3 SOURCE/CPU REPAIR ONLY.** RC3 may not publish, push, create a review
+task or dispatch 06G work. Dataset/raw-data access, provenance/adapter work, session-atomic CL manifests,
+cache, real-model preflight, T0, model, CUDA/GPU, training, evaluation, final-test unsealing and
+performance claims remain stopped.
+
 ## 06G R1 session-integrity intake
 
 - remote audit commit: `af9213b216b0260b184d3d3ae109a4ed1bed70b8`, parent

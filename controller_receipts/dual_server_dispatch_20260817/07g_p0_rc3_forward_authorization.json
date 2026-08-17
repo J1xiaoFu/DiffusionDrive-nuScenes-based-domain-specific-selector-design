@@ -1,0 +1,216 @@
+{
+  "schema": "drive_opd.forward_only_rc3_authorization.v1",
+  "recorded_at": "2026-08-18",
+  "status": "AUTHORIZED_SOURCE_CPU_REPAIR_ONLY",
+  "authority": {
+    "controller_branch": "codex/iclr2027-dual-server-controller",
+    "controller_commit": "BOUND_BY_ENCLOSING_GIT_COMMIT",
+    "authorization_is_execution_unlock": false
+  },
+  "originating_review": {
+    "task_id": "01a0106d-4a96-72d2-aa90-da0acd5f72c3",
+    "model": "gpt-5.6-sol",
+    "reasoning_effort": "xhigh",
+    "context_free_zero_parent": true,
+    "verdict": "REJECT_FAIL",
+    "score": 3,
+    "confidence": 5,
+    "review_report_sha256": "78664e96f07209691f633330bad51e6e642c6b3c33ec1954fa928ad0087c66bd",
+    "review_intake_sha256": "af650d8449e5dcc3d94021a64fba4690c04d837529186823e617118972b02f8f",
+    "public_rejection_commit": "e36eb38da827290c277a0f5ffc615456046f5524"
+  },
+  "immutable_rc2": {
+    "branch": "codex/iclr2027-drive-opd-07g-p0-rc2",
+    "commit": "d527274d368b6d6def5809b002324b31e88ae1bd",
+    "parent": "7edaaa05c199174e5b7d5f0cf46e45f50cd7e9f4",
+    "tree": "dce36d261b8a0f4bde4519a3a393471c54b05356",
+    "changed_path_count_from_rc1": 22,
+    "mutation_forbidden": true
+  },
+  "destination": {
+    "branch": "codex/iclr2027-drive-opd-07g-p0-rc3",
+    "worktree": "/home/khwang/domain-selector-p0-rc3",
+    "authorization_time_head": "d527274d368b6d6def5809b002324b31e88ae1bd",
+    "authorization_time_status_short": "",
+    "base_commit": "d527274d368b6d6def5809b002324b31e88ae1bd",
+    "required_commit_count_from_base": 1,
+    "merge_commit_allowed": false,
+    "required_parent": "d527274d368b6d6def5809b002324b31e88ae1bd",
+    "required_clean_final_status": true
+  },
+  "repair_scope": {
+    "p0": [
+      {
+        "id": "RC2-P0-01",
+        "name": "monotonic_git_and_strict_test_chronology",
+        "requirements": [
+          "raw_git_committer_instants_normalized_to_utc",
+          "complete_linear_family_to_access_ancestry_inspected",
+          "every_committer_instant_strictly_increases",
+          "intermediate_ledger_bytes_equal_frozen_empty_ledger",
+          "access_commit_appends_exactly_one_bound_event",
+          "family_time_lt_authorized_at_lt_access_time_lt_evaluator_start",
+          "equality_malformed_and_ambiguous_times_rejected"
+        ],
+        "required_negative_fixtures": [
+          "future_dated_intermediate_then_earlier_access",
+          "reversed_endpoint_commit_times",
+          "family_time_equals_authorized_at",
+          "authorized_at_equals_access_time",
+          "access_time_equals_evaluator_start"
+        ]
+      },
+      {
+        "id": "RC2-P0-02",
+        "name": "active_family_bound_sealed_access",
+        "requirements": [
+          "expected_family_identity_derived_from_frozen_comparison_family",
+          "family_id_spec_path_spec_hash_and_freeze_commit_bound",
+          "ledger_path_freeze_hash_access_hash_event_id_and_index_bound",
+          "evaluation_cell_protocol_domain_and_split_bound",
+          "every_test_evaluator_receipt_matches_expected_family",
+          "all_family_evidence_shares_one_identity"
+        ],
+        "required_negative_fixtures": [
+          "family_a_receipts_transplanted_to_family_b",
+          "each_bound_identity_field_mutated"
+        ]
+      },
+      {
+        "id": "RC2-P0-03",
+        "name": "mandatory_multicandidate_common_baseline_cells",
+        "requirements": [
+          "schema_declares_shared_confirmatory_cells",
+          "schema_declares_common_baseline_method_and_training_arm",
+          "minimum_distinct_candidate_count_gte_two",
+          "each_cell_has_two_distinct_candidates_against_exact_baseline",
+          "unique_comparison_and_evidence_identities",
+          "all_seven_metrics_per_candidate",
+          "no_implicit_cell_or_baseline_defaults"
+        ],
+        "required_negative_fixtures": [
+          "single_candidate_cell",
+          "baseline_mismatch",
+          "duplicate_candidate",
+          "undeclared_cell"
+        ]
+      },
+      {
+        "id": "RC2-P0-04",
+        "name": "finite_seed_design_domain",
+        "requirements": [
+          "one_reusable_finite_number_validator",
+          "all_generator_inputs_and_pilot_cells_finite",
+          "all_replay_intermediates_and_outputs_finite",
+          "normalized_invocation_and_receipt_semantic_numbers_finite",
+          "booleans_rejected_for_integer_or_real_parameters",
+          "allow_nan_false_for_generator_audit_and_claim_json",
+          "exact_normalized_deterministic_replay_preserved"
+        ],
+        "required_negative_values": [
+          "NaN",
+          "+Infinity",
+          "-Infinity"
+        ],
+        "required_negative_locations": [
+          "minimum_relevant_effect",
+          "target_power",
+          "family_alpha",
+          "pilot_matrix",
+          "critical_values",
+          "metric_power",
+          "heldout_fwer"
+        ]
+      }
+    ],
+    "must_not_regress": [
+      "measured_main_and_agem_presentation_and_unique_identity_budgets",
+      "deterministic_replay_targets",
+      "aler_query_capture",
+      "measured_transient_storage",
+      "ledger_append_only_history",
+      "executable_seed_replay",
+      "method_and_metric_registry_binding",
+      "filename_and_hypothesis_order_invariance",
+      "all_historical_p0_attack_families"
+    ]
+  },
+  "attack_acceptance": {
+    "new_named_family_count": 4,
+    "minimum_total_named_family_count": 19,
+    "minimum_total_mutation_receipt_count": 36,
+    "every_mutation_cli_exit_nonzero": true,
+    "every_mutation_claim_output_absent_before_assertion": true,
+    "positive_fixture_requirements": [
+      "strict_chronology",
+      "active_family_bound_evidence",
+      "two_candidates_one_common_baseline",
+      "finite_seed_design",
+      "filename_and_hypothesis_order_invariance"
+    ]
+  },
+  "authorized_actions": [
+    "edit_scoped_source_config_tests_and_paper_audit_response",
+    "run_static_checks_and_synthetic_cpu_tests_with_cuda_hidden",
+    "expand_named_p0_attack_harness",
+    "generate_temporary_cpu_audit_outputs",
+    "create_one_auditable_rc3_commit",
+    "report_exact_identity_paths_hashes_commands_results_and_artifact_boundary"
+  ],
+  "prohibited_actions": [
+    "move_or_modify_existing_rc2_rc1_research_recovery_controller_or_publication_refs",
+    "merge_rebase_amend_reset_force_push_delete_or_history_rewrite",
+    "publication_push_review_task_creation_controller_promotion_or_06g_dispatch",
+    "navsim_or_raw_data_read",
+    "cache_read_or_build",
+    "dataset_adapter_execution",
+    "real_model_import_or_preflight",
+    "t0_gpu_cuda_training_evaluation_or_performance_claim",
+    "official_population_partition_change_or_final_test_unseal"
+  ],
+  "test_environment": {
+    "cuda_visible_devices": "",
+    "python_dont_write_bytecode": "1",
+    "pytest_cache_provider_disabled": true,
+    "temporary_git_fixtures_allowed": true,
+    "scratch_outputs_outside_repository": true,
+    "required_suite_count": 6,
+    "required_static_checks": [
+      "in_memory_python_compile",
+      "json_parse",
+      "git_show_check"
+    ]
+  },
+  "required_rc3_report": [
+    "commit_parent_tree_and_one_commit_identity",
+    "clean_status",
+    "exact_changed_path_and_sha256_inventory",
+    "static_check_commands_and_hashes",
+    "six_suite_cpu_replay",
+    "expanded_harness_and_individual_mutation_receipts",
+    "closed_invariant_regression_results",
+    "artifact_boundary_attestation"
+  ],
+  "subsequent_controller_only_actions": [
+    "exact_rc3_intake_and_acceptance_decision",
+    "source_bundle_freeze_and_publication",
+    "new_context_free_gpt_5_6_sol_xhigh_exact_rc3_review",
+    "isolated_06g_source_cpu_replay_only_after_review_p0_closure"
+  ],
+  "gate_boundary": {
+    "rc3_source_cpu_repair": "AUTHORIZED",
+    "rc3_publication": "STOPPED_PENDING_CONTROLLER_INTAKE",
+    "fresh_context_free_exact_rc3_xhigh_review": "STOPPED_PENDING_CONTROLLER_FREEZE",
+    "destination_replay": "STOPPED_PENDING_REVIEW_P0_CLOSURE_AND_PUBLICATION",
+    "dataset_provenance_adapter": "STOPPED",
+    "session_atomic_cl_manifest": "STOPPED",
+    "cache": "STOPPED",
+    "real_model_preflight": "STOPPED",
+    "t0": "STOPPED",
+    "model": "STOPPED",
+    "gpu": "STOPPED",
+    "training": "STOPPED",
+    "evaluation": "STOPPED",
+    "performance_claim": "STOPPED"
+  }
+}
