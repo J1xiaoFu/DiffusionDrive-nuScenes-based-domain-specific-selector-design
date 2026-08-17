@@ -195,6 +195,43 @@ Decision: **AUTHORIZED FOR RC2 SOURCE/CPU REPAIR ONLY.** RC2 publication, exact-
 CL manifests, cache, real-model preflight, T0, model, CUDA/GPU, training, evaluation and performance
 claims remain stopped.
 
+## RC2 exact-commit controller intake
+
+- candidate: `codex/iclr2027-drive-opd-07g-p0-rc2@d527274d368b6d6def5809b002324b31e88ae1bd`
+- identity: sole parent is immutable RC1 `7edaaa05c199174e5b7d5f0cf46e45f50cd7e9f4`, tree
+  `dce36d261b8a0f4bde4519a3a393471c54b05356`, exactly one non-merge commit, 22 changed paths and a
+  clean source worktree
+- independent controller replay: exact detached commit, CUDA hidden, bytecode and pytest cache
+  disabled; 62 tests plus 21 subtests passed in 134.69 seconds
+- adversarial replay: 15/15 named families and 32/32 mutation instances rejected fail-closed with no
+  claim artifact; the positive filename/order-invariant fixture passed
+- static and artifact boundary: seven JSON files parsed, 114 Python files compiled in memory,
+  `git show --check` passed, and the detached tree remained clean with no pytest cache, bytecode,
+  model or checkpoint paths
+- intake receipt: `07g_p0_rc2_acceptance.json`, SHA256
+  `ba1146436af28089ad155885ad95b75a8eb440ad61239ff06bc7b66088247fe4`
+
+Decision: **ACCEPTED FOR SOURCE PUBLICATION AND A NEW EXACT-RC2 CONTEXT-FREE REVIEW ONLY.** The three
+RC1 P0 findings and associated P1 hardening are candidate-closed, not review-closed. Isolated 06G
+source/CPU replay remains stopped until the publication and review boundary is frozen. Dataset and
+adapter execution, session-atomic CL manifests, cache, real-model preflight, T0, model, CUDA/GPU,
+training, evaluation and performance claims remain stopped.
+
+## RC2 source-transfer freeze
+
+- source: `codex/iclr2027-drive-opd-07g-p0-rc2@d527274d368b6d6def5809b002324b31e88ae1bd`
+- manifest: 41 source/config/test files, SHA256
+  `9eadb5064f5bebd8234e910fb3a6e6aa8dc16aeb7d077fbd30803cda0af66932`
+- logical source bundle: `5bc6f3339f1af5ccde9c21a8068b94053ae00ea920eed9f3ade7613d70a5cd88`
+- frozen generator: `selector_bench/scripts/51_freeze_drive_opd_06g_transfer.py`, SHA256
+  `958d537d6707f130f72834790ba8bdfcd3192431d214d5fdb4241ea61e023a78`
+- freeze receipt: `07g_p0_rc2_transfer_freeze.txt`, SHA256
+  `b7f285b527174e0c089152feb7330c9505b9a19a57366887278a802b40678475`
+
+Decision: **SOURCE BUNDLE FROZEN LOCALLY.** Public reachability is not yet established. Exact-RC2
+review may use this immutable controller freeze, but isolated 06G replay remains stopped until review
+and public fetchability both pass. All execution gates remain stopped.
+
 ## 06G R1 session-integrity intake
 
 - remote audit commit: `af9213b216b0260b184d3d3ae109a4ed1bed70b8`, parent

@@ -169,10 +169,12 @@ def current_gpu_uuid() -> str:
     raise RunnerError("could not bind the training process to a physical GPU UUID")
 
 
-def atomic_json(path: Path, payload: object) -> None:
+def atomic_json(path: Path, payload: object, storage_counter: Any | None = None) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_suffix(path.suffix + ".tmp")
     temporary.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
+    if storage_counter is not None:
+        storage_counter.observe_temporary(temporary)
     os.replace(temporary, path)
 
 
@@ -219,8 +221,55 @@ class TokenDataset(Dataset):
     def __len__(self) -> int:
         return len(self.indices)
 
-    def __getitem__(self, index: int) -> tuple[Any, Any]:
-        return self.dataset[self.indices[index]]
+    def __getitem__(self, index: int) -> tuple[str, Any, Any]:
+        features, targets = self.dataset[self.indices[index]]
+        return self.tokens[index], features, targets
+
+
+def planned_agem_replay_batches(
+    tokens: Sequence[str],
+    *,
+    replay_batch_size: int,
+    updates_per_epoch: int,
+    start_epoch: int,
+    end_epoch: int,
+    seed: int,
+    stage_index: int,
+) -> dict[int, tuple[tuple[str, ...], ...]]:
+    """Replay the exact deterministic DataLoader identity schedule without cache reads."""
+
+    if (
+        not tokens
+        or replay_batch_size <= 0
+        or updates_per_epoch <= 0
+        or end_epoch < start_epoch
+    ):
+        raise RunnerError("invalid A-GEM replay-plan inputs")
+    plan: dict[int, tuple[tuple[str, ...], ...]] = {}
+    for epoch in range(start_epoch, end_epoch + 1):
+        replay_generator = torch.Generator()
+        replay_generator.manual_seed(
+            stable_seed("agem-order", seed, stage_index, epoch)
+        )
+        identity_loader = DataLoader(
+            list(tokens),
+            batch_size=replay_batch_size,
+            shuffle=True,
+            generator=replay_generator,
+            num_workers=0,
+            drop_last=False,
+        )
+        identity_iterator = iter(identity_loader)
+        batches: list[tuple[str, ...]] = []
+        for _ in range(updates_per_epoch):
+            try:
+                delivered = next(identity_iterator)
+            except StopIteration:
+                identity_iterator = iter(identity_loader)
+                delivered = next(identity_iterator)
+            batches.append(tuple(str(token) for token in delivered))
+        plan[epoch] = tuple(batches)
+    return plan
 
 
 def build_agent(rap_root: Path, learning_rate: float) -> Any:
@@ -314,9 +363,13 @@ def checkpoint_payload(
     }
 
 
-def atomic_checkpoint(payload: Mapping[str, Any], path: Path) -> str:
+def atomic_checkpoint(
+    payload: Mapping[str, Any], path: Path, storage_counter: Any | None = None
+) -> str:
     temporary = path.with_suffix(path.suffix + ".tmp")
     torch.save(dict(payload), temporary)
+    if storage_counter is not None:
+        storage_counter.observe_temporary(temporary)
     os.replace(temporary, path)
     return sha256_file(path)
 
@@ -468,10 +521,17 @@ def main() -> None:
         set_gradient_,
         trainable_parameters,
     )
+    from selector_bench.continual.run_budget import (
+        BudgetMeasurementError,
+        RunBudgetCounter,
+        TRANSIENT_STORAGE_SEMANTICS,
+        TransientStorageCounter,
+    )
 
     if not torch.cuda.is_available() or torch.cuda.device_count() != 1:
         raise RunnerError("bind exactly one idle GPU through /home/rguo/bin/gpu-run")
     args.output_dir.mkdir(parents=True, exist_ok=True)
+    storage_counter = TransientStorageCounter()
     protocol_path = args.output_dir / "protocol.json"
     result_path = args.output_dir / "result.json"
     if protocol_path.exists() or result_path.exists():
@@ -586,6 +646,7 @@ def main() -> None:
             "cudnn_benchmark": False,
             "cudnn_deterministic": True,
         },
+        storage_counter,
     )
 
     random.seed(args.seed)
@@ -674,6 +735,10 @@ def main() -> None:
         for prior_stage in range(1, args.stage_index)
         for token in stage_tokens(manifest, prior_stage, "train")
     }
+    budget_counter = RunBudgetCounter(
+        current_identities=frozenset(current_identities),
+        old_identities=frozenset(old_identities),
+    )
     updates_per_epoch = math.ceil(len(tokens) / args.batch_size)
     target_updates = updates_per_epoch * args.epochs
     query_per_update = 0
@@ -695,16 +760,25 @@ def main() -> None:
         "student_queries": target_updates * query_per_update,
         "teacher_queries": target_updates * query_per_update,
     }
+    agem_replay_plan: dict[int, tuple[tuple[str, ...], ...]] = {}
     if args.arm == "agem":
-        replay_batch_sizes = [
-            min(args.agem_replay_batch, len(agem_buffer_tokens) - offset)
-            for offset in range(0, len(agem_buffer_tokens), args.agem_replay_batch)
-        ]
-        target_budget["old_unique_identities"] = len(agem_buffer_tokens)
-        target_budget["old_presentations"] = sum(
-            replay_batch_sizes[index % len(replay_batch_sizes)]
-            for index in range(target_updates)
+        agem_replay_plan = planned_agem_replay_batches(
+            agem_buffer_tokens,
+            replay_batch_size=args.agem_replay_batch,
+            updates_per_epoch=updates_per_epoch,
+            start_epoch=start_epoch,
+            end_epoch=end_epoch,
+            seed=args.seed,
+            stage_index=args.stage_index,
         )
+        planned_old = [
+            token
+            for epoch_batches in agem_replay_plan.values()
+            for batch in epoch_batches
+            for token in batch
+        ]
+        target_budget["old_unique_identities"] = len(set(planned_old))
+        target_budget["old_presentations"] = len(planned_old)
     for field, expected in (
         ("start_epoch", start_epoch),
         ("end_epoch", end_epoch),
@@ -782,7 +856,8 @@ def main() -> None:
         "agem_buffer_tokens": len(agem_buffer_tokens) if args.arm == "agem" else None,
         "agem_replay_batch": args.agem_replay_batch if args.arm == "agem" else None,
     }
-    atomic_json(protocol_path, protocol)
+    protocol["transient_storage_semantics"] = TRANSIENT_STORAGE_SEMANTICS
+    atomic_json(protocol_path, protocol, storage_counter)
     protocol_sha256 = sha256_file(protocol_path)
     print(json.dumps({"event": "protocol", **protocol}, sort_keys=True), flush=True)
 
@@ -808,10 +883,6 @@ def main() -> None:
     epoch_log = args.output_dir / "epochs.jsonl"
     run_started = time.monotonic()
     steps_this_invocation = 0
-    observed_forward_calls = 0
-    observed_backward_calls = 0
-    observed_student_queries = 0
-    observed_teacher_queries = 0
     run_peak_vram_bytes = 0
     stopped_early = False
     for epoch in range(start_epoch, end_epoch + 1):
@@ -850,10 +921,14 @@ def main() -> None:
         sums: dict[str, float] = {}
         samples = 0
         batches = 0
-        for batch_index, (features, targets) in enumerate(loader):
+        for batch_index, (batch_tokens, features, targets) in enumerate(loader):
             if args.max_steps and steps_this_invocation >= args.max_steps:
                 stopped_early = True
                 break
+            try:
+                budget_counter.observe_batch(batch_tokens)
+            except BudgetMeasurementError as exc:
+                raise RunnerError(str(exc)) from exc
             seed = stable_seed("stock", args.seed, args.stage_index, epoch, batch_index)
             random.seed(seed)
             np.random.seed(seed)
@@ -864,6 +939,8 @@ def main() -> None:
             optimizer.zero_grad(set_to_none=True)
             torch.cuda.reset_peak_memory_stats(device)
             batch_start = time.monotonic()
+            step_forward_calls = 0
+            step_backward_calls = 0
             distill_metrics: dict[str, float] = {}
             distillation = None
             if adapter is not None:
@@ -897,7 +974,7 @@ def main() -> None:
                     teacher_query = lambda state, time: adapter.query(
                         adapter.teacher, teacher_context, state, time
                     )
-                    with adapter.deterministic_planner_queries():
+                    with adapter.capture_query_audit() as query_audit, adapter.deterministic_planner_queries():
                         searched, search_metrics = aler_adversarial_latent_search(
                             real_states[0],
                             search_student_query,
@@ -910,6 +987,14 @@ def main() -> None:
                         repair, repair_metrics = aler_repair_loss(
                             searched, repair_student_query, teacher_query, timestep
                         )
+                    declared_queries = int(
+                        search_metrics["aler_teacher_queries"]
+                        + repair_metrics["aler_teacher_queries"]
+                    )
+                    query_audit.assert_budget(
+                        student=declared_queries,
+                        teacher=declared_queries,
+                    )
                     manifold = nearest_manifold_distance(searched, real_states[0])
                     distillation = (
                         distill_config.lambda_perception * perception
@@ -921,9 +1006,16 @@ def main() -> None:
                         **perception_metrics,
                         **search_metrics,
                         **repair_metrics,
-                        "aler_teacher_queries": 2.0,
-                        "student_denoiser_queries": 2.0,
-                        "teacher_denoiser_queries": 2.0,
+                        "aler_teacher_queries": float(declared_queries),
+                        "student_denoiser_queries": float(declared_queries),
+                        "teacher_denoiser_queries": float(declared_queries),
+                        "real_adapter_query_audit_pass": 1.0,
+                        "actual_student_denoiser_queries": float(
+                            query_audit.count("student")
+                        ),
+                        "actual_teacher_denoiser_queries": float(
+                            query_audit.count("teacher")
+                        ),
                         "aler_manifold_l2_mean": float(manifold.mean().item()),
                     }
                 else:
@@ -957,7 +1049,7 @@ def main() -> None:
             # measured against the unchanged stage-start teacher as historical
             # perception drift even when both checkpoints are initially equal.
             predictions = agent.forward(features, targets)
-            observed_forward_calls += 1
+            step_forward_calls += 1
             stock_terms = agent.compute_loss(features, targets, predictions)
             stock_loss = stock_terms["loss"]
             total_loss = stock_loss
@@ -968,16 +1060,25 @@ def main() -> None:
                 total_loss = total_loss + args.ewc_lambda * ewc_penalty
                 distill_metrics["ewc_penalty"] = float(ewc_penalty.detach().item())
             total_loss.backward()
-            observed_backward_calls += 1
+            step_backward_calls += 1
             if agem_iterator is not None:
                 parameters = trainable_parameters(agent)
                 current_gradient = capture_gradient(parameters)
                 optimizer.zero_grad(set_to_none=True)
                 try:
-                    replay_features, replay_targets = next(agem_iterator)
+                    replay_tokens, replay_features, replay_targets = next(agem_iterator)
                 except StopIteration:
                     agem_iterator = iter(agem_loader)
-                    replay_features, replay_targets = next(agem_iterator)
+                    replay_tokens, replay_features, replay_targets = next(agem_iterator)
+                expected_replay_tokens = agem_replay_plan[epoch][batch_index]
+                if tuple(str(token) for token in replay_tokens) != expected_replay_tokens:
+                    raise RunnerError(
+                        "A-GEM replay loader delivery differs from its frozen identity plan"
+                    )
+                try:
+                    budget_counter.observe_batch(replay_tokens)
+                except BudgetMeasurementError as exc:
+                    raise RunnerError(str(exc)) from exc
                 replay_seed = stable_seed(
                     "agem-reference", args.seed, args.stage_index, epoch, batch_index
                 )
@@ -989,13 +1090,13 @@ def main() -> None:
                 replay_targets = move_to_device(replay_targets, device)
                 with preserve_module_buffers(agent):
                     replay_predictions = agent.forward(replay_features, replay_targets)
-                    observed_forward_calls += 1
+                    step_forward_calls += 1
                     replay_terms = agent.compute_loss(
                         replay_features, replay_targets, replay_predictions
                     )
                     reference_loss = replay_terms["loss"]
                     reference_loss.backward()
-                    observed_backward_calls += 1
+                    step_backward_calls += 1
                 reference_gradient = capture_gradient(parameters)
                 set_gradient_(parameters, current_gradient)
                 del current_gradient
@@ -1021,22 +1122,31 @@ def main() -> None:
                 update_ema_teacher_(teacher, agent, momentum=0.99)
             global_step += 1
             steps_this_invocation += 1
-            observed_student_queries += int(
+            step_student_queries = int(
                 distill_metrics.get(
                     "actual_student_denoiser_queries",
                     distill_metrics.get("student_denoiser_queries", 0.0),
                 )
             )
-            observed_teacher_queries += int(
+            step_teacher_queries = int(
                 distill_metrics.get(
                     "actual_teacher_denoiser_queries",
                     distill_metrics.get("teacher_denoiser_queries", 0.0),
                 )
             )
+            try:
+                budget_counter.observe_optimizer_step(
+                    forward_calls=step_forward_calls,
+                    backward_calls=step_backward_calls,
+                    student_queries=step_student_queries,
+                    teacher_queries=step_teacher_queries,
+                )
+            except BudgetMeasurementError as exc:
+                raise RunnerError(str(exc)) from exc
             run_peak_vram_bytes = max(
                 run_peak_vram_bytes, int(torch.cuda.max_memory_allocated(device))
             )
-            current_batch = int(next(iter(features.values())).shape[0])
+            current_batch = len(batch_tokens)
             samples += current_batch
             batches += 1
             row = {
@@ -1095,6 +1205,7 @@ def main() -> None:
                     protocol=protocol,
                 ),
                 rolling,
+                storage_counter,
             )
             epoch_row["checkpoint"] = str(rolling.resolve())
             epoch_row["checkpoint_sha256"] = digest
@@ -1122,21 +1233,11 @@ def main() -> None:
             "optimizer_state_sha256": optimizer_digest,
             "endpoint_sha256": endpoint_sha256,
         },
+        storage_counter,
     )
-    complete_budget = not stopped_early and steps_this_invocation == target_updates
-    observed_budget = {
-        **target_budget,
-        "epochs": max(0, completed_epoch - start_epoch + 1),
-        "optimizer_updates": steps_this_invocation,
-        "current_presentations": (
-            target_budget["current_presentations"] if complete_budget else 0
-        ),
-        "old_presentations": target_budget["old_presentations"] if complete_budget else 0,
-        "forward_calls": observed_forward_calls,
-        "backward_calls": observed_backward_calls,
-        "student_queries": observed_student_queries,
-        "teacher_queries": observed_teacher_queries,
-    }
+    observed_budget = budget_counter.snapshot(
+        completed_epochs=max(0, completed_epoch - start_epoch + 1)
+    )
     persistent_bytes = sum(
         path.stat().st_size
         for path in args.output_dir.rglob("*")
@@ -1182,7 +1283,7 @@ def main() -> None:
             "wall_seconds": time.monotonic() - run_started,
             "peak_vram_bytes": run_peak_vram_bytes,
             "persistent_bytes": persistent_bytes,
-            "transient_bytes": 0,
+            "transient_bytes": storage_counter.peak_atomic_temporary_bytes,
             "host": socket.gethostname(),
             "execution_device": "cuda",
             "gpu_uuid": current_gpu_uuid(),

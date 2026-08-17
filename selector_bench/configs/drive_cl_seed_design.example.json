@@ -1,5 +1,5 @@
 {
-  "schema": "selector_bench.drive_cl_seed_design.v1",
+  "schema": "selector_bench.drive_cl_seed_design.v2",
   "status": "REPLACE_WITH_PASSED_ONLY_AFTER_EXECUTABLE_AUDIT",
   "design_split": "audit",
   "designed_seed_ids": [0, 1, 2, 3, 4, 5, 6, 7, 8],
@@ -11,14 +11,18 @@
   "power_simulation_repetitions": 10000,
   "simulation_seed": 0,
   "minimum_seed_count_for_two_sided_family_tail_resolution": 9,
+  "tail_resolution_rule": "2^(1-n_seed) <= family_alpha / family_metric_count",
   "calibration_status": "REPLACE_WITH_PASSED_ONLY_AFTER_SMALL_SAMPLE_CALIBRATION",
   "calibration_method": "heldout_null_crossed_resampling_max_statistic_over_seven_metrics",
   "power_method": "audit_only_crossed_resampling_at_minimum_relevant_effect",
   "pilot_matrix": "REPLACE_AUDIT_PILOT_MATRIX.json",
   "pilot_matrix_sha256": "REPLACE_AUDIT_PILOT_MATRIX_SHA256",
+  "candidate_seed_ids": [0, 1, 2, 3, 4, 5, 6, 7, 8],
   "candidate_seed_audits": [
     {
       "seed_count": 9,
+      "session_count": "REPLACE_AUDIT_SESSION_COUNT",
+      "critical_value": "REPLACE_HELDOUT_MAX_STATISTIC_CRITICAL_VALUE",
       "minimum_metric_power": "REPLACE_ESTIMATED_POWER",
       "metric_power": {
         "score": "REPLACE_POWER",
@@ -35,5 +39,19 @@
       "evaluation_simulations": 5000
     }
   ],
-  "audit_source_receipt_sha256": ["REPLACE_AUDIT_ONLY_PILOT_RECEIPT_SHA256"]
+  "audit_source_receipt_sha256": ["REPLACE_AUDIT_ONLY_PILOT_RECEIPT_SHA256"],
+  "normalized_invocation": {
+    "schema": "selector_bench.drive_cl_seed_design_invocation.v1",
+    "pilot_matrix_sha256": "REPLACE_AUDIT_PILOT_MATRIX_SHA256",
+    "candidate_seed_ids": [0, 1, 2, 3, 4, 5, 6, 7, 8],
+    "minimum_relevant_effect": "REPLACE_POSITIVE_EFFECT",
+    "target_power": 0.8,
+    "family_alpha": 0.05,
+    "simulation_repetitions": 10000,
+    "simulation_seed": 0
+  },
+  "generator_module_repository_path": "selector_bench/selector_bench/continual/seed_design.py",
+  "generator_module_sha256": "REPLACE_GENERATOR_MODULE_SHA256",
+  "generator_entrypoint_repository_path": "selector_bench/scripts/55_design_drive_cl_confirmatory_seeds.py",
+  "generator_entrypoint_sha256": "REPLACE_GENERATOR_ENTRYPOINT_SHA256"
 }

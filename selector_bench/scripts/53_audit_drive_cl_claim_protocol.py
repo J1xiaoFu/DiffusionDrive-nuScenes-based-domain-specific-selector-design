@@ -17,6 +17,8 @@ AUDITED_SOURCES = (
     "selector_bench/selector_bench/continual/drive_opd.py",
     "selector_bench/selector_bench/continual/evaluation_contract.py",
     "selector_bench/selector_bench/continual/navsim_protocol.py",
+    "selector_bench/selector_bench/continual/run_budget.py",
+    "selector_bench/selector_bench/continual/seed_design.py",
     "selector_bench/selector_bench/continual/statistics.py",
     "selector_bench/scripts/40_build_drive_cl_protocol.py",
     "selector_bench/scripts/41_train_drive_cl_diffusiondrive.py",
@@ -36,6 +38,7 @@ AUDITED_SOURCES = (
     "selector_bench/configs/drive_cl_crossed_comparison_spec.example.json",
     "selector_bench/configs/drive_cl_global_holm_family.example.json",
     "selector_bench/configs/drive_cl_seed_design.example.json",
+    "selector_bench/configs/drive_cl_sealed_test_access_ledger.example.json",
     "selector_bench/configs/drive_cl_method_registry.v1.json",
     "selector_bench/configs/drive_cl_metric_registry.v1.json",
     "selector_bench/tests/test_navsim_continual_protocol.py",
@@ -43,6 +46,7 @@ AUDITED_SOURCES = (
     "selector_bench/tests/test_drive_opd_losses.py",
     "selector_bench/tests/test_drive_cl_statistics.py",
     "selector_bench/tests/test_drive_cl_claim_protocol.py",
+    "selector_bench/tests/test_drive_cl_run_budget.py",
 )
 
 TEST_FILES = (
@@ -51,6 +55,7 @@ TEST_FILES = (
     "selector_bench/tests/test_drive_cl_baselines.py",
     "selector_bench/tests/test_drive_cl_statistics.py",
     "selector_bench/tests/test_drive_cl_claim_protocol.py",
+    "selector_bench/tests/test_drive_cl_run_budget.py",
 )
 
 
@@ -126,6 +131,7 @@ def main() -> None:
         "selector_bench/configs/drive_cl_crossed_comparison_spec.example.json",
         "selector_bench/configs/drive_cl_global_holm_family.example.json",
         "selector_bench/configs/drive_cl_seed_design.example.json",
+        "selector_bench/configs/drive_cl_sealed_test_access_ledger.example.json",
         "selector_bench/configs/drive_cl_method_registry.v1.json",
         "selector_bench/configs/drive_cl_metric_registry.v1.json",
     ):
@@ -133,18 +139,23 @@ def main() -> None:
 
     environment = os.environ.copy()
     environment["PYTHONPATH"] = str(repo / "selector_bench")
+    environment["CUDA_VISIBLE_DEVICES"] = ""
+    environment["PYTHONDONTWRITEBYTECODE"] = "1"
     compile_receipt = command_receipt(
         [
             str(python),
-            "-m",
-            "py_compile",
+            "-c",
+            (
+                "from pathlib import Path; import sys; "
+                "[(compile(Path(p).read_text(), p, 'exec')) for p in sys.argv[1:]]"
+            ),
             *(relative for relative in AUDITED_SOURCES if relative.endswith(".py")),
         ],
         repo=repo,
         environment=environment,
     )
     test_receipt = command_receipt(
-        [str(python), "-m", "pytest", "-q", *TEST_FILES],
+        [str(python), "-m", "pytest", "-q", "-p", "no:cacheprovider", *TEST_FILES],
         repo=repo,
         environment=environment,
     )

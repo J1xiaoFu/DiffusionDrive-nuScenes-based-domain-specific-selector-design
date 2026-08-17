@@ -6,6 +6,7 @@ import os
 import subprocess
 import sys
 import unittest
+from datetime import datetime, timezone
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any, Iterable
@@ -15,8 +16,11 @@ from selector_bench.continual.claim_protocol import (
     CROSSED_RECEIPT_SCHEMA,
     EVALUATOR_RUN_SCHEMA,
     GLOBAL_RESULT_SCHEMA,
+    load_training_run_contract,
+    validate_family_registries_and_cells,
 )
-from selector_bench.continual.statistics import PDM_DEFAULT_METRICS
+from selector_bench.continual.statistics import PDM_DEFAULT_METRICS, StatisticsError
+from selector_bench.continual.run_budget import TRANSIENT_STORAGE_SEMANTICS
 from selector_bench.utils.hashing import hash_jsonable
 
 
@@ -286,6 +290,7 @@ class ClaimFixture:
                     "start_epoch": 1,
                     "end_epoch": 2,
                     "max_steps": 0,
+                    "transient_storage_semantics": TRANSIENT_STORAGE_SEMANTICS,
                 }
                 rng_record = run_root / "rng_record.json"
                 write_json(
@@ -413,7 +418,7 @@ class ClaimFixture:
                             "wall_seconds": 1.0,
                             "peak_vram_bytes": 0,
                             "persistent_bytes": endpoint.stat().st_size,
-                            "transient_bytes": 0,
+                            "transient_bytes": 137,
                             "host": "cpu-fixture",
                             "execution_device": "cpu_fixture",
                             "gpu_uuid": None,
@@ -480,51 +485,15 @@ class ClaimFixture:
     ) -> None:
         for method_id in ("sequential", "drive_opd_fixed"):
             for seed in self.seeds:
-                paths = self.run_paths[(method_id, seed)]
-                arguments: list[object] = [
-                    "--training-protocol",
-                    paths["protocol"],
-                    "--training-result",
-                    paths["result"],
-                    "--evaluation-cell-receipt",
-                    self.evaluation_receipt,
-                    "--evaluator-repository",
-                    self.root,
-                    "--evaluator-source-commit",
-                    self.source_commit,
-                    "--evaluator-entrypoint",
-                    self.entrypoint,
-                    "--command-spec",
-                    self.command_spec,
-                    "--environment-lock",
-                    self.environment_lock,
-                    "--metric-registry",
-                    self.metric_registry,
-                    "--output-csv",
-                    paths["csv"],
-                    "--output-receipt",
-                    paths["evaluator"],
-                    "--stdout-log",
-                    paths["stdout"],
-                    "--stderr-log",
-                    paths["stderr"],
-                    "--deterministic-seed",
+                evaluated = self.evaluate_one(
+                    method_id,
                     seed,
-                ]
-                if access_receipt is not None:
-                    arguments.extend(
-                        [
-                            "--access-repository",
-                            self.root,
-                            "--access-receipt",
-                            access_receipt,
-                            "--access-commit",
-                            access_commit,
-                        ]
-                    )
-                evaluated = run_script("54_run_drive_cl_navsim_evaluator.py", *arguments)
+                    access_receipt=access_receipt,
+                    access_commit=access_commit,
+                )
                 if evaluated.returncode != 0:
                     raise AssertionError(evaluated.stderr)
+                paths = self.run_paths[(method_id, seed)]
                 summary = run_script(
                     "45_summarize_drive_cl_pdm.py",
                     "--evaluator-receipt",
@@ -537,11 +506,65 @@ class ClaimFixture:
                 if summary.returncode != 0:
                     raise AssertionError(summary.stderr)
 
+    def evaluate_one(
+        self,
+        method_id: str,
+        seed: int,
+        *,
+        access_receipt: Path | None = None,
+        access_commit: str | None = None,
+    ) -> subprocess.CompletedProcess[str]:
+        paths = self.run_paths[(method_id, seed)]
+        arguments: list[object] = [
+            "--training-protocol",
+            paths["protocol"],
+            "--training-result",
+            paths["result"],
+            "--evaluation-cell-receipt",
+            self.evaluation_receipt,
+            "--evaluator-repository",
+            self.root,
+            "--evaluator-source-commit",
+            self.source_commit,
+            "--evaluator-entrypoint",
+            self.entrypoint,
+            "--command-spec",
+            self.command_spec,
+            "--environment-lock",
+            self.environment_lock,
+            "--metric-registry",
+            self.metric_registry,
+            "--output-csv",
+            paths["csv"],
+            "--output-receipt",
+            paths["evaluator"],
+            "--stdout-log",
+            paths["stdout"],
+            "--stderr-log",
+            paths["stderr"],
+            "--deterministic-seed",
+            seed,
+        ]
+        if access_receipt is not None:
+            arguments.extend(
+                [
+                    "--access-repository",
+                    self.root,
+                    "--access-receipt",
+                    access_receipt,
+                    "--access-commit",
+                    access_commit,
+                ]
+            )
+        return run_script("54_run_drive_cl_navsim_evaluator.py", *arguments)
+
     def freeze_confirmatory_family(
         self,
         *,
         claim_relative: str = "claims/main.crossed.json",
         reverse_hypotheses: bool = False,
+        access_variant: str = "valid",
+        seed_design_variant: str = "valid",
     ) -> tuple[Path, str, Path, str]:
         if self.split != "test":
             raise AssertionError("confirmatory fixture requires sealed test split")
@@ -562,55 +585,95 @@ class ClaimFixture:
                 "schema": "selector_bench.drive_cl_audit_pilot_matrix.v1",
                 "split": "audit",
                 "metrics": list(PDM_DEFAULT_METRICS),
-                "seed_ids": [0, 1],
-                "session_ids": ["pilot-a", "pilot-b"],
+                "seed_ids": [0, 1, 2, 3],
+                "session_ids": [f"pilot-{index}" for index in range(8)],
                 "source_receipts": [str(audit_source)],
                 "source_receipt_sha256": [sha256(audit_source)],
                 "candidate_minus_baseline": {
-                    metric: [[0.0, 0.01], [-0.01, 0.0]]
+                    metric: [
+                        [
+                            (seed_index - 1.5) * 0.01
+                            + (session_index - 3.5) * 0.002
+                            for session_index in range(8)
+                        ]
+                        for seed_index in range(4)
+                    ]
                     for metric in PDM_DEFAULT_METRICS
                 },
             },
         )
         seed_design = self.root / "seed_design.json"
-        write_json(
-            seed_design,
-            {
-                "schema": "selector_bench.drive_cl_seed_design.v1",
-                "status": "passed",
-                "design_split": "audit",
-                "designed_seed_ids": list(self.seeds),
-                "minimum_relevant_effect": 0.02,
-                "target_power": 0.8,
-                "estimated_power": 0.85,
-                "family_alpha": 0.05,
-                "family_metric_count": 7,
-                "power_simulation_repetitions": 10000,
-                "simulation_seed": 0,
-                "minimum_seed_count_for_two_sided_family_tail_resolution": 9,
-                "calibration_status": "passed",
-                "calibration_method": "heldout_null_crossed_resampling_max_statistic_over_seven_metrics",
-                "power_method": "audit_only_crossed_resampling_at_minimum_relevant_effect",
-                "pilot_matrix": str(pilot_matrix),
-                "pilot_matrix_sha256": sha256(pilot_matrix),
-                "audit_source_receipt_sha256": [sha256(audit_source)],
-                "candidate_seed_audits": [
-                    {
-                        "seed_count": len(self.seeds),
-                        "minimum_metric_power": 0.85,
-                        "metric_power": {
-                            metric: 0.85 for metric in PDM_DEFAULT_METRICS
-                        },
-                        "heldout_null_fwer": 0.05,
-                        "null_fwer_tolerance": 0.06,
-                        "calibration_simulations": 5000,
-                        "evaluation_simulations": 5000,
-                    }
-                ],
-            },
+        program_root = self.root / "seed_design_program"
+        generator_module = program_root / "seed_design.py"
+        generator_entrypoint = program_root / "55_design_drive_cl_confirmatory_seeds.py"
+        generator_module.parent.mkdir(parents=True, exist_ok=True)
+        generator_module.write_bytes(
+            (
+                REPOSITORY_ROOT
+                / "selector_bench/selector_bench/continual/seed_design.py"
+            ).read_bytes()
         )
+        generator_entrypoint.write_bytes(
+            (SCRIPT_ROOT / "55_design_drive_cl_confirmatory_seeds.py").read_bytes()
+        )
+        designed = run_script(
+            "55_design_drive_cl_confirmatory_seeds.py",
+            "--pilot-matrix",
+            pilot_matrix,
+            "--candidate-seed-ids",
+            ",".join(str(seed) for seed in self.seeds),
+            "--minimum-relevant-effect",
+            0.1,
+            "--target-power",
+            0.8,
+            "--family-alpha",
+            0.05,
+            "--simulation-repetitions",
+            10000,
+            "--simulation-seed",
+            0,
+            "--repository",
+            self.root,
+            "--generator-module-source",
+            generator_module,
+            "--generator-entrypoint-source",
+            generator_entrypoint,
+            "--output",
+            seed_design,
+        )
+        if designed.returncode != 0:
+            raise AssertionError(designed.stderr or designed.stdout)
+        seed_payload = json.loads(seed_design.read_text())
+        if seed_design_variant == "handwritten_output":
+            seed_payload["estimated_power"] = 0.812345
+        elif seed_design_variant == "altered_seed_or_repetitions":
+            seed_payload["normalized_invocation"]["simulation_seed"] = 17
+        elif seed_design_variant == "altered_effect_or_pilot":
+            seed_payload["normalized_invocation"]["minimum_relevant_effect"] = 0.2
+        elif seed_design_variant == "altered_program_identity":
+            seed_payload["generator_module_sha256"] = "0" * 64
+        elif seed_design_variant == "altered_replayed_statistic":
+            seed_payload["candidate_seed_audits"][0]["critical_value"] += 0.5
+        elif seed_design_variant != "valid":
+            raise AssertionError(f"unknown seed-design fixture variant: {seed_design_variant}")
+        if seed_design_variant != "valid":
+            write_json(seed_design, seed_payload)
         claim_receipt = self.root / claim_relative
         family = self.root / "family.json"
+        access_ledger = self.root / "sealed_test_access_ledger.json"
+        freeze_events = (
+            [{"unregistered_prior_access": True}]
+            if access_variant == "nonempty_freeze_ledger"
+            else []
+        )
+        write_json(
+            access_ledger,
+            {
+                "schema": "selector_bench.drive_cl_sealed_test_access_ledger.v1",
+                "family_id": "p003_primary",
+                "events": freeze_events,
+            },
+        )
         hypotheses = []
         for metric in PDM_DEFAULT_METRICS:
             hypotheses.append(
@@ -658,6 +721,10 @@ class ClaimFixture:
                 "expected_seed_ids": list(self.seeds),
                 "seed_design_receipt": str(seed_design),
                 "seed_design_receipt_sha256": sha256(seed_design),
+                "sealed_test_access_ledger_repository_path": access_ledger.relative_to(
+                    self.root
+                ).as_posix(),
+                "sealed_test_access_ledger_empty_sha256": sha256(access_ledger),
                 "claim_receipt_root": "claims",
                 "expected_comparisons": [
                     {
@@ -697,32 +764,104 @@ class ClaimFixture:
             audit_source,
             pilot_matrix,
             seed_design,
+            generator_module,
+            generator_entrypoint,
+            access_ledger,
             family,
             self.protocol_path,
             self.method_registry,
             self.metric_registry,
         )
         access = self.root / "sealed_access.json"
+        authorized_at = subprocess.check_output(
+            ["git", "-C", str(self.root), "show", "-s", "--format=%cI", freeze_commit],
+            text=True,
+        ).strip()
+        authorized_at = datetime.fromisoformat(authorized_at).astimezone(
+            timezone.utc
+        ).isoformat()
+        if access_variant == "authorization_year_1900":
+            authorized_at = "1900-01-01T00:00:00+00:00"
+        elif access_variant == "future_authorization":
+            authorized_at = "2999-01-01T00:00:00+00:00"
+        event_id = hashlib.sha256(f"sealed:{freeze_commit}".encode()).hexdigest()[:32]
+        event = {
+            "access_event_id": event_id,
+            "authorized_at_utc": authorized_at,
+            "family_id": "p003_primary",
+            "family_spec_sha256": sha256(family),
+            "evaluation_cell_receipt_sha256": sha256(self.evaluation_receipt),
+            "protocol_content_sha256": self.protocol["content_sha256"],
+            "evaluation_domain": "navsim-fixture/v1::toy_cl::stage_1::old_domain",
+        }
+        if access_variant == "intermediate_event_rewrite":
+            prior_event = dict(event)
+            prior_event["access_event_id"] = "f" * 32
+            write_json(
+                access_ledger,
+                {
+                    "schema": "selector_bench.drive_cl_sealed_test_access_ledger.v1",
+                    "family_id": "p003_primary",
+                    "events": [prior_event],
+                },
+            )
+            git_commit(self.root, "record unauthorized prior event", access_ledger)
+            write_json(
+                access_ledger,
+                {
+                    "schema": "selector_bench.drive_cl_sealed_test_access_ledger.v1",
+                    "family_id": "p003_primary",
+                    "events": [],
+                },
+            )
+            git_commit(self.root, "delete unauthorized prior event", access_ledger)
+        final_events = [event, dict(event)] if access_variant == "duplicate_event" else [event]
+        write_json(
+            access_ledger,
+            {
+                "schema": "selector_bench.drive_cl_sealed_test_access_ledger.v1",
+                "family_id": "p003_primary",
+                "events": final_events,
+            },
+        )
+        receipt_ledger = access_ledger
+        extra_commit_paths: list[Path] = []
+        if access_variant == "wrong_ledger_path_or_family":
+            receipt_ledger = self.root / "alternate_access_ledger.json"
+            receipt_ledger.write_bytes(access_ledger.read_bytes())
+            extra_commit_paths.append(receipt_ledger)
         write_json(
             access,
             {
-                "schema": "selector_bench.drive_cl_sealed_test_access.v1",
+                "schema": "selector_bench.drive_cl_sealed_test_access.v2",
                 "status": "authorized",
-                "authorized_after_family_freeze": True,
-                "access_event_id": hashlib.sha256(
-                    f"sealed:{freeze_commit}".encode()
-                ).hexdigest()[:32],
-                "authorized_at_utc": "2026-08-17T00:01:00+00:00",
-                "prior_final_test_access_count": 0,
-                "evaluation_cell_receipt_sha256": sha256(self.evaluation_receipt),
-                "protocol_content_sha256": self.protocol["content_sha256"],
-                "evaluation_domain": "navsim-fixture/v1::toy_cl::stage_1::old_domain",
+                "family_id": "p003_primary",
                 "family_spec_repository_path": family.relative_to(self.root).as_posix(),
                 "family_spec_sha256": sha256(family),
                 "family_freeze_commit": freeze_commit,
+                "access_ledger_repository_path": receipt_ledger.relative_to(
+                    self.root
+                ).as_posix(),
+                "access_ledger_sha256": sha256(receipt_ledger),
+                "access_event_id": event_id,
+                "access_event_index": 0,
+                "authorized_at_utc": authorized_at,
+                "evaluation_cell_receipt_sha256": sha256(self.evaluation_receipt),
+                "protocol_content_sha256": self.protocol["content_sha256"],
+                "evaluation_domain": "navsim-fixture/v1::toy_cl::stage_1::old_domain",
             },
         )
-        access_commit = git_commit(self.root, "authorize sealed test", access)
+        if access_variant == "asserted_count_substitution":
+            access_payload = json.loads(access.read_text())
+            access_payload["prior_final_test_access_count"] = 0
+            write_json(access, access_payload)
+        access_commit = git_commit(
+            self.root,
+            "authorize sealed test",
+            access_ledger,
+            access,
+            *extra_commit_paths,
+        )
         return family, freeze_commit, access, access_commit
 
 
@@ -830,6 +969,63 @@ class DriveCLClaimProtocolTest(unittest.TestCase):
                 for item in family["hypotheses"]
             )
         )
+
+    def test_common_evaluation_cell_supports_multiple_registered_methods(self) -> None:
+        with TemporaryDirectory() as directory:
+            fixture = ClaimFixture(Path(directory), tuple(range(9)), "test")
+            family_path, _, _, _ = fixture.freeze_confirmatory_family()
+            family = json.loads(family_path.read_text())
+            second_spec = fixture.root / "comparison_spec_lwf.json"
+            second_payload = json.loads(fixture.spec_path.read_text())
+            second_payload["comparison_id"] = "lwf_vs_sequential"
+            second_payload["candidate"]["method_id"] = "lwf"
+            second_payload["candidate"]["training_arm"] = "lwf"
+            write_json(second_spec, second_payload)
+            second_comparison = dict(family["expected_comparisons"][0])
+            second_comparison.update(
+                {
+                    "comparison_id": "lwf_vs_sequential",
+                    "comparison_spec_repository_path": second_spec.relative_to(
+                        fixture.root
+                    ).as_posix(),
+                    "comparison_spec_sha256": sha256(second_spec),
+                    "comparison_receipt_repository_path": "claims/lwf.crossed.json",
+                    "candidate_method": "lwf",
+                    "candidate_training_arm": "lwf",
+                }
+            )
+            family["expected_comparisons"].append(second_comparison)
+            for original in list(family["hypotheses"]):
+                duplicate = dict(original)
+                duplicate.update(
+                    {
+                        "id": "lwf_vs_sequential::" + str(original["metric"]),
+                        "comparison_id": "lwf_vs_sequential",
+                        "comparison_spec_repository_path": second_spec.relative_to(
+                            fixture.root
+                        ).as_posix(),
+                        "comparison_spec_sha256": sha256(second_spec),
+                        "comparison_receipt_repository_path": "claims/lwf.crossed.json",
+                        "candidate_method": "lwf",
+                        "candidate_training_arm": "lwf",
+                    }
+                )
+                family["hypotheses"].append(duplicate)
+            write_json(family_path, family)
+            freeze_commit = git_commit(
+                fixture.root,
+                "freeze common-cell multi-method family",
+                family_path,
+                second_spec,
+            )
+            validated = validate_family_registries_and_cells(
+                family,
+                family_path=family_path,
+                repository=fixture.root,
+                freeze_commit=freeze_commit,
+            )
+            self.assertEqual(len(validated["expected_comparisons"]), 2)
+            self.assertEqual(len(validated["required_cross_cells"]), 1)
 
     def test_cpu_run_registration_cli_freezes_target_identity_before_training(self) -> None:
         with TemporaryDirectory() as directory:
@@ -1313,6 +1509,18 @@ class DriveCLClaimProtocolTest(unittest.TestCase):
             self.assertFalse((fixture.root / "failed.json").exists())
             self.assertIn("completed run budget mismatch", failed.stderr)
 
+    def test_claim_eligible_run_requires_measured_nonzero_transient_storage(self) -> None:
+        with TemporaryDirectory() as directory:
+            fixture = ClaimFixture(Path(directory), (0, 1), "audit")
+            paths = fixture.run_paths[("drive_opd_fixed", 0)]
+            result = json.loads(paths["result"].read_text())
+            result["resources"]["transient_bytes"] = 0
+            write_json(paths["result"], result)
+            with self.assertRaisesRegex(
+                StatisticsError, "lacks measured nonzero transient storage"
+            ):
+                load_training_run_contract(paths["protocol"], paths["result"])
+
     def test_p0_12_hidden_extra_claim_object_is_rejected(self) -> None:
         with TemporaryDirectory() as directory:
             chain = self._confirmatory_chain(Path(directory))
@@ -1344,6 +1552,86 @@ class DriveCLClaimProtocolTest(unittest.TestCase):
             self.assertNotEqual(failed.returncode, 0)
             self.assertFalse((chain["fixture"].root / "attack_inventory.json").exists())
             self.assertIn("inventory differs from expected comparisons", failed.stderr)
+
+    def test_p0_13_noncanonical_final_test_chronology_is_rejected(self) -> None:
+        variants = (
+            "authorization_year_1900",
+            "future_authorization",
+            "nonempty_freeze_ledger",
+            "duplicate_event",
+            "wrong_ledger_path_or_family",
+            "asserted_count_substitution",
+            "intermediate_event_rewrite",
+        )
+        for variant in variants:
+            with self.subTest(variant=variant), TemporaryDirectory() as directory:
+                fixture = ClaimFixture(Path(directory), tuple(range(9)), "test")
+                _, _, access, access_commit = fixture.freeze_confirmatory_family(
+                    access_variant=variant
+                )
+                claim_output = fixture.run_paths[("sequential", 0)]["evaluator"]
+                failed = fixture.evaluate_one(
+                    "sequential",
+                    0,
+                    access_receipt=access,
+                    access_commit=access_commit,
+                )
+                audit_rejected_cli("P0-13", variant, failed, claim_output)
+                self.assertNotEqual(failed.returncode, 0)
+                self.assertFalse(claim_output.exists())
+
+    def test_p0_14_loader_delivery_budget_mismatch_is_rejected(self) -> None:
+        with TemporaryDirectory() as directory:
+            fixture = ClaimFixture(Path(directory), (0, 1), "audit")
+            fixture.evaluate_all()
+            result_path = fixture.run_paths[("drive_opd_fixed", 0)]["result"]
+            result = json.loads(result_path.read_text())
+            result["observed_budget"]["current_unique_identities"] -= 1
+            write_json(result_path, result)
+            claim_output = fixture.root / "failed.json"
+            failed = run_script(
+                "52_compare_drive_cl_crossed_pdm.py",
+                "--comparison-spec",
+                fixture.spec_path,
+                "--output",
+                claim_output,
+            )
+            audit_rejected_cli("P0-14", "loader-delivery-mismatch", failed, claim_output)
+            self.assertNotEqual(failed.returncode, 0)
+            self.assertFalse(claim_output.exists())
+            self.assertIn("completed run budget mismatch", failed.stderr)
+
+    def test_p0_15_seed_design_must_be_exact_executable_replay(self) -> None:
+        variants = (
+            "handwritten_output",
+            "altered_seed_or_repetitions",
+            "altered_effect_or_pilot",
+            "altered_program_identity",
+            "altered_replayed_statistic",
+        )
+        for variant in variants:
+            with self.subTest(variant=variant), TemporaryDirectory() as directory:
+                fixture = ClaimFixture(Path(directory), tuple(range(9)), "test")
+                family, freeze_commit, _, _ = fixture.freeze_confirmatory_family(
+                    seed_design_variant=variant
+                )
+                claim_output = fixture.root / "failed.json"
+                failed = run_script(
+                    "52_compare_drive_cl_crossed_pdm.py",
+                    "--comparison-spec",
+                    fixture.spec_path,
+                    "--family-repository",
+                    fixture.root,
+                    "--family-spec",
+                    family,
+                    "--family-freeze-commit",
+                    freeze_commit,
+                    "--output",
+                    claim_output,
+                )
+                audit_rejected_cli("P0-15", variant, failed, claim_output)
+                self.assertNotEqual(failed.returncode, 0)
+                self.assertFalse(claim_output.exists())
 
     def test_positive_family_is_filename_and_hypothesis_order_invariant(self) -> None:
         with TemporaryDirectory() as first_directory, TemporaryDirectory() as second_directory:

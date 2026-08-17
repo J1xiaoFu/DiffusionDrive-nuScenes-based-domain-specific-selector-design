@@ -10,6 +10,12 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping
 
+from selector_bench.continual.seed_design import (
+    INVOCATION_SCHEMA,
+    SEED_DESIGN_SCHEMA,
+    build_seed_design_payload,
+)
+from selector_bench.continual.run_budget import TRANSIENT_STORAGE_SEMANTICS
 from selector_bench.continual.statistics import PDM_DEFAULT_METRICS, StatisticsError
 
 
@@ -22,8 +28,8 @@ CROSSED_SPEC_SCHEMA = "selector_bench.drive_cl_crossed_comparison_spec.v2"
 CROSSED_RECEIPT_SCHEMA = "selector_bench.drive_cl_crossed_pdm_comparison.v4"
 GLOBAL_FAMILY_SCHEMA = "selector_bench.drive_cl_global_holm_family.v4"
 GLOBAL_RESULT_SCHEMA = "selector_bench.drive_cl_global_holm_result.v4"
-SEALED_ACCESS_SCHEMA = "selector_bench.drive_cl_sealed_test_access.v1"
-SEED_DESIGN_SCHEMA = "selector_bench.drive_cl_seed_design.v1"
+SEALED_ACCESS_SCHEMA = "selector_bench.drive_cl_sealed_test_access.v2"
+SEALED_LEDGER_SCHEMA = "selector_bench.drive_cl_sealed_test_access_ledger.v1"
 EVIDENCE_INVENTORY_SCHEMA = "selector_bench.drive_cl_evidence_inventory.v1"
 METHOD_REGISTRY_SCHEMA = "selector_bench.drive_cl_method_registry.v1"
 METRIC_REGISTRY_SCHEMA = "selector_bench.drive_cl_metric_registry.v1"
@@ -228,7 +234,7 @@ def validate_seed_design(
     freeze_commit: str,
     expected_seeds: tuple[int, ...],
 ) -> dict[str, Any]:
-    """Verify an audit-only executable seed power/calibration receipt."""
+    """Replay the frozen audit-only seed power/calibration computation."""
 
     design_path = resolve(
         family_root, family.get("seed_design_receipt"), "seed-design receipt"
@@ -246,45 +252,7 @@ def validate_seed_design(
         sha256(design_path),
         "family seed-design receipt SHA256",
     )
-    try:
-        target_power = float(design.get("target_power"))
-        achieved_power = float(design.get("estimated_power"))
-        minimum_effect = float(design.get("minimum_relevant_effect"))
-        repetitions = int(design.get("power_simulation_repetitions"))
-    except (TypeError, ValueError) as exc:
-        raise StatisticsError("seed-design numerical contract is malformed") from exc
-    if target_power < 0.8 or achieved_power < target_power or minimum_effect <= 0.0:
-        raise StatisticsError("seed design does not meet its preregistered power/effect target")
     family_alpha = float(family.get("alpha"))
-    tail_resolution_minimum = math.ceil(
-        1.0 - math.log2(family_alpha / len(PDM_DEFAULT_METRICS))
-    )
-    if len(expected_seeds) < tail_resolution_minimum:
-        raise StatisticsError(
-            "confirmatory seed set cannot resolve the two-sided seven-metric family tail: "
-            f"need at least {tail_resolution_minimum}, got {len(expected_seeds)}"
-        )
-    require_equal(
-        design.get("minimum_seed_count_for_two_sided_family_tail_resolution"),
-        tail_resolution_minimum,
-        "seed-design discrete tail-resolution minimum",
-    )
-    if repetitions < 10_000 or design.get("calibration_status") != "passed":
-        raise StatisticsError("seed design lacks the required calibration audit")
-    require_equal(
-        design.get("calibration_method"),
-        "heldout_null_crossed_resampling_max_statistic_over_seven_metrics",
-        "seed-design calibration method",
-    )
-    require_equal(
-        design.get("power_method"),
-        "audit_only_crossed_resampling_at_minimum_relevant_effect",
-        "seed-design power method",
-    )
-    if not isinstance(design.get("pilot_matrix_sha256"), str) or len(
-        design["pilot_matrix_sha256"]
-    ) != 64:
-        raise StatisticsError("seed design lacks a content-addressed pilot matrix")
     pilot_path = resolve(family_root, design.get("pilot_matrix"), "seed-design pilot matrix")
     verify_frozen_file(repository, pilot_path, freeze_commit)
     require_equal(
@@ -298,44 +266,97 @@ def validate_seed_design(
     )
     require_equal(pilot.get("split"), "audit", "seed-design pilot split")
     require_equal(tuple(pilot.get("metrics", [])), PDM_DEFAULT_METRICS, "seed-design pilot metrics")
+    invocation = design.get("normalized_invocation")
+    invocation_keys = {
+        "schema",
+        "pilot_matrix_sha256",
+        "candidate_seed_ids",
+        "minimum_relevant_effect",
+        "target_power",
+        "family_alpha",
+        "simulation_repetitions",
+        "simulation_seed",
+    }
+    if not isinstance(invocation, dict) or set(invocation) != invocation_keys:
+        raise StatisticsError("seed design lacks one normalized executable invocation")
+    require_equal(invocation.get("schema"), INVOCATION_SCHEMA, "seed invocation schema")
     require_equal(
-        design.get("family_alpha"), family_alpha, "seed-design family alpha"
+        invocation.get("pilot_matrix_sha256"), sha256(pilot_path), "seed invocation pilot SHA256"
     )
     require_equal(
-        design.get("family_metric_count"),
-        len(PDM_DEFAULT_METRICS),
-        "seed-design family metric count",
+        tuple(invocation.get("candidate_seed_ids", [])),
+        tuple(design.get("candidate_seed_ids", [])),
+        "seed invocation candidate IDs",
     )
-    if not isinstance(design.get("simulation_seed"), int):
-        raise StatisticsError("seed design lacks an integer simulation seed")
-    candidate_audits = design.get("candidate_seed_audits")
-    if not isinstance(candidate_audits, list) or not candidate_audits:
-        raise StatisticsError("seed design lacks executable candidate-seed audit rows")
-    selected_rows = [
+    require_equal(invocation.get("family_alpha"), family_alpha, "seed invocation family alpha")
+    module_path = resolve(
+        repository,
+        design.get("generator_module_repository_path"),
+        "seed-design generator module",
+    )
+    entrypoint_path = resolve(
+        repository,
+        design.get("generator_entrypoint_repository_path"),
+        "seed-design generator entrypoint",
+    )
+    verify_frozen_file(repository, module_path, freeze_commit)
+    verify_frozen_file(repository, entrypoint_path, freeze_commit)
+    require_equal(
+        design.get("generator_module_sha256"), sha256(module_path), "generator module SHA256"
+    )
+    require_equal(
+        design.get("generator_entrypoint_sha256"),
+        sha256(entrypoint_path),
+        "generator entrypoint SHA256",
+    )
+    executing_module = Path(__file__).with_name("seed_design.py")
+    executing_entrypoint = Path(__file__).resolve().parents[2] / "scripts" / "55_design_drive_cl_confirmatory_seeds.py"
+    require_equal(sha256(module_path), sha256(executing_module), "executing seed module identity")
+    require_equal(
+        sha256(entrypoint_path), sha256(executing_entrypoint), "executing seed CLI identity"
+    )
+    try:
+        replay = build_seed_design_payload(
+            pilot_path,
+            pilot_reference=str(design.get("pilot_matrix")),
+            candidate_seed_ids=tuple(int(value) for value in invocation["candidate_seed_ids"]),
+            minimum_relevant_effect=float(invocation["minimum_relevant_effect"]),
+            target_power=float(invocation["target_power"]),
+            family_alpha=float(invocation["family_alpha"]),
+            simulation_repetitions=int(invocation["simulation_repetitions"]),
+            simulation_seed=int(invocation["simulation_seed"]),
+            generator_module_repository_path=str(
+                design.get("generator_module_repository_path")
+            ),
+            generator_module_sha256=sha256(module_path),
+            generator_entrypoint_repository_path=str(
+                design.get("generator_entrypoint_repository_path")
+            ),
+            generator_entrypoint_sha256=sha256(entrypoint_path),
+        )
+    except (TypeError, ValueError) as exc:
+        raise StatisticsError("seed-design invocation values are malformed") from exc
+    if design != replay:
+        mismatches = sorted(
+            key for key in set(design) | set(replay) if design.get(key) != replay.get(key)
+        )
+        raise StatisticsError(
+            "seed-design receipt is not the exact executable replay: " + ", ".join(mismatches)
+        )
+    target_power = float(replay["target_power"])
+    achieved_power = float(replay["estimated_power"])
+    minimum_effect = float(replay["minimum_relevant_effect"])
+    repetitions = int(replay["power_simulation_repetitions"])
+    tail_resolution_minimum = int(
+        replay["minimum_seed_count_for_two_sided_family_tail_resolution"]
+    )
+    if target_power < 0.8 or achieved_power < target_power or minimum_effect <= 0.0:
+        raise StatisticsError("seed design does not meet its preregistered power/effect target")
+    selected = next(
         row
-        for row in candidate_audits
-        if isinstance(row, dict) and row.get("seed_count") == len(expected_seeds)
-    ]
-    if len(selected_rows) != 1:
-        raise StatisticsError("seed design does not contain one selected-seed audit row")
-    selected = selected_rows[0]
-    if float(selected.get("minimum_metric_power", -1.0)) != achieved_power:
-        raise StatisticsError("seed-design power does not match its selected audit row")
-    if float(selected.get("heldout_null_fwer", math.inf)) > float(
-        selected.get("null_fwer_tolerance", -math.inf)
-    ):
-        raise StatisticsError("seed-design held-out null calibration failed")
-    metric_power = selected.get("metric_power")
-    if not isinstance(metric_power, dict) or set(metric_power) != set(PDM_DEFAULT_METRICS):
-        raise StatisticsError("seed-design selected row lacks all seven metric powers")
-    if min(float(value) for value in metric_power.values()) != achieved_power:
-        raise StatisticsError("seed-design minimum metric power is not replayable")
-    if (
-        int(selected.get("calibration_simulations", 0))
-        + int(selected.get("evaluation_simulations", 0))
-        != repetitions
-    ):
-        raise StatisticsError("seed-design calibration/evaluation repetitions mismatch")
+        for row in replay["candidate_seed_audits"]
+        if int(row["seed_count"]) == len(expected_seeds)
+    )
     sources = design.get("audit_source_receipt_sha256")
     if not isinstance(sources, list) or not sources or any(
         not isinstance(value, str) or len(value) != 64 for value in sources
@@ -415,6 +436,7 @@ def validate_family_registries_and_cells(
     }
     comparison_by_id: dict[str, dict[str, Any]] = {}
     registered_cells: set[tuple[object, ...]] = set()
+    registered_semantic_comparisons: set[tuple[object, ...]] = set()
     for item in expected_comparisons:
         if not isinstance(item, dict) or set(item) != comparison_keys:
             raise StatisticsError("family expected-comparison fields are malformed")
@@ -470,8 +492,13 @@ def validate_family_registries_and_cells(
             item.get("evaluation_domain"),
             item.get("split"),
         )
-        if cell in registered_cells:
-            raise StatisticsError("family reuses a checkpoint-stage/evaluation-domain cell")
+        semantic_comparison = cell + (
+            item.get("baseline_method"),
+            item.get("candidate_method"),
+        )
+        if semantic_comparison in registered_semantic_comparisons:
+            raise StatisticsError("family duplicates one semantic method comparison")
+        registered_semantic_comparisons.add(semantic_comparison)
         registered_cells.add(cell)
         comparison_by_id[comparison_id] = item
 
@@ -699,6 +726,11 @@ def load_training_run_contract(
     result = load_json(result_path, "training result")
     require_equal(protocol.get("schema"), TRAINING_PROTOCOL_SCHEMA, "training protocol schema")
     require_equal(result.get("schema"), TRAINING_RESULT_SCHEMA, "training result schema")
+    require_equal(
+        protocol.get("transient_storage_semantics"),
+        TRANSIENT_STORAGE_SEMANTICS,
+        "training transient-storage semantics",
+    )
     run_id = protocol.get("run_id")
     if (
         not isinstance(run_id, str)
@@ -947,11 +979,14 @@ def load_training_run_contract(
         float(resources.get("wall_seconds", -1.0)) < 0.0
         or int(resources.get("peak_vram_bytes", -1)) < 0
         or int(resources.get("persistent_bytes", -1)) < 0
-        or int(resources.get("transient_bytes", -1)) < 0
+        or int(resources.get("transient_bytes", 0)) <= 0
         or not isinstance(resources.get("host"), str)
         or resources.get("execution_device") not in {"cpu_fixture", "cuda"}
     ):
-        raise StatisticsError("training resource receipt contains invalid values")
+        raise StatisticsError(
+            "training resource receipt contains invalid values or lacks measured "
+            "nonzero transient storage"
+        )
     if resources["execution_device"] == "cuda" and not resources.get("gpu_uuid"):
         raise StatisticsError("CUDA training receipt lacks a GPU UUID")
     return TrainingRunContract(

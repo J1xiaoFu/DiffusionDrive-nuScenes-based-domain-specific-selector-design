@@ -25,6 +25,9 @@ ATTACKS = (
     ("P0-10", "mutable-protocol"),
     ("P0-11", "incomplete-run"),
     ("P0-12", "hidden-extra-claim"),
+    ("P0-13", "noncanonical-final-test-chronology"),
+    ("P0-14", "loader-delivery-budget-mismatch"),
+    ("P0-15", "non-executable-seed-design"),
 )
 REJECTION_MARKER = "DRIVE_CL_P0_REJECTION="
 
@@ -43,6 +46,9 @@ def node_for(identifier: str) -> str:
         "P0-10": "test_p0_10_mutable_config_protocol_and_registries_are_rejected",
         "P0-11": "test_p0_11_incomplete_run_budget_is_rejected",
         "P0-12": "test_p0_12_hidden_extra_claim_object_is_rejected",
+        "P0-13": "test_p0_13_noncanonical_final_test_chronology_is_rejected",
+        "P0-14": "test_p0_14_loader_delivery_budget_mismatch_is_rejected",
+        "P0-15": "test_p0_15_seed_design_must_be_exact_executable_replay",
     }[identifier]
     return (
         "selector_bench/tests/test_drive_cl_claim_protocol.py::"
@@ -65,9 +71,20 @@ def parse_args() -> argparse.Namespace:
 def run_node(
     repo: Path, python: Path, node: str, *, expect_rejections: bool
 ) -> dict[str, object]:
-    command = [str(python), "-m", "pytest", "-q", "-s", node]
+    command = [
+        str(python),
+        "-m",
+        "pytest",
+        "-q",
+        "-s",
+        "-p",
+        "no:cacheprovider",
+        node,
+    ]
     environment = os.environ.copy()
     environment["PYTHONPATH"] = str(repo / "selector_bench")
+    environment["CUDA_VISIBLE_DEVICES"] = ""
+    environment["PYTHONDONTWRITEBYTECODE"] = "1"
     process = subprocess.run(
         command,
         cwd=repo,
@@ -128,7 +145,7 @@ def main() -> None:
     positive = run_node(repo, python, positive_node, expect_rejections=False)
     passed = passed and positive["harness_exit_code"] == 0
     payload = {
-        "schema": "selector_bench.drive_cl_p0_attack_audit.v1",
+        "schema": "selector_bench.drive_cl_p0_attack_audit.v2",
         "status": "PASS" if passed else "FAIL",
         "attack_count": len(cases),
         "attack_cases": cases,

@@ -1,0 +1,5 @@
+{
+  "schema": "selector_bench.drive_cl_sealed_test_access_ledger.v1",
+  "family_id": "REPLACE_FROZEN_FAMILY_ID",
+  "events": []
+}

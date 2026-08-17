@@ -19,6 +19,8 @@ SOURCE_FILES = (
     "selector_bench/selector_bench/continual/baselines.py",
     "selector_bench/selector_bench/continual/statistics.py",
     "selector_bench/selector_bench/continual/evaluation_contract.py",
+    "selector_bench/selector_bench/continual/run_budget.py",
+    "selector_bench/selector_bench/continual/seed_design.py",
     "selector_bench/scripts/40_build_drive_cl_protocol.py",
     "selector_bench/scripts/41_train_drive_cl_diffusiondrive.py",
     "selector_bench/scripts/42_export_drive_cl_eval_tokens.py",
@@ -42,6 +44,7 @@ SOURCE_FILES = (
     "selector_bench/configs/drive_cl_crossed_comparison_spec.example.json",
     "selector_bench/configs/drive_cl_global_holm_family.example.json",
     "selector_bench/configs/drive_cl_seed_design.example.json",
+    "selector_bench/configs/drive_cl_sealed_test_access_ledger.example.json",
     "selector_bench/configs/drive_cl_method_registry.v1.json",
     "selector_bench/configs/drive_cl_metric_registry.v1.json",
     "selector_bench/tests/test_drive_cl_baselines.py",
@@ -49,6 +52,7 @@ SOURCE_FILES = (
     "selector_bench/tests/test_drive_opd_losses.py",
     "selector_bench/tests/test_navsim_continual_protocol.py",
     "selector_bench/tests/test_drive_cl_claim_protocol.py",
+    "selector_bench/tests/test_drive_cl_run_budget.py",
 )
 
 

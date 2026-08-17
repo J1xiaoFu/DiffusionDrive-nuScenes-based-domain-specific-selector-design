@@ -5,6 +5,10 @@ from types import SimpleNamespace
 
 import torch
 
+from selector_bench.continual.baselines import (
+    aler_adversarial_latent_search,
+    aler_repair_loss,
+)
 from selector_bench.continual.drive_opd import (
     DriveOPDConfig,
     DriveOPDError,
@@ -138,6 +142,50 @@ class DriveOPDLossTest(unittest.TestCase):
         audit.assert_budget(student=1, teacher=1)
         with self.assertRaisesRegex(DriveOPDError, "query budget mismatch"):
             audit.assert_budget(student=2, teacher=1)
+
+    def test_aler_search_and_repair_use_measured_adapter_queries(self) -> None:
+        adapter = DiffusionDriveOPDAdapter.__new__(DiffusionDriveOPDAdapter)
+        adapter.student = torch.nn.Module()
+        adapter.teacher = torch.nn.Module()
+        adapter._active_query_audit = None
+        scale = torch.nn.Parameter(torch.tensor(0.8))
+
+        def query_impl(planner, context, state, time):
+            del context, time
+            if planner is adapter.student:
+                logits = torch.stack(
+                    [scale.expand(state.shape[0]), -scale.expand(state.shape[0])], -1
+                )
+                return state * scale, logits
+            return state, torch.tensor([[1.0, -1.0]]).repeat(state.shape[0], 1)
+
+        adapter._query_impl = query_impl
+        state = torch.ones(2, 3)
+        student_query = lambda value, time: adapter.query(
+            adapter.student, None, value, time
+        )
+        teacher_query = lambda value, time: adapter.query(
+            adapter.teacher, None, value, time
+        )
+        with adapter.capture_query_audit() as audit:
+            searched, search_metrics = aler_adversarial_latent_search(
+                state,
+                student_query,
+                teacher_query,
+                10,
+                search_steps=1,
+            )
+            loss, repair_metrics = aler_repair_loss(
+                searched, student_query, teacher_query, 10
+            )
+        declared = int(
+            search_metrics["aler_teacher_queries"]
+            + repair_metrics["aler_teacher_queries"]
+        )
+        audit.assert_budget(student=declared, teacher=declared)
+        self.assertEqual(declared, 2)
+        loss.backward()
+        self.assertIsNotNone(scale.grad)
 
     def test_full_distillation_loss_and_gradients_are_identical_with_query_audit(self) -> None:
         def build(scale: torch.nn.Parameter):
