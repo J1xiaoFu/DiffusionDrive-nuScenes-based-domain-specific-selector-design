@@ -1,0 +1,32 @@
+06G_P0_ACCEPTANCE_CONTRACT_REPLAY_PASS
+
+exact_fetch_command:
+GIT_TERMINAL_PROMPT=0 git fetch --no-tags --no-recurse-submodules https://github.com/J1xiaoFu/DiffusionDrive-nuScenes-based-domain-specific-selector-design.git refs/heads/codex/iclr2027-dual-server-dispatch-publication
+
+fetch_exit=0
+fetch_output:
+warning: 没有共同的提交
+来自 https://github.com/J1xiaoFu/DiffusionDrive-nuScenes-based-domain-specific-selector-design
+ * branch            codex/iclr2027-dual-server-dispatch-publication -> FETCH_HEAD
+
+publication_commit=4e71ea3a2adb5c455b1f82090e2ec166c8f23f40
+parent=e1ec56924f9a7a21bf2073b0dabc9fe30b4ade2d
+tree=89c53d3e32947f7c83faeb234473eb66b73533ca
+file=ICLR2027_P0_CLAIM_PROTOCOL_ACCEPTANCE_20260817.md
+file_sha256=374d81fd57e4bd40bed396b4af26f86f1fa52f8f38e712de2b880fe45d295b7e
+all_expected_values=PASS
+file_read_completely=YES
+contract_decision_observed=FAIL / OPEN P0
+
+local_branch=codex/iclr2027-diffusiondrive-06g
+local_HEAD=0c4fb7cbc4b4ecc4bc056027a011fa3bd1d29d27
+git_status_short=<empty>
+remote_config_unchanged=YES; only origin=https://github.com/hustvl/DiffusionDrive.git
+refs_containing_publication_commit=<empty>; object is reachable via FETCH_HEAD only
+checkout_unchanged=YES
+merge=NO
+gh_install_or_use=NO
+official_navsim_source_modified=NO
+cache_real_model_T0_CL_GPU_evaluation=STOPPED
+
+decision=PASS only for acceptance-contract reachability/content audit. No 9dab/source adaptation, dataset/cache gate, or execution unlock is inferred.

@@ -28,9 +28,18 @@ stage manifest, T0, real-model preflight, GPU training, evaluation, or paper-per
 - 06G reachability: explicit HTTPS fetch succeeded; commit/parent/tree matched, the five declared
   receipt payload hashes replayed, and both published 06G snapshots were byte-identical to the 06G
   local duty/goal files
+- current P0 acceptance publication: commit
+  `4e71ea3a2adb5c455b1f82090e2ec166c8f23f40`, parent `e1ec56924f9a7a21bf2073b0dabc9fe30b4ade2d`,
+  tree `89c53d3e32947f7c83faeb234473eb66b73533ca`
+- 06G independently fetched that commit to `FETCH_HEAD`, read the acceptance contract completely,
+  and matched its SHA256 `374d81fd57e4bd40bed396b4af26f86f1fa52f8f38e712de2b880fe45d295b7e`;
+  branch, checkout, origin and official NAVSIM source stayed unchanged
 
 This is a dispatch/receipt publication snapshot. It deliberately excludes the rejected/unreleased
 `9dabf423` claim-protocol source and cannot serve as a source/transfer execution authorization.
+
+The published acceptance contract itself records `FAIL / OPEN P0`. Its reachability PASS only proves
+that both servers can audit the same gate bytes; it does not prove the rejected protocol has been fixed.
 
 ## 07G receipt
 
