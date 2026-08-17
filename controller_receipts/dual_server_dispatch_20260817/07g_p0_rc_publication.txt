@@ -1,0 +1,49 @@
+07G P0 RC SOURCE PUBLICATION — CONTROLLER REPLAY PASS (SOURCE/CPU ONLY)
+
+Publication repository:
+J1xiaoFu/DiffusionDrive-nuScenes-based-domain-specific-selector-design
+
+Publication branch:
+codex/iclr2027-dual-server-dispatch-publication
+
+Publication commit:
+02e2784cb39cd636af6f582c2ff3f72d9274c58f
+
+Parent:
+94a30b148e3a7c6fe1ecdd2f8ce493ab8440946b
+
+Tree:
+b95c40170c29c8408cc258ea22a173d2167d8a66
+
+Frozen RC identity:
+- source branch: codex/iclr2027-drive-opd-07g-p0-rc
+- source commit: 7edaaa05c199174e5b7d5f0cf46e45f50cd7e9f4
+- source parent: d1cee1916f8f2329b4e3f3a1140e79e5d22c124e
+- source tree: 0e6e9a0adda280765ce41ab377de9bbbaea0cff1
+- controller freeze commit: 4e5822bc68744d0bfecbb620a04fea4e63315c7b
+
+Frozen transfer identity:
+- manifest SHA256: 70b9f99bc96633a6be9a9437b106e48dc1d8effdac55fbc8439869c3dbc2ed78
+- source file count: 37
+- logical source bundle SHA256: ee681bf3cdb0cc2dfd198f860ce927971d738904250daacb2d8cfbf47349de93
+- controller acceptance SHA256: e395f099e03d44cae967e5ca65a11000624060cf344d03484df82b2c944bd69f
+
+Controller publication replay:
+- publication branch ref equals the publication commit
+- raw Git commit SHA, sole parent and tree all match the values above
+- every one of the 37 manifest source paths is present in the published recursive tree with the
+  exact Git blob produced from the frozen RC bytes
+- all four published controller paths are present with the exact Git blobs from controller commit
+  4e5822bc68744d0bfecbb620a04fea4e63315c7b
+- verified target blob count: 41/41
+- actual publication commit diff path count: 35
+- six manifest source paths were already byte-identical in the parent tree and therefore do not
+  appear in the commit diff: scripts 43, 44 and 47; continual __init__.py and baselines.py; and
+  test_drive_cl_baselines.py
+- ref update was a non-forced fast-forward
+
+Decision boundary:
+PASS only for publication reachability and byte identity of the source-only RC transfer set.
+Independent 06G ordinary-HTTPS fetch, manifest replay and CPU/P0 replay remain pending. Fresh
+context-free exact-RC blind review remains pending. Dataset provenance/adapter, cache, real-model
+preflight, T0, model, GPU, training, evaluation and performance claims remain STOPPED.

@@ -54,6 +54,12 @@ stage manifest, T0, real-model preflight, GPU training, evaluation, or paper-per
   `dd945bbff8632409795b47c3d0f2907f5777d5d8`; the publication branch ref, raw commit
   parent/tree, exact three-path diff and all three Git blobs were independently replayed, and each
   fetched blob was byte-identical to the local controller file from `ae223719d82ae31c1a6bddea04ba3f11f85e091a`
+- 07G P0 RC source publication: `02e2784cb39cd636af6f582c2ff3f72d9274c58f`, parent
+  `94a30b148e3a7c6fe1ecdd2f8ce493ab8440946b`, tree
+  `b95c40170c29c8408cc258ea22a173d2167d8a66`; the controller replayed the branch ref,
+  raw commit and recursive tree, matching 37/37 frozen source blobs and 4/4 controller receipt
+  blobs. The non-forced fast-forward has 35 actual diff paths because six source paths were already
+  byte-identical in its parent.
 
 This is a dispatch/receipt publication snapshot. It deliberately excludes the rejected/unreleased
 `9dabf423` claim-protocol source and cannot serve as a source/transfer execution authorization.
@@ -80,8 +86,8 @@ that both servers can audit the same gate bytes; it does not prove the rejected 
   `ee681bf3cdb0cc2dfd198f860ce927971d738904250daacb2d8cfbf47349de93`, manifest SHA256
   `70b9f99bc96633a6be9a9437b106e48dc1d8effdac55fbc8439869c3dbc2ed78`
 
-Decision: **PASS only for exact RC identity, static/CPU/P0-fixture checks and source-only manifest
-freeze.** Fresh context-free review, publication and 06G destination replay remain pending.
+Decision: **PASS only for exact RC identity, static/CPU/P0-fixture checks, source-only manifest
+freeze and publication byte identity.** Fresh context-free review and 06G destination replay remain pending.
 Dataset provenance/adapter, cache, real-model preflight, T0, GPU, training, evaluation and
 performance gates remain stopped.
 
