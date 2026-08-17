@@ -1,0 +1,25 @@
+{
+  "schema": "selector_bench.drive_cl_runtime_override.v1",
+  "base_config": "drive_opd_native_cl_failure_patch_seed0_v1.json",
+  "base_config_sha256": "3f2010d3d4711cc9862d294b59947fb3aa4a98e959f8dbf80d0e8a4054f986ac",
+  "scope": "failure_patch_stage2_seed0_core4",
+  "rejected_attempt": {
+    "batch_size": 64,
+    "reason": "three_of_three_distillation_arms_oom_on_real_stage2_batches",
+    "failure_allocation_mib": 256,
+    "sequential_partial_result_is_ineligible": true
+  },
+  "override": {
+    "batch_size": 48,
+    "applies_to_all_arms": [
+      "sequential",
+      "lwf",
+      "fixed_opd",
+      "ema099_opd"
+    ],
+    "epochs": 30,
+    "same_full_stage2_token_exposure_per_epoch": true,
+    "same_data_order_rule_optimizer_lr_and_augmentation": true
+  },
+  "evidence_boundary": "memory_robustness_correction_not_a_method_hyperparameter_selection"
+}
