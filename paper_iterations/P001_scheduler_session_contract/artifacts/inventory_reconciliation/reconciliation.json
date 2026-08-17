@@ -1,0 +1,110 @@
+{
+  "cache_selection_diagnosis": {
+    "cache_is_post_hoc_subset_of_allowlist": true,
+    "configured_interval_matches_cache": false,
+    "declared_provenance_receipt_available": false,
+    "declared_provenance_receipt_valid": false,
+    "required_remediation": "Rebuild the cache from a frozen config with a machine-readable receipt, or supply the original subset-selection receipt; then regenerate the CL manifest."
+  },
+  "counts": {
+    "allowlist_tokens_seen_in_configured_raw_logs": 103288,
+    "cache_fraction_of_allowlist": 0.14475060026334133,
+    "cache_tokens": 14951,
+    "configured_allowlist_tokens": 103288,
+    "configured_interval_sampled_scenes": 7457,
+    "configured_logs": 1192,
+    "extra_raw_logs_excluded": 118,
+    "protocol_audit_tokens": 1512,
+    "protocol_test_tokens": 2995,
+    "protocol_tokens": 14951,
+    "protocol_train_tokens": 10444,
+    "raw_log_files_total": 1310,
+    "sessions": 162,
+    "unit_stride_eligible_scenes": 103288
+  },
+  "evidence_boundary": "The audit proves raw allowlist membership and cache/protocol identity. A PASS additionally requires a reproducible cache-subset selection rule. It does not prove that a remote server has byte-identical raw logs or caches.",
+  "failed_invariants": [
+    "cache_selection_rule_is_reproducible"
+  ],
+  "invariants": {
+    "allowlist_equals_unit_stride_eligible": true,
+    "allowlist_tokens_unique": true,
+    "cache_equals_full_protocol": true,
+    "cache_is_subset_of_allowlist": true,
+    "cache_log_mapping_equals_protocol": true,
+    "cache_log_mapping_matches_raw": true,
+    "cache_selection_rule_is_reproducible": false,
+    "configured_logs_unique_and_present": true,
+    "portable_all_equals_full_protocol": true,
+    "portable_audit_equals_full_audit": true,
+    "portable_content_hash_matches_full": true,
+    "portable_source_manifest_hash_matches": true,
+    "portable_test_equals_full_test": true,
+    "portable_train_count_matches_contract": true,
+    "portable_train_equals_full_train": true,
+    "portable_train_hash_matches_contract": true,
+    "session_atomicity_holds": true,
+    "train_audit_test_are_disjoint": true
+  },
+  "scene_selection_semantics": {
+    "allowlist_unit": "raw_frame_token",
+    "current_frame_offset": 3,
+    "frame_interval": 14,
+    "num_future_frames": 10,
+    "num_history_frames": 4,
+    "requires_route": true,
+    "training_unit": "valid_fixed_length_sampled_window_current_frame",
+    "window_frames": 14
+  },
+  "schema": "selector_bench.drive_cl_inventory_reconciliation.v1",
+  "sources": {
+    "cache_index": {
+      "path": "/home/rguo/rap_workspace/exp/training_cache/valid_cache_train.pkl",
+      "provenance_receipt": null,
+      "provenance_receipt_valid": false,
+      "sha256": "8655b2d75988b557b4b233670ad24796d533ef4cbf78014f5a7d80f307cf4630"
+    },
+    "portable_manifest": {
+      "content_sha256": "60427d6d94d6d283c072d98b748eb2f5c40a31a61fbc69a86a7ab22b17db948b",
+      "path": "/home/khwang/domain-selector/selector_bench/artifacts/drive_opd_native_cl_001/portable/failure_patch_cl_training_manifest_v1.json",
+      "sha256": "fada48c55b4c8b0234c44f82b16d718f1ae8e0b9d3ea8dcfb744b1bbe8c25b46"
+    },
+    "protocol_manifest": {
+      "content_sha256": "60427d6d94d6d283c072d98b748eb2f5c40a31a61fbc69a86a7ab22b17db948b",
+      "path": "/home/khwang/domain-selector/selector_bench/artifacts/drive_opd_native_cl_001/protocols_seed0/failure_patch_cl_v1/manifest.json",
+      "sha256": "ca807076b564de6008a2edadfcacc14d12f637605b2805a0bd8695e4b2985871"
+    },
+    "raw_selected_tree": {
+      "content_sha256": "503e0dd763371a8893fe20b675cfbc399d332d57560f3644e31bfa2eda5c06ca",
+      "path": "/home/rguo/rap_workspace/dataset/navsim_logs/trainval",
+      "selected_bytes": 13170865067
+    },
+    "scene_filter_yaml": {
+      "path": "/home/rguo/RAP-main/RAP-main/navsim/planning/script/config/common/train_test_split/scene_filter/navtrain.yaml",
+      "sha256": "63fe842f27766c92080f9e27f006f9f75e5ef5d50acaefd6e2a61045d734e170"
+    },
+    "scene_loader_source": {
+      "path": "/home/rguo/RAP-main/RAP-main/navsim/common/dataloader.py",
+      "sha256": "03b289ade9bd24133c6b5492c13d84cf4f8ee8f0f67cf734fecacaf2bedcc5b3"
+    }
+  },
+  "status": "FAIL",
+  "tables": {
+    "per_log_csv": "/home/khwang/domain-selector/paper_iterations/P001_scheduler_session_contract/artifacts/inventory_reconciliation/per_log_reconciliation.csv",
+    "per_log_csv_sha256": "9a6dc517c549ab2f93a094957f26b7bd37aade4ac6a86d8affe4a1dda1d30f6e",
+    "per_session_csv": "/home/khwang/domain-selector/paper_iterations/P001_scheduler_session_contract/artifacts/inventory_reconciliation/per_session_reconciliation.csv",
+    "per_session_csv_sha256": "ad3577d8f197f2f91e9bf1cea5806c6bfe36b156d7ec92c155ed6bbfb0ab9823"
+  },
+  "token_set_sha256": {
+    "allowlist": "5614a8a32a7030bda7cc71696e085f59116df442ba6c0b2604bb0649fea7f083",
+    "cache": "448991202f3422608cdbd56abd8d49017046aaafc4e3d30d055aff7bb2fe465f",
+    "configured_interval_sampled": "d46d0360c02e8eaa6e66861ae9f7ad54c8f06e9aa9f3c285734ca7bf5e6ebdc8",
+    "portable_train": "d2238dbb081c79f4cf4eb72b87e16675a407d007d60c65e9d65791f2a0ec1d7a",
+    "protocol_all": "448991202f3422608cdbd56abd8d49017046aaafc4e3d30d055aff7bb2fe465f",
+    "protocol_audit": "15abe88bde9fc0eb59b4919cadbac46281b530e263b1f0a3abe71e569fbfe0a2",
+    "protocol_test": "be92248e8d3f2a0d5a35d73b1bf7183457e707465a92adb9df95f6c265610b4d",
+    "protocol_train": "d2238dbb081c79f4cf4eb72b87e16675a407d007d60c65e9d65791f2a0ec1d7a",
+    "unit_stride_eligible": "5614a8a32a7030bda7cc71696e085f59116df442ba6c0b2604bb0649fea7f083"
+  },
+  "wall_seconds": 113.94021010797587
+}

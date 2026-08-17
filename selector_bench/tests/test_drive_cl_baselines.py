@@ -13,6 +13,7 @@ from selector_bench.continual.baselines import (
     inject_stagewise_lora,
     lora_orthogonality_penalty,
     nearest_manifold_distance,
+    preserve_module_buffers,
     project_agem_gradient_,
     start_new_lora_stage,
     talr_scene_weights,
@@ -23,8 +24,10 @@ class DriveCLBaselinesTest(unittest.TestCase):
     def test_ewc_fisher_and_penalty(self) -> None:
         model = torch.nn.Linear(2, 1, bias=False)
         accumulator = DiagonalFisherAccumulator(model)
-        model(torch.ones(3, 2)).sum().backward()
-        accumulator.add(model, batch_size=3)
+        for _ in range(3):
+            model.zero_grad(set_to_none=True)
+            model(torch.ones(1, 2)).sum().backward()
+            accumulator.add(model, batch_size=1)
         state = accumulator.finalize(model)
         self.assertEqual(state.sample_count, 3)
         model.weight.data.add_(0.2)
@@ -33,10 +36,29 @@ class DriveCLBaselinesTest(unittest.TestCase):
     def test_ewc_treats_inactive_parameters_as_zero_importance(self) -> None:
         model = torch.nn.Sequential(torch.nn.Linear(2, 1), torch.nn.Linear(1, 1))
         accumulator = DiagonalFisherAccumulator(model)
-        model[0](torch.ones(2, 2)).sum().backward()
-        accumulator.add(model, batch_size=2)
+        model[0](torch.ones(1, 2)).sum().backward()
+        accumulator.add(model, batch_size=1)
         state = accumulator.finalize(model)
         self.assertEqual(float(state.fisher["1.weight"].sum()), 0.0)
+
+    def test_ewc_rejects_squared_aggregate_batch_gradient(self) -> None:
+        model = torch.nn.Linear(2, 1, bias=False)
+        accumulator = DiagonalFisherAccumulator(model)
+        model(torch.ones(2, 2)).sum().backward()
+        with self.assertRaisesRegex(RuntimeError, "one-example"):
+            accumulator.add(model, batch_size=2)
+
+    def test_agem_replay_keeps_gradients_but_restores_batchnorm_buffers(self) -> None:
+        model = torch.nn.Sequential(torch.nn.BatchNorm1d(2), torch.nn.Linear(2, 1))
+        model.train()
+        before = {
+            name: value.clone() for name, value in model.named_buffers()
+        }
+        with preserve_module_buffers(model):
+            model(torch.tensor([[2.0, 0.0], [4.0, 1.0]])).sum().backward()
+        for name, value in model.named_buffers():
+            torch.testing.assert_close(value, before[name])
+        self.assertIsNotNone(model[1].weight.grad)
 
     def test_agem_projection_removes_negative_dot(self) -> None:
         parameter = torch.nn.Parameter(torch.tensor([1.0, 2.0]))

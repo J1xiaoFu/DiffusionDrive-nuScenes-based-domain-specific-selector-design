@@ -6,9 +6,11 @@ from types import SimpleNamespace
 import torch
 
 from selector_bench.continual.drive_opd import (
+    DriveOPDError,
     DiffusionDriveOPDAdapter,
     PerceptionDistillationConfig,
     PlanningDistillationConfig,
+    configure_rollout_schedule,
     masked_bev_distillation,
     matched_agent_distillation,
     planning_distillation_loss,
@@ -17,10 +19,27 @@ from selector_bench.continual.drive_opd import (
 
 
 class _IdentityScheduler:
+    config = SimpleNamespace(num_train_timesteps=1000)
+
+    def set_timesteps(self, inference_steps, device):
+        self.inference_steps = inference_steps
+        stride = self.config.num_train_timesteps // inference_steps
+        self.timesteps = torch.arange(
+            self.config.num_train_timesteps - stride,
+            -1,
+            -stride,
+            device=device,
+        )
+
     @staticmethod
     def add_noise(base, noise, timestep):
         del timestep
         return base + noise
+
+    @staticmethod
+    def step(model_output, timestep, sample):
+        del timestep
+        return SimpleNamespace(prev_sample=sample - model_output)
 
 
 class DriveOPDLossTest(unittest.TestCase):
@@ -82,6 +101,74 @@ class DriveOPDLossTest(unittest.TestCase):
         self.assertEqual(metrics["planning_query_states"], 2.0)
         loss.backward()
         self.assertIsNotNone(scale.grad)
+
+    def test_identical_registered_states_give_identical_losses_and_gradients(self) -> None:
+        first_scale = torch.nn.Parameter(torch.tensor(0.8))
+        second_scale = torch.nn.Parameter(torch.tensor(0.8))
+
+        def query(scale):
+            def implementation(state: torch.Tensor, time: torch.Tensor):
+                del time
+                logits = torch.stack(
+                    [scale.expand(state.shape[0]), -scale.expand(state.shape[0])], -1
+                )
+                return state * scale, logits
+
+            return implementation
+
+        def teacher(state: torch.Tensor, time: torch.Tensor):
+            del time
+            return state, torch.tensor([[1.0, -1.0]]).repeat(state.shape[0], 1)
+
+        registered = [torch.ones(2, 3), torch.full((2, 3), 2.0)]
+        first_loss, _ = planning_distillation_loss(
+            query(first_scale),
+            teacher,
+            registered,
+            [10, 0],
+            PlanningDistillationConfig(),
+        )
+        second_loss, _ = planning_distillation_loss(
+            query(second_scale),
+            teacher,
+            [state.clone() for state in registered],
+            [10, 0],
+            PlanningDistillationConfig(),
+        )
+        first_loss.backward()
+        second_loss.backward()
+        torch.testing.assert_close(first_loss, second_loss)
+        torch.testing.assert_close(first_scale.grad, second_scale.grad)
+
+    def test_rollout_schedule_is_constant_stride_and_registered(self) -> None:
+        scheduler = _IdentityScheduler()
+        schedule = configure_rollout_schedule(
+            scheduler,
+            PlanningDistillationConfig(),
+            torch.device("cpu"),
+        )
+        self.assertEqual(schedule.query_timesteps, (10, 0))
+        self.assertEqual(schedule.initial_noise_timestep, 10)
+        self.assertEqual(schedule.transition_stride, 10)
+        self.assertEqual(schedule.scheduler_inference_steps, 100)
+        self.assertEqual(scheduler.inference_steps, 100)
+
+    def test_rollout_schedule_rejects_historical_time_mismatch(self) -> None:
+        scheduler = _IdentityScheduler()
+        with self.assertRaises(DriveOPDError):
+            configure_rollout_schedule(
+                scheduler,
+                PlanningDistillationConfig(initial_noise_timestep=8),
+                torch.device("cpu"),
+            )
+        with self.assertRaises(DriveOPDError):
+            configure_rollout_schedule(
+                scheduler,
+                PlanningDistillationConfig(
+                    rollout_timesteps=(20, 5, 0), initial_noise_timestep=20
+                ),
+                torch.device("cpu"),
+            )
 
     def test_lwf_exogenous_states_match_planner_dtype(self) -> None:
         adapter = DiffusionDriveOPDAdapter.__new__(DiffusionDriveOPDAdapter)

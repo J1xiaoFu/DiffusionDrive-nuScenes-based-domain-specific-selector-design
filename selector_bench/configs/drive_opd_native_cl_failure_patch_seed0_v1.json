@@ -42,13 +42,18 @@
     "agent_confidence": 0.7,
     "bev_confidence": 0.7,
     "rollout_timesteps": [10, 0],
+    "initial_noise_timestep": 10,
+    "ddim_transition_stride": 10,
+    "scheduler_inference_steps": 100,
+    "student_rollout_gradient": "semi_gradient_detached_transitions",
     "matched_student_queries": 2,
     "matched_teacher_queries": 2
   },
   "ewc": {
     "old_log_buffer": 1024,
-    "fisher_batch_size": 16,
-    "fisher_batches": 64,
+    "importance_estimator": "per_example_official_loss_gradient_second_moment_eval_mode",
+    "fisher_batch_size": 1,
+    "fisher_batches": 1024,
     "lambda_audit_candidates": [1000.0, 10000.0, 100000.0],
     "selection_split": "audit"
   },
@@ -84,7 +89,7 @@
       "comfort",
       "ego_progress"
     ],
-    "cluster_unit": "complete_log",
+    "cluster_unit": "timestamp_vehicle_session",
     "bootstrap_repetitions": 10000,
     "confidence_interval": 0.95
   },

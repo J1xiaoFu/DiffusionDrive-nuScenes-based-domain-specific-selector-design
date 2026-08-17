@@ -1,0 +1,3 @@
+schedule,initial_noise_timestep,first_query_timestep,scheduler_inference_steps,scheduler_transition_stride,scheduler_actual_next_timestep,declared_next_query_timestep,initial_query_time_mismatch,transition_label_mismatch,rms_to_scheduler_t9_from_same_noise,rms_to_declared_t0_from_same_noise,student_queries,teacher_queries
+historical_official_heuristic,8,10,1000,1,9,0,2,9,0.003556465730071068,0.019807802513241768,2,2
+drive_opd_constant_stride,10,10,100,10,0,0,0,0,,1.5384538087914734e-08,2,2

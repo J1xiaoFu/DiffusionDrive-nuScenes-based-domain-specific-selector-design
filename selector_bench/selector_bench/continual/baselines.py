@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import math
 from dataclasses import dataclass
@@ -13,6 +14,9 @@ import torch.nn.functional as F
 from selector_bench.continual.drive_opd import DriveOPDError, QueryFunction
 
 
+EWC_ESTIMATOR = "per_example_official_loss_gradient_second_moment_eval_mode"
+
+
 def trainable_parameters(model: torch.nn.Module) -> list[torch.nn.Parameter]:
     return [parameter for parameter in model.parameters() if parameter.requires_grad]
 
@@ -22,6 +26,7 @@ class EWCState:
     anchor: dict[str, torch.Tensor]
     fisher: dict[str, torch.Tensor]
     sample_count: int
+    estimator: str = EWC_ESTIMATOR
 
     @classmethod
     def from_model_and_fisher(
@@ -43,6 +48,7 @@ class EWCState:
             },
             fisher={name: value.detach().cpu().clone() for name, value in fisher.items()},
             sample_count=int(sample_count),
+            estimator=EWC_ESTIMATOR,
         )
 
     def penalty(self, model: torch.nn.Module) -> torch.Tensor:
@@ -59,7 +65,14 @@ class EWCState:
 
 
 class DiagonalFisherAccumulator:
-    """Accumulate squared old-data gradients after ordinary loss backward calls."""
+    """Accumulate a per-example diagonal loss-gradient second moment.
+
+    DiffusionDrive's official objective is a composite surrogate rather than a
+    normalized log-likelihood, so this is an explicit EWC importance proxy and
+    not a claim that the statistic is the model's true Fisher information.
+    Batch-gradient squaring is forbidden because cross-example gradient terms
+    make it a biased replacement for the per-example second moment.
+    """
 
     def __init__(self, model: torch.nn.Module) -> None:
         self.values = {
@@ -71,24 +84,50 @@ class DiagonalFisherAccumulator:
 
     @torch.no_grad()
     def add(self, model: torch.nn.Module, batch_size: int) -> None:
-        if batch_size <= 0:
-            raise DriveOPDError("Fisher batch size must be positive")
+        if batch_size != 1:
+            raise DriveOPDError(
+                "EWC importance requires one-example backward calls; "
+                "squared aggregate batch gradients are not accepted"
+            )
         for name, parameter in model.named_parameters():
             if name in self.values:
                 # A conditional multimodal head can legitimately be inactive for
                 # a batch.  Its empirical Fisher contribution is zero, not an
                 # estimator failure.
                 if parameter.grad is not None:
-                    self.values[name].add_(
-                        parameter.grad.detach().cpu().square(), alpha=batch_size
-                    )
-        self.sample_count += batch_size
+                    self.values[name].add_(parameter.grad.detach().cpu().square())
+        self.sample_count += 1
 
     def finalize(self, model: torch.nn.Module) -> EWCState:
         if self.sample_count <= 0:
             raise DriveOPDError("cannot finalize an empty Fisher accumulator")
         fisher = {name: value / self.sample_count for name, value in self.values.items()}
         return EWCState.from_model_and_fisher(model, fisher, self.sample_count)
+
+
+@contextlib.contextmanager
+def preserve_module_buffers(model: torch.nn.Module) -> Iterable[None]:
+    """Restore every module buffer after an auxiliary train-mode forward.
+
+    A-GEM needs gradients of the replay loss but the replay sample is not part
+    of the deployed model's forward stream.  Keeping train mode preserves the
+    same response function as the current-batch loss; restoring buffers prevents
+    the auxiliary pass from silently applying a second BatchNorm/statistics
+    update.
+    """
+
+    snapshot = {
+        name: buffer.detach().clone() for name, buffer in model.named_buffers()
+    }
+    try:
+        yield
+    finally:
+        current = dict(model.named_buffers())
+        if current.keys() != snapshot.keys():
+            raise DriveOPDError("module buffers changed identity during protected forward")
+        with torch.no_grad():
+            for name, value in snapshot.items():
+                current[name].copy_(value)
 
 
 def capture_gradient(parameters: Sequence[torch.nn.Parameter]) -> torch.Tensor:

@@ -112,6 +112,14 @@ paper_iterations/P###_<claim>/
 论文决策：只有状态/时间、公平预算、数据覆盖与统计单位四项均可识别，P002 才能产生
 性能主张；否则继续收缩协议，不能运行或解释新的 OPD/LwF 排名。
 
+2026-08-17 P001 实测更新：本机 `navtrain.yaml` 的 103,288 个 allowlist token 全部是
+unit-stride 下合法场景；其声明的 `frame_interval=14` 只产生 7,457 个场景，而现有
+`valid_cache_train.pkl` 含 14,951 个场景（allowlist 的 14.48%）。14,951 与 CL 完整
+manifest 完全一致，10,444 是其中三个 train split 的并集；但 14,951 子集没有生成
+规则、随机种子或 receipt，因此数据覆盖门当前为 **FAIL**。不得事后把现有 token 列表
+包装成可复现抽样。06G 必须从冻结的 pristine 官方 config 与 loader 重新生成场景清单
+和 cache receipt，再由本机重建 CL manifest；在此之前 P002 性能排名保持阻塞。
+
 ### C2 / P002：pristine 官方 Seed-0 稳定—塑性主表（8月21日至8月25日）
 
 - 完成四种感知/规划上下文互换，判断感知漂移是否因果改变规划响应。

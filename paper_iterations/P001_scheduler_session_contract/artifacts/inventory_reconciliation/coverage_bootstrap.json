@@ -1,0 +1,11 @@
+{
+  "bootstrap_unit": "complete_timestamp_vehicle_session",
+  "ci95_high": 0.1505990812755259,
+  "ci95_low": 0.1455890206987151,
+  "equal_session_mean_cache_fraction": 0.14809044573723906,
+  "interpretation": "Descriptive cache coverage only; not a model-performance interval.",
+  "repetitions": 10000,
+  "schema": "drive_opd.p001_session_coverage_bootstrap.v1",
+  "seed": 20260817,
+  "session_count": 162
+}

@@ -4,16 +4,17 @@
 from __future__ import annotations
 
 import argparse
-import csv
 import hashlib
 import json
-import math
 import os
 import random
 from collections import defaultdict
 from pathlib import Path
 
 import numpy as np
+
+from selector_bench.continual.statistics import read_pdm_rows
+from selector_bench.continual.navsim_protocol import session_id_from_log
 
 
 def sha256(path: Path) -> str:
@@ -50,62 +51,39 @@ def main() -> None:
     )
     cell = stage["splits"][receipt["split"]]
     expected = set(cell["tokens"])
-    rows: dict[str, dict[str, float]] = {}
-    invalid: list[str] = []
-    with args.csv.open(newline="") as stream:
-        for raw in csv.DictReader(stream):
-            token = (raw.get("token") or "").strip()
-            if not token or token == "average":
-                continue
-            valid = (raw.get("valid") or "").strip().lower() in {"true", "1"}
-            if not valid:
-                invalid.append(token)
-                continue
-            values: dict[str, float] = {}
-            for key, raw_value in raw.items():
-                if key in {None, "", "token", "valid"} or not raw_value:
-                    continue
-                try:
-                    value = float(raw_value)
-                except ValueError:
-                    continue
-                if math.isfinite(value):
-                    values[key] = value
-            rows[token] = values
-    observed = set(rows) | set(invalid)
-    if observed != expected:
-        raise RuntimeError(
-            f"PDM cell mismatch: missing={len(expected-observed)} extra={len(observed-expected)}"
-        )
+    rows = read_pdm_rows(args.csv, expected_tokens=expected, require_all_valid=True)
     metrics = sorted({key for values in rows.values() for key in values})
-    token_to_log = cell["token_to_log"]
+    token_to_session = {
+        token: session_id_from_log(log_name)
+        for token, log_name in cell["token_to_log"].items()
+    }
     rng = random.Random(args.seed)
     summaries: dict[str, dict[str, float]] = {}
     for metric in metrics:
-        log_values: dict[str, list[float]] = defaultdict(list)
+        session_values: dict[str, list[float]] = defaultdict(list)
         token_values = []
         for token, values in rows.items():
             if metric in values:
                 value = values[metric]
                 token_values.append(value)
-                log_values[token_to_log[token]].append(value)
-        log_means = [float(np.mean(values)) for values in log_values.values()]
-        if not log_means:
+                session_values[token_to_session[token]].append(value)
+        session_means = [float(np.mean(values)) for values in session_values.values()]
+        if not session_means:
             continue
         bootstrap = [
-            float(np.mean([rng.choice(log_means) for _ in log_means]))
+            float(np.mean([rng.choice(session_means) for _ in session_means]))
             for _ in range(args.bootstrap_repetitions)
         ]
         summaries[metric] = {
             "token_mean": float(np.mean(token_values)),
-            "log_cluster_mean": float(np.mean(log_means)),
+            "session_cluster_mean": float(np.mean(session_means)),
             "ci95_low": float(np.percentile(bootstrap, 2.5)),
             "ci95_high": float(np.percentile(bootstrap, 97.5)),
             "valid_tokens": len(token_values),
-            "log_clusters": len(log_means),
+            "session_clusters": len(session_means),
         }
     payload = {
-        "schema": "selector_bench.drive_cl_pdm_cell_summary.v1",
+        "schema": "selector_bench.drive_cl_pdm_cell_summary.v2",
         "protocol_content_sha256": manifest["content_sha256"],
         "stage_index": receipt["stage_index"],
         "stage_name": receipt["stage_name"],
@@ -116,8 +94,8 @@ def main() -> None:
         "csv_sha256": sha256(args.csv),
         "expected_tokens": len(expected),
         "valid_tokens": len(rows),
-        "invalid_tokens": len(invalid),
-        "bootstrap_unit": "complete_log",
+        "invalid_tokens": 0,
+        "bootstrap_unit": "complete_timestamp_vehicle_session",
         "bootstrap_repetitions": args.bootstrap_repetitions,
         "metrics": summaries,
     }

@@ -1,0 +1,55 @@
+{
+  "evidence_boundary": "This proves scheduler state-time consistency and equal denoiser-query counts. It does not prove that the corrected auxiliary loss improves NAVSIM metrics.",
+  "historical_official_heuristic": {
+    "declared_next_query_timestep": 0,
+    "first_query_timestep": 10,
+    "initial_noise_timestep": 8,
+    "initial_query_time_mismatch": 2,
+    "rms_to_declared_t0_from_same_noise": 0.019807802513241768,
+    "rms_to_scheduler_t9_from_same_noise": 0.003556465730071068,
+    "schedule": "historical_official_heuristic",
+    "scheduler_actual_next_timestep": 9,
+    "scheduler_inference_steps": 1000,
+    "scheduler_transition_stride": 1,
+    "student_queries": 2,
+    "teacher_queries": 2,
+    "transition_label_mismatch": 9
+  },
+  "method_semantics": {
+    "final_timestep_has_no_unused_scheduler_step": true,
+    "student_rollout_state_transition_gradient": "detached_semi_gradient"
+  },
+  "negative_control": {
+    "same_beta_schedule": "scaled_linear",
+    "same_clean_states": true,
+    "same_noise": true,
+    "same_prediction_type": "sample",
+    "same_query_and_teacher_forward_counts": true
+  },
+  "scheduler_consistent_method": {
+    "declared_next_query_timestep": 0,
+    "first_query_timestep": 10,
+    "initial_noise_timestep": 10,
+    "initial_query_time_mismatch": 0,
+    "rms_to_declared_t0_from_same_noise": 1.5384538087914734e-08,
+    "rms_to_scheduler_t9_from_same_noise": null,
+    "schedule": "drive_opd_constant_stride",
+    "scheduler_actual_next_timestep": 0,
+    "scheduler_inference_steps": 100,
+    "scheduler_transition_stride": 10,
+    "student_queries": 2,
+    "teacher_queries": 2,
+    "transition_label_mismatch": 0
+  },
+  "schema": "selector_bench.drive_opd_rollout_schedule_audit.v1",
+  "sources": {
+    "diffusers_version": "0.21.4",
+    "method_source": "/home/khwang/domain-selector/selector_bench/selector_bench/continual/drive_opd.py",
+    "method_source_sha256": "448e065e79da07628940d8889b9b97e175764448911b0985f26e216ec3e62e25",
+    "official_source": "/home/rguo/RAP-main/RAP-main/navsim/agents/diffusiondrive/transfuser_model_v2.py",
+    "official_source_sha256": "ee33c8eee9a4466743ecd9ffdb757479c1377522784c58ee626797c5d18f1d3d"
+  },
+  "status": "PASS",
+  "table": "/home/khwang/domain-selector/paper_iterations/P001_scheduler_session_contract/artifacts/rollout_schedule/schedule_comparison.csv",
+  "table_sha256": "1ae7bbda4f9a77e33c756dcd77bb6019b2407566c46386af29eefd05e6746a4c"
+}

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compute an empirical diagonal Fisher for the Drive-CL EWC baseline.
+"""Compute a per-example diagonal importance proxy for Drive-CL EWC.
 
 The old-log buffer and source checkpoint are hashed into the artifact.  The
 model remains in evaluation mode so Fisher estimation cannot mutate source
@@ -43,8 +43,8 @@ def parse_args() -> argparse.Namespace:
         "--cache", type=Path, default=Path("/home/rguo/rap_workspace/exp/training_cache")
     )
     parser.add_argument("--buffer-size", type=int, default=1024)
-    parser.add_argument("--batch-size", type=int, default=16)
-    parser.add_argument("--max-batches", type=int, default=64)
+    parser.add_argument("--batch-size", type=int, choices=(1,), default=1)
+    parser.add_argument("--max-batches", type=int, default=1024)
     parser.add_argument("--workers", type=int, default=8)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--learning-rate", type=float, default=1.5e-4)
@@ -67,7 +67,10 @@ def main() -> None:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
     sys.path.insert(0, str(args.rap_root.resolve()))
     from navsim.planning.training.dataset import CacheOnlyDataset
-    from selector_bench.continual.baselines import DiagonalFisherAccumulator
+    from selector_bench.continual.baselines import (
+        EWC_ESTIMATOR,
+        DiagonalFisherAccumulator,
+    )
 
     runner = load_runner(Path(__file__).with_name("41_train_drive_cl_diffusiondrive.py"))
     manifest = json.loads(args.protocol_manifest.read_text())
@@ -147,7 +150,7 @@ def main() -> None:
         )
     state = accumulator.finalize(agent)
     payload = {
-        "schema": "selector_bench.drive_cl_empirical_fisher.v1",
+        "schema": "selector_bench.drive_cl_ewc_importance.v2",
         "protocol_content_sha256": manifest.get("content_sha256"),
         "stage_index": args.stage_index,
         "source_checkpoint": str(args.source_checkpoint.resolve()),
@@ -155,7 +158,7 @@ def main() -> None:
         "sample_count": state.sample_count,
         "buffer_token_pool": selected,
         "fisher": state.fisher,
-        "estimator": "squared_gradient_of_official_drive_loss_eval_mode",
+        "estimator": EWC_ESTIMATOR,
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
     free = os.statvfs(args.output.parent).f_bavail * os.statvfs(args.output.parent).f_frsize

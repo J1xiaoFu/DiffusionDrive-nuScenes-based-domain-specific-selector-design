@@ -9,7 +9,12 @@ import json
 import os
 from pathlib import Path
 
-from selector_bench.continual.statistics import paired_log_bootstrap, read_pdm_rows
+from selector_bench.continual.navsim_protocol import session_id_from_log
+from selector_bench.continual.statistics import (
+    holm_adjusted_pvalues,
+    paired_session_bootstrap,
+    read_pdm_rows,
+)
 
 
 def sha256(path: Path) -> str:
@@ -61,21 +66,11 @@ def main() -> None:
     cell = stage["splits"][receipt["split"]]
     expected = set(cell["tokens"])
     token_to_log = cell["token_to_log"]
-    baseline = read_pdm_rows(args.baseline_csv)
-    if set(baseline) != expected:
-        raise RuntimeError(
-            "baseline token mismatch: "
-            f"missing={len(expected-set(baseline))} extra={len(set(baseline)-expected)}"
-        )
+    baseline = read_pdm_rows(args.baseline_csv, expected_tokens=expected)
 
     comparisons = {}
     for offset, (name, path) in enumerate(args.candidate):
-        rows = read_pdm_rows(path)
-        if set(rows) != expected:
-            raise RuntimeError(
-                f"{name} token mismatch: "
-                f"missing={len(expected-set(rows))} extra={len(set(rows)-expected)}"
-            )
+        rows = read_pdm_rows(path, expected_tokens=expected)
         metrics = sorted(
             set.intersection(
                 *(set(baseline[token]) & set(rows[token]) for token in sorted(expected))
@@ -84,7 +79,7 @@ def main() -> None:
         comparisons[name] = {
             "candidate_csv": str(path.resolve()),
             "candidate_csv_sha256": sha256(path),
-            "candidate_minus_baseline": paired_log_bootstrap(
+            "candidate_minus_baseline": paired_session_bootstrap(
                 baseline,
                 rows,
                 token_to_log,
@@ -94,14 +89,27 @@ def main() -> None:
             ),
         }
 
+    family = {
+        (name, metric): values["bootstrap_two_sided_pvalue"]
+        for name, comparison in comparisons.items()
+        for metric, values in comparison["candidate_minus_baseline"].items()
+    }
+    for (name, metric), value in holm_adjusted_pvalues(family).items():
+        comparisons[name]["candidate_minus_baseline"][metric][
+            "family_holm_adjusted_pvalue"
+        ] = value
+
     payload = {
-        "schema": "selector_bench.drive_cl_paired_pdm_comparison.v1",
+        "schema": "selector_bench.drive_cl_paired_pdm_comparison.v2",
         "protocol_content_sha256": manifest["content_sha256"],
         "stage_index": receipt["stage_index"],
         "stage_name": receipt["stage_name"],
         "split": receipt["split"],
         "expected_tokens": len(expected),
-        "log_clusters": len(set(token_to_log.values())),
+        "session_clusters": len(
+            {session_id_from_log(value) for value in token_to_log.values()}
+        ),
+        "multiplicity_family": "all_candidate_by_metric_comparisons_in_this_report",
         "bootstrap_repetitions": args.bootstrap_repetitions,
         "baseline_csv": str(args.baseline_csv.resolve()),
         "baseline_csv_sha256": sha256(args.baseline_csv),

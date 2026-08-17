@@ -69,7 +69,17 @@ class PlanningDistillationConfig:
     response_weight: float = 1.0
     mode_kl_weight: float = 1.0
     rollout_timesteps: tuple[int, ...] = (10, 0)
-    initial_noise_timestep: int = 8
+    initial_noise_timestep: int = 10
+
+
+@dataclass(frozen=True)
+class RolloutSchedule:
+    """A DDIM subsequence whose queried states have an unambiguous time label."""
+
+    query_timesteps: tuple[int, ...]
+    initial_noise_timestep: int
+    transition_stride: int
+    scheduler_inference_steps: int
 
 
 @dataclass(frozen=True)
@@ -215,6 +225,8 @@ def planning_distillation_loss(
 
     if not states or len(states) != len(timesteps):
         raise DriveOPDError("states and timesteps must be non-empty and aligned")
+    if tuple(int(value) for value in timesteps) != config.rollout_timesteps:
+        raise DriveOPDError("registered states must use the frozen rollout timesteps")
     response_losses: list[torch.Tensor] = []
     mode_losses: list[torch.Tensor] = []
     agreements: list[torch.Tensor] = []
@@ -246,6 +258,74 @@ def planning_distillation_loss(
         "planning_mode_forward_kl": float(mode.detach().item()),
         "planning_mode_top1_agreement": float(torch.stack(agreements).mean().item()),
         "planning_query_states": float(len(states)),
+    }
+
+
+def configure_rollout_schedule(
+    scheduler: Any,
+    config: PlanningDistillationConfig,
+    device: torch.device,
+) -> RolloutSchedule:
+    """Configure a constant-stride DDIM subsequence and audit every time label.
+
+    DiffusionDrive's historical two-step inference noises an anchor at time 8,
+    conditions the first denoiser at time 10, and configures the scheduler for
+    unit-size transitions.  That heuristic is not a controlled OPD/LwF state
+    comparison.  The research loss instead registers one explicit subsequence:
+    the initial forward-noise time equals the first queried time, and each
+    scheduler transition lands exactly on the next queried time.
+    """
+
+    timesteps = tuple(int(value) for value in config.rollout_timesteps)
+    if len(timesteps) < 2 or timesteps[-1] != 0:
+        raise DriveOPDError("rollout timesteps must contain at least two times and end at zero")
+    if any(left <= right for left, right in zip(timesteps, timesteps[1:])):
+        raise DriveOPDError("rollout timesteps must be strictly decreasing")
+    strides = tuple(left - right for left, right in zip(timesteps, timesteps[1:]))
+    if len(set(strides)) != 1:
+        raise DriveOPDError("rollout timesteps must form a constant-stride DDIM subsequence")
+    stride = strides[0]
+    if config.initial_noise_timestep != timesteps[0]:
+        raise DriveOPDError(
+            "initial noise timestep must equal the first denoiser query timestep"
+        )
+    scheduler_config = getattr(scheduler, "config", None)
+    if isinstance(scheduler_config, Mapping):
+        train_timesteps = scheduler_config.get("num_train_timesteps")
+    else:
+        train_timesteps = getattr(scheduler_config, "num_train_timesteps", None)
+    if train_timesteps is None:
+        raise DriveOPDError("diffusion scheduler does not declare num_train_timesteps")
+    train_timesteps = int(train_timesteps)
+    if timesteps[0] >= train_timesteps or train_timesteps % stride != 0:
+        raise DriveOPDError("rollout stride is incompatible with the diffusion training grid")
+    inference_steps = train_timesteps // stride
+    scheduler.set_timesteps(inference_steps, device)
+    registered = getattr(scheduler, "timesteps", None)
+    if registered is not None:
+        registered_set = {int(value) for value in registered}
+        missing = sorted(set(timesteps) - registered_set)
+        if missing:
+            raise DriveOPDError(f"scheduler did not register rollout timesteps: {missing}")
+    return RolloutSchedule(
+        query_timesteps=timesteps,
+        initial_noise_timestep=config.initial_noise_timestep,
+        transition_stride=stride,
+        scheduler_inference_steps=inference_steps,
+    )
+
+
+def _rollout_schedule_metrics(schedule: RolloutSchedule) -> dict[str, float]:
+    return {
+        "planning_schedule_consistent": 1.0,
+        "planning_initial_noise_timestep": float(schedule.initial_noise_timestep),
+        "planning_transition_stride": float(schedule.transition_stride),
+        "planning_scheduler_inference_steps": float(
+            schedule.scheduler_inference_steps
+        ),
+        "planning_first_query_timestep": float(schedule.query_timesteps[0]),
+        "planning_last_query_timestep": float(schedule.query_timesteps[-1]),
+        "planning_rollout_semigradient": 1.0,
     }
 
 
@@ -409,6 +489,9 @@ class DiffusionDriveOPDAdapter:
         batch_size = context.ego_query.shape[0]
         anchor = head.plan_anchor.detach().unsqueeze(0).repeat(batch_size, 1, 1, 1)
         normalized_anchor = head.norm_odo(anchor)[..., :2]
+        schedule = configure_rollout_schedule(
+            head.diffusion_scheduler, config, normalized_anchor.device
+        )
         noise = torch.randn(
             normalized_anchor.shape,
             dtype=normalized_anchor.dtype,
@@ -417,25 +500,25 @@ class DiffusionDriveOPDAdapter:
         )
         initial_timestep = torch.full(
             (batch_size,),
-            config.initial_noise_timestep,
+            schedule.initial_noise_timestep,
             dtype=torch.long,
             device=normalized_anchor.device,
         )
         state = head.diffusion_scheduler.add_noise(
             normalized_anchor, noise, initial_timestep
         )
-        head.diffusion_scheduler.set_timesteps(1000, normalized_anchor.device)
         states: list[torch.Tensor] = []
         with torch.no_grad(), _temporary_eval(self.student):
-            for timestep in config.rollout_timesteps:
+            for timestep_index, timestep in enumerate(schedule.query_timesteps):
                 states.append(state.detach())
                 time = torch.full(
                     (batch_size,), timestep, dtype=torch.long, device=state.device
                 )
                 response, _ = self.query(self.student, detached, state, time)
-                state = head.diffusion_scheduler.step(
-                    model_output=response[..., :2], timestep=timestep, sample=state
-                ).prev_sample
+                if timestep_index + 1 < len(schedule.query_timesteps):
+                    state = head.diffusion_scheduler.step(
+                        model_output=response[..., :2], timestep=timestep, sample=state
+                    ).prev_sample
         return states
 
     def student_support_planning_loss(
@@ -457,6 +540,9 @@ class DiffusionDriveOPDAdapter:
         batch_size = student_context.ego_query.shape[0]
         anchor = head.plan_anchor.detach().unsqueeze(0).repeat(batch_size, 1, 1, 1)
         normalized_anchor = head.norm_odo(anchor)[..., :2]
+        schedule = configure_rollout_schedule(
+            head.diffusion_scheduler, config, normalized_anchor.device
+        )
         noise = torch.randn(
             normalized_anchor.shape,
             dtype=normalized_anchor.dtype,
@@ -465,18 +551,17 @@ class DiffusionDriveOPDAdapter:
         )
         initial_timestep = torch.full(
             (batch_size,),
-            config.initial_noise_timestep,
+            schedule.initial_noise_timestep,
             dtype=torch.long,
             device=normalized_anchor.device,
         )
         state = head.diffusion_scheduler.add_noise(
             normalized_anchor, noise, initial_timestep
         ).detach()
-        head.diffusion_scheduler.set_timesteps(1000, normalized_anchor.device)
         response_losses: list[torch.Tensor] = []
         mode_losses: list[torch.Tensor] = []
         agreements: list[torch.Tensor] = []
-        for timestep in config.rollout_timesteps:
+        for timestep_index, timestep in enumerate(schedule.query_timesteps):
             time = torch.full(
                 (batch_size,), timestep, dtype=torch.long, device=state.device
             )
@@ -500,11 +585,12 @@ class DiffusionDriveOPDAdapter:
             agreements.append(
                 (student_mode.argmax(-1) == teacher_mode.argmax(-1)).float().mean()
             )
-            state = head.diffusion_scheduler.step(
-                model_output=student_response[..., :2].detach(),
-                timestep=timestep,
-                sample=state,
-            ).prev_sample.detach()
+            if timestep_index + 1 < len(schedule.query_timesteps):
+                state = head.diffusion_scheduler.step(
+                    model_output=student_response[..., :2].detach(),
+                    timestep=timestep,
+                    sample=state,
+                ).prev_sample.detach()
         response = torch.stack(response_losses).mean()
         mode = torch.stack(mode_losses).mean()
         loss = config.response_weight * response + config.mode_kl_weight * mode
@@ -512,9 +598,10 @@ class DiffusionDriveOPDAdapter:
             "planning_response_mse": float(response.detach().item()),
             "planning_mode_forward_kl": float(mode.detach().item()),
             "planning_mode_top1_agreement": float(torch.stack(agreements).mean().item()),
-            "planning_query_states": float(len(config.rollout_timesteps)),
-            "student_denoiser_queries": float(len(config.rollout_timesteps)),
-            "teacher_denoiser_queries": float(len(config.rollout_timesteps)),
+            "planning_query_states": float(len(schedule.query_timesteps)),
+            "student_denoiser_queries": float(len(schedule.query_timesteps)),
+            "teacher_denoiser_queries": float(len(schedule.query_timesteps)),
+            **_rollout_schedule_metrics(schedule),
         }
 
     def exogenous_states(
@@ -538,11 +625,14 @@ class DiffusionDriveOPDAdapter:
         modes = int(head.plan_anchor.shape[0])
         base = trajectory[..., :2].unsqueeze(1).repeat(1, modes, 1, 1)
         base = head.norm_odo(base)
+        schedule = configure_rollout_schedule(
+            head.diffusion_scheduler, config, base.device
+        )
         noise = torch.randn(
             base.shape, dtype=base.dtype, device=base.device, generator=generator
         )
         states = []
-        for timestep in config.rollout_timesteps:
+        for timestep in schedule.query_timesteps:
             time = torch.full(
                 (base.shape[0],), timestep, dtype=torch.long, device=base.device
             )
@@ -587,6 +677,11 @@ class DiffusionDriveOPDAdapter:
                     states = self.exogenous_states(
                         targets, config.planning, generator=generator
                     )
+                    schedule = configure_rollout_schedule(
+                        self.student._trajectory_head.diffusion_scheduler,
+                        config.planning,
+                        states[0].device,
+                    )
                     student_query = lambda state, time: self.query(
                         self.student, student_context, state, time
                     )
@@ -604,6 +699,7 @@ class DiffusionDriveOPDAdapter:
                         {
                             "student_denoiser_queries": float(len(states)),
                             "teacher_denoiser_queries": float(len(states)),
+                            **_rollout_schedule_metrics(schedule),
                         }
                     )
         else:

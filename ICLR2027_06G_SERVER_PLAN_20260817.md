@@ -71,10 +71,20 @@ baseline 公平预算或最终测试边界。发现问题时先报告证据，�
 
 ### R1：精确缓存与协议映射（8月20日前）
 
-- **阻塞门**：先对齐本机 14,951-token cache inventory、portable manifest 的 10,444
-  train token 与 06G 官方 103,288-token raw inventory；逐 session/log/token 解释所有
-  纳入和排除。在对齐完成并由当前服务器冻结前，不得把 portable manifest 当作 pristine
-  官方主实验数据，也不得启动 claim-bearing 训练。
+- **阻塞门**：P001 已证明本机 14,951-token cache 是 103,288 个合法 allowlist 场景的
+  14.48% 后验子集，不等于本机 `frame_interval=14` 所产生的 7,457 个场景，且缺失原始
+  选择规则/seed/receipt。portable manifest 的 10,444 只是该不可复现 cache 子集的训练
+  split。不得复制这两个集合或把它们当作 pristine 官方主实验数据。
+- 在冻结的官方 commit 上直接运行官方 SceneLoader/config，输出 raw allowlist → 合法
+  window → 实际训练 token 的逐 log/session reason counts。不得预设官方结果一定是
+  103,288，也不得用扫描已有 cache 目录来替代源数据选择。
+- 06G 存储充足时优先缓存官方规则产生的完整训练集合；若预计空间/时间无法接受，先向
+  当前服务器回传完整集合计数和成本，由当前服务器预注册确定性子采样规则后再构建，
+  禁止先看结果再选子集。
+- cache receipt 必须记录官方 config/source SHA、原始数据树 SHA、选择规则、seed、逐
+  session/token-set SHA、cache builder 列表、成功/失败 token 和最终 index SHA。只有
+  receipt 能从源数据重放得到同一 token hash，当前服务器才重建 Failure-Patch/Chronological
+  manifests 并解除 P002 阻塞。
 - 只在对齐后使用冻结 manifest 指定的训练 token；审计/测试 token 不得进入训练 cache。
 - 构建官方 training/metric cache，并对 token 集合、数量、重复和缺失做 SHA 审计。
 - 将 Failure-Patch-CL 与 Chronological-CL 映射到完整 log 原子边界。

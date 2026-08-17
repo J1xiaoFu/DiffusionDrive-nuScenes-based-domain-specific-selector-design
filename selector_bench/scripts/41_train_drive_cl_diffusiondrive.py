@@ -321,12 +321,14 @@ def main() -> None:
         update_ema_teacher_,
     )
     from selector_bench.continual.baselines import (
+        EWC_ESTIMATOR,
         EWCState,
         aler_adversarial_latent_search,
         aler_repair_loss,
         capture_gradient,
         nearest_manifold_distance,
         project_agem_gradient_,
+        preserve_module_buffers,
         set_gradient_,
         trainable_parameters,
     )
@@ -372,6 +374,10 @@ def main() -> None:
         expected_source = sha256_file(args.source_checkpoint)
         if fisher_payload.get("source_checkpoint_sha256") != expected_source:
             raise RunnerError("EWC Fisher was not computed from this stage-start checkpoint")
+        if fisher_payload.get("estimator") != EWC_ESTIMATOR:
+            raise RunnerError(
+                "EWC artifact is not the required per-example loss-gradient second moment"
+            )
         ewc_state = EWCState.from_model_and_fisher(
             agent,
             fisher_payload["fisher"],
@@ -634,12 +640,13 @@ def main() -> None:
                 torch.cuda.manual_seed_all(replay_seed)
                 replay_features = move_to_device(replay_features, device)
                 replay_targets = move_to_device(replay_targets, device)
-                replay_predictions = agent.forward(replay_features, replay_targets)
-                replay_terms = agent.compute_loss(
-                    replay_features, replay_targets, replay_predictions
-                )
-                reference_loss = replay_terms["loss"]
-                reference_loss.backward()
+                with preserve_module_buffers(agent):
+                    replay_predictions = agent.forward(replay_features, replay_targets)
+                    replay_terms = agent.compute_loss(
+                        replay_features, replay_targets, replay_predictions
+                    )
+                    reference_loss = replay_terms["loss"]
+                    reference_loss.backward()
                 reference_gradient = capture_gradient(parameters)
                 set_gradient_(parameters, current_gradient)
                 del current_gradient
