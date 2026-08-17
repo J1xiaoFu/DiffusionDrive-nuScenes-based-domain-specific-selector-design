@@ -119,6 +119,30 @@ replay.** Fresh context-free exact-RC blind review remains pending. Dataset prov
 session-atomic CL manifest, cache, real-model preflight, T0, model, GPU, training, evaluation and
 performance claims remain stopped.
 
+## Exact-RC context-free review freeze
+
+- review ID: `P001-DRIVE-OPD-P0-RC-EXACT`
+- target: `7edaaa05c199174e5b7d5f0cf46e45f50cd7e9f4`, parent
+  `d1cee1916f8f2329b4e3f3a1140e79e5d22c124e`, tree
+  `0e6e9a0adda280765ce41ab377de9bbbaea0cff1`
+- required reviewer: a newly created context-free task using `gpt-5.6-sol` at `xhigh`, with no
+  parent conversation or preloaded prior-review conclusion
+- immutable inputs: the public source commit `02e2784cb39cd636af6f582c2ff3f72d9274c58f`,
+  final receipt commit `d1665712535e101c948bec2bb7f7c21e64fe1f36`, 37-file bundle SHA256
+  `ee681bf3cdb0cc2dfd198f860ce927971d738904250daacb2d8cfbf47349de93` and 06G destination
+  receipt SHA256 `89503b3763e31a8383fe02bb6746783344b474a2cd8e11108730466fdef045e5`
+- required review: independent code-first audit, all twelve historical required-fix dispositions,
+  isolated five-suite and P0-harness replay, new adversarial bypass attempts, exact source/receipt
+  hash replay and explicit P0/P1/P2 findings
+- pass boundary: no open P0 and independent closure of every source/CPU-testable historical P0;
+  all P1/P2 items must be dispositioned, and the unopened real-adapter/data/model gates must remain
+  explicit
+
+Decision: **FROZEN, NOT STARTED.** No review task was created by this freeze. Even a future PASS can
+clear only the fresh context-free exact-RC review gate; dataset provenance/adapter, session-atomic CL
+manifest, cache, real-model preflight, T0, model, GPU, training, evaluation and performance claims
+remain stopped pending separate controller decisions and receipts.
+
 ## 06G R1 session-integrity intake
 
 - remote audit commit: `af9213b216b0260b184d3d3ae109a4ed1bed70b8`, parent

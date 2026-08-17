@@ -1,0 +1,194 @@
+{
+  "schema": "drive_opd.context_free_exact_rc_review.v1",
+  "review_id": "P001-DRIVE-OPD-P0-RC-EXACT",
+  "created_at": "2026-08-17",
+  "status": "FROZEN_NOT_STARTED",
+  "reviewer_contract": {
+    "model": "gpt-5.6-sol",
+    "reasoning_effort": "xhigh",
+    "new_task_required": true,
+    "forked_parent_turns": 0,
+    "parent_conversation_access_forbidden": true,
+    "read_only": true,
+    "network_use": "immutable_fetch_verification_only"
+  },
+  "target": {
+    "branch_label": "codex/iclr2027-drive-opd-07g-p0-rc",
+    "commit": "7edaaa05c199174e5b7d5f0cf46e45f50cd7e9f4",
+    "parent": "d1cee1916f8f2329b4e3f3a1140e79e5d22c124e",
+    "parent_count": 1,
+    "tree": "0e6e9a0adda280765ce41ab377de9bbbaea0cff1",
+    "commit_count_from_parent": 1,
+    "changed_path_count": 34
+  },
+  "publication": {
+    "repository": "J1xiaoFu/DiffusionDrive-nuScenes-based-domain-specific-selector-design",
+    "branch": "codex/iclr2027-dual-server-dispatch-publication",
+    "source_commit": "02e2784cb39cd636af6f582c2ff3f72d9274c58f",
+    "source_parent": "94a30b148e3a7c6fe1ecdd2f8ce493ab8440946b",
+    "source_tree": "b95c40170c29c8408cc258ea22a173d2167d8a66",
+    "final_receipt_commit": "d1665712535e101c948bec2bb7f7c21e64fe1f36",
+    "final_receipt_parent": "02e2784cb39cd636af6f582c2ff3f72d9274c58f",
+    "final_receipt_tree": "7ba0facb01a1dc7f4354d32964127a252f5dc2c2",
+    "enclosing_review_freeze_commit": "BOUND_EXTERNALLY_BY_PUBLISHED_GIT_COMMIT"
+  },
+  "source_bundle": {
+    "transfer_manifest_path": "controller_receipts/dual_server_dispatch_20260817/07g_p0_rc_transfer_manifest.json",
+    "transfer_manifest_sha256": "70b9f99bc96633a6be9a9437b106e48dc1d8effdac55fbc8439869c3dbc2ed78",
+    "canonical_algorithm_source_path": "selector_bench/scripts/51_freeze_drive_opd_06g_transfer.py",
+    "canonical_algorithm_source_sha256": "846e28eaa8a4aeaa2d4cb13de2626f3bca10275eedb6fe07f25fd081960019bc",
+    "file_count": 37,
+    "logical_bundle_sha256": "ee681bf3cdb0cc2dfd198f860ce927971d738904250daacb2d8cfbf47349de93",
+    "verification_requirement": "verify every declared path hash and recompute the canonical logical bundle"
+  },
+  "controller_evidence": {
+    "exact_rc_acceptance_commit": "4e5822bc68744d0bfecbb620a04fea4e63315c7b",
+    "source_publication_controller_commit": "51efea76cc4eb099c7e9fb6a1d18c58026eef5fd",
+    "destination_replay_controller_commit": "a87ed9058825f4a0d7a7d9ae4784d884aa6defa6",
+    "destination_replay_receipt_path": "controller_receipts/dual_server_dispatch_20260817/06g_p0_rc_destination_replay.json",
+    "destination_replay_receipt_sha256": "89503b3763e31a8383fe02bb6746783344b474a2cd8e11108730466fdef045e5",
+    "destination_replay_audit_commit": "7bcfbf5f173cc567228904bc76413c508194dfe7"
+  },
+  "exact_rc_review_materials": {
+    "paper_iterations/P001_scheduler_session_contract/POST_REVIEW_INTERNAL_AUDIT.md": "cc56e1a2bd041fd07a644c6d49b3bd002de61bfb203a5e5c388d53f5d82c1506",
+    "paper_iterations/P001_scheduler_session_contract/P0_ACCEPTANCE_REPAIR_RESPONSE.md": "265e2223b46e67dbb5ffda3d62eb47003689a04a501b02a9b4bac67c4481ea9e",
+    "paper_iterations/P001_scheduler_session_contract/ROUND_MANIFEST.json": "9de6d3da2270cc1f7dbb371994c5e57a610486f89df5293b10ba84f4708f863c",
+    "paper_iterations/P001_scheduler_session_contract/AUDIT_INDEX.md": "a7af305dbcdab995709492d168bd2bf6593089b0f41fa244287a76e9e63e9897",
+    "paper_iterations/P001_scheduler_session_contract/artifacts/p0_acceptance_repair_final/claim_protocol_audit.json": "7aaa90d901872bacef77d35a0a3eed9b8ac85fda7fc115d9a3061193cb3920c9",
+    "paper_iterations/P001_scheduler_session_contract/artifacts/p0_acceptance_repair_final/p0_attack_audit.json": "bd414ac17797506ce1cbdcbc8c9f6f1dc24c426847b531cf85d07726a8f3ea1d"
+  },
+  "review_phases": [
+    {
+      "phase": 1,
+      "name": "independent_code_audit",
+      "constraint": "record candidate findings before reading author response or prior internal audit"
+    },
+    {
+      "phase": 2,
+      "name": "historical_required_fix_disposition",
+      "constraint": "audit all twelve required fixes against exact code and adversarial evidence"
+    }
+  ],
+  "mandatory_audits": [
+    "exact_commit_parent_tree_and_one_commit_identity",
+    "public_source_and_final_receipt_identity",
+    "all_37_source_path_hashes_and_logical_bundle",
+    "destination_replay_receipt_hash_and_scope_boundary",
+    "unique_immutable_run_identity_and_rerun_rejection",
+    "checkpoint_evaluator_csv_lineage",
+    "semantic_and_evidence_identity_deduplication",
+    "method_and_metric_registry_binding",
+    "domain_derivation_stage_chronology_and_leakage_resistance",
+    "seed_design_crossed_comparison_family_and_multiplicity",
+    "claim_root_filename_and_order_invariance",
+    "runtime_neutrality_loss_teacher_query_and_optimizer_budgets",
+    "independent_bypass_attempts_beyond_shipped_fixtures",
+    "all_twelve_historical_required_fix_dispositions"
+  ],
+  "cpu_replay": {
+    "cuda_visible_devices": "",
+    "python_dont_write_bytecode": "1",
+    "pytest_cache_provider_disabled": true,
+    "test_paths": [
+      "selector_bench/tests/test_navsim_continual_protocol.py",
+      "selector_bench/tests/test_drive_opd_losses.py",
+      "selector_bench/tests/test_drive_cl_baselines.py",
+      "selector_bench/tests/test_drive_cl_statistics.py",
+      "selector_bench/tests/test_drive_cl_claim_protocol.py"
+    ],
+    "p0_harness": "selector_bench/scripts/57_audit_drive_cl_p0_attacks.py",
+    "required_recordings": [
+      "interpreter_identity",
+      "exact_commands",
+      "exit_codes",
+      "pass_fail_and_mutation_counts",
+      "elapsed_time",
+      "stdout_stderr_and_audit_json_sha256",
+      "claim_output_absence_before_each_mutation_assertion",
+      "positive_fixture_result"
+    ]
+  },
+  "historical_required_fixes": [
+    "unique_immutable_run_identity_and_rerun_reuse_prevention",
+    "evaluator_receipt_binding_checkpoint_through_evaluation_output",
+    "rejection_of_reused_evidence",
+    "method_registry_binding_to_experiment_arm",
+    "evaluator_derived_domain_identity",
+    "confirmatory_verification_of_frozen_family",
+    "claim_root_selection_independent_of_filename_suffix",
+    "semantic_and_evidence_identity_deduplication",
+    "chronology_binding",
+    "confirmatory_seed_power_and_calibration_design",
+    "complete_distillation_loss_and_budget_audit_with_real_adapter_gate_closed",
+    "unambiguous_round_status_and_evidence_boundary"
+  ],
+  "finding_levels": {
+    "P0": "executable claim-integrity bypass, substitution, leakage, invalid promotion, unfair comparison or false gate promotion",
+    "P1": "material defect blocking the next data or adapter gate while current execution gates remain closed",
+    "P2": "bounded maintainability, clarity or defense-in-depth issue without a current claim consequence"
+  },
+  "pass_criteria": [
+    "no_open_p0",
+    "all_source_or_cpu_testable_historical_p0_items_independently_closed",
+    "immutable_identity_and_hash_replay_passed",
+    "five_suite_and_p0_harness_replay_passed",
+    "all_p1_and_p2_findings_explicitly_dispositioned",
+    "non_executed_gate_boundary_preserved"
+  ],
+  "required_outputs": {
+    "markdown_review": true,
+    "json_receipt": true,
+    "json_receipt_required_fields": [
+      "schema",
+      "review_id",
+      "reviewer_task_id",
+      "model",
+      "reasoning_effort",
+      "target_commit",
+      "target_parent",
+      "target_tree",
+      "publication_commit",
+      "verified_hashes",
+      "environment",
+      "commands",
+      "test_results",
+      "p0_harness_results",
+      "independent_attack_results",
+      "historical_required_fix_dispositions",
+      "findings",
+      "score_1_to_10",
+      "confidence_1_to_5",
+      "verdict",
+      "gate_decisions"
+    ],
+    "verdict_values": [
+      "PASS",
+      "FAIL"
+    ]
+  },
+  "gate_boundary": {
+    "fresh_context_free_exact_rc_review": "PENDING",
+    "dataset_provenance_adapter": "STOPPED",
+    "session_atomic_cl_manifest": "STOPPED",
+    "cache": "STOPPED",
+    "real_model_preflight": "STOPPED",
+    "t0": "STOPPED",
+    "model": "STOPPED",
+    "gpu": "STOPPED",
+    "training": "STOPPED",
+    "evaluation": "STOPPED",
+    "performance_claim": "STOPPED",
+    "pass_effect": "clear only fresh_context_free_exact_rc_review for a later controller decision"
+  },
+  "mutation_boundary": {
+    "tracked_source_write": false,
+    "commit": false,
+    "push": false,
+    "branch_or_ref_move": false,
+    "merge_or_rebase": false,
+    "cache_read_or_build": false,
+    "real_model_import": false,
+    "gpu_or_cuda_action": false,
+    "isolated_temporary_test_files_allowed": true
+  }
+}
