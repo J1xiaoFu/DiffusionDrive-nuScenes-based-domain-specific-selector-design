@@ -14,6 +14,24 @@ stage manifest, T0, real-model preflight, GPU training, evaluation, or paper-per
 - dispatch parent: `3b6523de2f06f912e6e7834a0a5ce4166864f544`
 - publication status: local only; HTTPS push failed because GitHub credentials were unavailable
 
+## Jump-host publication
+
+- publication repository: `J1xiaoFu/DiffusionDrive-nuScenes-based-domain-specific-selector-design`
+- publication branch: `codex/iclr2027-dual-server-dispatch-publication`
+- first publication commit: `d3be2e8e7eda17f8c9afade2de5da4aa26f559f9`
+- parent: `90e5314d92fc127e65d2d8207569ee5c08a899b3`
+- tree: `bf57f039fbece5f49e067c185cecfd185874e3db`
+- transport: authenticated GitHub application acting as the local jump host; no `gh` installation
+  or GitHub credential was placed on 07G or 06G
+- content check: all 14 published Git blob SHAs matched the selected files from local controller
+  commit `0fd2b0aae9ab26d3a2bc99c965539f67666f784e`
+- 06G reachability: explicit HTTPS fetch succeeded; commit/parent/tree matched, the five declared
+  receipt payload hashes replayed, and both published 06G snapshots were byte-identical to the 06G
+  local duty/goal files
+
+This is a dispatch/receipt publication snapshot. It deliberately excludes the rejected/unreleased
+`9dabf423` claim-protocol source and cannot serve as a source/transfer execution authorization.
+
 ## 07G receipt
 
 - branch: `codex/iclr2027-drive-opd-07g-research`

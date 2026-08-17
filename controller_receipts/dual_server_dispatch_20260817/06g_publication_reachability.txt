@@ -1,0 +1,38 @@
+06G_DISPATCH_PUBLICATION_REACHABILITY_AUDIT_PASS
+
+exact_fetch_command:
+GIT_TERMINAL_PROMPT=0 git fetch --no-tags --no-recurse-submodules https://github.com/J1xiaoFu/DiffusionDrive-nuScenes-based-domain-specific-selector-design.git refs/heads/codex/iclr2027-dual-server-dispatch-publication
+
+fetch_exit=0
+publication_commit=d3be2e8e7eda17f8c9afade2de5da4aa26f559f9
+parent=90e5314d92fc127e65d2d8207569ee5c08a899b3
+tree=bf57f039fbece5f49e067c185cecfd185874e3db
+receipt_git_tree=ea719e241282d8768dcbb2748b23eed6eaa1ea83
+
+ICLR2027_DUAL_SERVER_EXECUTION_PLAN_20260817.md_sha256=f6f0b05f8448fcb82fac840e07317e9f6f23321c7b01c69d636c4d66da601f22
+controller_receipts/dual_server_dispatch_20260817/SHA256SUMS_sha256=26e90f2a797b672f7d692b6617d5a2016e3536f4a1d34155950c9596a3a65c32
+receipt_snapshot_sha256=26e90f2a797b672f7d692b6617d5a2016e3536f4a1d34155950c9596a3a65c32
+receipt_directory_files=6 (5 payloads + SHA256SUMS)
+declared_payload_entries=5
+
+recomputed_payloads:
+PASS b11b30c60551aa850253cc5c6c6cdadfcce027d997f91f3189b0f0cdbf46e6cd AUDIT.md
+PASS f8a67700db491415e655c816bcb56e701053bf2042437b3c777cebc4391039d8 07g_relay.txt
+PASS 6492865e676c64bf65c31677cb8bd6cf0dfb8fcdaf46dfe3be4189eaf0c8c645 06g_relay.txt
+PASS 189b506905eef42ef361907a625bd7871f2e4920decdb959c1fcfcec15c87d7d 06g_AGENTS.snapshot.md
+PASS b47bb8e22ede30551cfce9e7a43a282e5f6d00c77f044c749723279a91356f8f 06g_EXECUTION_OBJECTIVE.snapshot.md
+
+byte_comparisons:
+PASS published 06g_AGENTS.snapshot.md == local AGENTS.md
+PASS published 06g_EXECUTION_OBJECTIVE.snapshot.md == local ICLR2027_06G_EXECUTION_OBJECTIVE.md
+
+local_branch=codex/iclr2027-diffusiondrive-06g
+local_HEAD=0c4fb7cbc4b4ecc4bc056027a011fa3bd1d29d27
+git_status_short=<empty>
+remote_config_unchanged=only origin=https://github.com/hustvl/DiffusionDrive.git
+refs_containing_publication_commit=<empty>; publication object is reachable only through FETCH_HEAD
+merge_checkout=NO
+gh_install_or_use=NO
+cache_T0_GPU=STOPPED
+
+decision=PASS only for public dispatch/receipt reachability and content integrity. This is not a 9dab/P0 source release and does not authorize cache, real-model preflight, T0, CL, GPU, evaluation, or claims.

@@ -210,6 +210,9 @@ manifest 和 receipt SHA；口头状态和 prefix SHA 不足以解锁。
 2026-08-17 职责回执：07G 文档提交
 `d1cee1916f8f2329b4e3f3a1140e79e5d22c124e` 已由 controller 本地独立核验；06G 文档
 提交 `0c4fb7cbc4b4ecc4bc056027a011fa3bd1d29d27` 已由 06G 任务回传，但 controller 主机
-无法解析 SSH host alias，因此尚未独立读取远端 Git object。审计边界与原始回执封存在
-`controller_receipts/dual_server_dispatch_20260817/`。该通过只确认职责文件已落地，不
-确认 source release、数据门、训练代码或执行授权。
+无法解析 SSH host alias，因此使用本机已认证 GitHub 应用发布独立协调快照分支
+`codex/iclr2027-dual-server-dispatch-publication`。首个 publication commit
+`d3be2e8e7eda17f8c9afade2de5da4aa26f559f9` 已由 06G 通过普通 HTTPS fetch 获取；其
+commit/parent/tree、receipt 5/5 哈希与两份 06G 文档逐字节比较全部通过。审计边界与原始
+回执封存在 `controller_receipts/dual_server_dispatch_20260817/`。该通过只确认职责文件与
+receipts 可达，不确认 9dab/P0 source release、数据门、训练代码或执行授权。
