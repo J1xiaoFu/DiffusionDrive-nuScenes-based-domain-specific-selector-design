@@ -1,0 +1,103 @@
+{
+  "schema": "selector_bench.drive_opd_seed0_funnel.v1",
+  "name": "drive_opd_native_cl_failure_patch_seed0",
+  "protocol_manifest": "/home/khwang/domain-selector/selector_bench/artifacts/drive_opd_native_cl_001/protocols_seed0/failure_patch_cl_v1/manifest.json",
+  "protocol_content_sha256": "60427d6d94d6d283c072d98b748eb2f5c40a31a61fbc69a86a7ab22b17db948b",
+  "seed": 0,
+  "final_test_policy": "sealed_until_method_configuration_is_frozen",
+  "optimizer": {
+    "name": "AdamW",
+    "learning_rate": 0.00015,
+    "minimum_learning_rate": 0.000001,
+    "schedule_epochs": 180,
+    "warmup_epochs": 5,
+    "batch_size": 64,
+    "stage_epochs": 30,
+    "one_optimizer_step_per_current_batch": true
+  },
+  "stage1": {
+    "arm": "sequential",
+    "initialization": "scratch",
+    "epochs": 30,
+    "required_audit_before_stage2": true
+  },
+  "seed0_arms": [
+    "sequential",
+    "planner_only",
+    "ewc",
+    "agem",
+    "step_matched_replay",
+    "full_exposure_replay",
+    "lwf",
+    "fixed_opd",
+    "ema099_opd",
+    "aler_drive",
+    "perception_only",
+    "planning_only"
+  ],
+  "distillation": {
+    "microbatch": 8,
+    "perception_weight": 1.0,
+    "planning_weight": 1.0,
+    "agent_confidence": 0.7,
+    "bev_confidence": 0.7,
+    "rollout_timesteps": [10, 0],
+    "matched_student_queries": 2,
+    "matched_teacher_queries": 2
+  },
+  "ewc": {
+    "old_log_buffer": 1024,
+    "fisher_batch_size": 16,
+    "fisher_batches": 64,
+    "lambda_audit_candidates": [1000.0, 10000.0, 100000.0],
+    "selection_split": "audit"
+  },
+  "agem": {
+    "old_log_buffer": 1024,
+    "reference_batch_size": 8
+  },
+  "aler_drive": {
+    "search_steps": 1,
+    "step_size": 0.05,
+    "radius": 0.1,
+    "gradient_floor": 0.000001,
+    "matched_teacher_queries": 2,
+    "required_diagnostics": [
+      "active_search_fraction",
+      "nearest_real_state_l2",
+      "real_log_degradation_prediction"
+    ]
+  },
+  "replay": {
+    "step_matched_fraction": 0.5,
+    "step_matched_total_current_stage_steps": true,
+    "full_exposure_uses_all_seen_training_tokens": true
+  },
+  "evaluation": {
+    "during_method_selection": "all_seen_audit_cells_after_each_stage",
+    "after_freeze": "all_stage_test_cells",
+    "metrics": [
+      "score",
+      "no_at_fault_collisions",
+      "drivable_area_compliance",
+      "time_to_collision_within_bound",
+      "comfort",
+      "ego_progress"
+    ],
+    "cluster_unit": "complete_log",
+    "bootstrap_repetitions": 10000,
+    "confidence_interval": 0.95
+  },
+  "promotion_gate": {
+    "drive_opd_beats_sequential_on_at_least_two_conflict_transitions": true,
+    "drive_opd_beats_lwf_and_aler_on_high_support_shift_subset": true,
+    "chronological_positive_transfer_is_not_suppressed": true,
+    "confidence_intervals_required": true
+  },
+  "not_yet_in_this_runner": [
+    "DER++-Drive stored-response cache",
+    "LoRA-SFT and O-LoRA-Drive PEFT table",
+    "TALR-Scene diagnostic",
+    "GoalFlow Flow-Matching replication"
+  ]
+}

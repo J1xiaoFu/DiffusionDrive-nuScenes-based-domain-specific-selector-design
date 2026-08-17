@@ -1,0 +1,70 @@
+{
+  "schema": "selector_bench.drive_opd_cross_host_migration.v1",
+  "created_at": "2026-08-17",
+  "source_host": "07Gkhwang",
+  "destination_host": "06G",
+  "destination_project": "AutoDrive",
+  "destination_thread_id": "01a00e84-1f10-7331-ac52-fbc0c5d75a5a",
+  "base_commit": "fb57a0ada48addf353857f563e584793e3da26ec",
+  "transfer_mode": "source_only_git_branch",
+  "weights_remain_on_origin_host": true,
+  "optimizer_states_remain_on_origin_host": true,
+  "initial_arms": [
+    "sequential",
+    "lwf",
+    "fixed_opd",
+    "ema099_opd"
+  ],
+  "optimizer_contract": {
+    "optimizer": "AdamW",
+    "joint_official_and_distillation_loss": true,
+    "forward_backward_per_step": 1,
+    "optimizer_updates_per_step": 1,
+    "teacher_stop_gradient": true
+  },
+  "preflight_gates": [
+    "resolve_whether_navtrain_means_NAVSIM_navtrain_or_nuScenes_train_split",
+    "record_remote_code_commit_and_dataset_roots",
+    "record_gpu_uuid_inventory_without_interrupting_other_users",
+    "one_batch_official_loss_equivalence",
+    "identical_fixed_teacher_student_distillation_near_zero",
+    "matched_lwf_and_opd_teacher_query_budget",
+    "one_step_checkpoint_resume_with_optimizer_state"
+  ],
+  "source_files": {
+    "selector_bench/selector_bench/continual/__init__.py": "501e4ecb5e575a4bb7f78e4f65403bb58e00b48f6efc0430094ab8592f5331bf",
+    "selector_bench/selector_bench/continual/navsim_protocol.py": "4134a00b29cb3328fffc73e2eef498915253cb3ea30feb2cdd8b01a61e5a1e5f",
+    "selector_bench/selector_bench/continual/drive_opd.py": "1f161c0db7316b54de55a776472a3bb0bbc4c7cd897c314e401ba9e87f0ff750",
+    "selector_bench/selector_bench/continual/baselines.py": "e8fc9341b1e684dd3456e6d4459fddd9b82f944a8b7e67ff5fd6677c0d731ea8",
+    "selector_bench/selector_bench/continual/statistics.py": "1ea10389b11a6a07695e478d75235d0d0d38bc8539d89ff7538a50f2ebaaa8da",
+    "selector_bench/scripts/40_build_drive_cl_protocol.py": "9797565c427d2ec35fb72d89e2d435f1f8bc3a8e5ad857b95c227350644ab916",
+    "selector_bench/scripts/41_train_drive_cl_diffusiondrive.py": "17356d176acf63864101e699daa028cfd1ee1550c7206c261e2c01cfec84582b",
+    "selector_bench/scripts/42_export_drive_cl_eval_tokens.py": "5ab37e8d383ff96281129a1845cedb4ae958b3233e7775edd7588c9ab01757d3",
+    "selector_bench/scripts/43_audit_diffusiondrive_context_swap.py": "b085841a48cffd93b2cf5dccb594efe352eaf3d20d0de4f52488d2d623a6eb5b",
+    "selector_bench/scripts/44_compute_drive_cl_fisher.py": "ca6947b4ee4f588f701791d735160247f9f36671fbe0c850610c30d5e64a5812",
+    "selector_bench/scripts/45_summarize_drive_cl_pdm.py": "63ecc235ee208f6e8ade8c15d09842203908857f997f7f9d341ae4ba126a517c",
+    "selector_bench/configs/drive_opd_native_cl_failure_patch_seed0_v1.json": "3f2010d3d4711cc9862d294b59947fb3aa4a98e959f8dbf80d0e8a4054f986ac",
+    "selector_bench/tests/test_drive_cl_baselines.py": "369e9412a66d21b2a4b4c25513adf0b7e27b38152e3c05b862ab602b1f9744a8",
+    "selector_bench/tests/test_drive_cl_statistics.py": "67c8a076de8acdde05b1648afe26918355c388646fd48279813e026232533463",
+    "selector_bench/tests/test_drive_opd_losses.py": "c5f8165ff629d01242fbbdc5c20dacb92f8164662242673f17af6fb5637bb165",
+    "selector_bench/tests/test_navsim_continual_protocol.py": "eb5201a8d45d46469fa9ec84dc7b95231942285f6483f6686e7b635b0a7a01bf"
+  },
+  "remote_result_contract": {
+    "sync_back": [
+      "environment_inventory.json",
+      "experiment_manifest.json",
+      "checkpoint_sha256.json",
+      "steps.jsonl",
+      "epochs.jsonl",
+      "evaluation.csv",
+      "summary.json",
+      "plots"
+    ],
+    "do_not_sync_back": [
+      "model_weights",
+      "optimizer_states",
+      "dataset",
+      "feature_cache"
+    ]
+  }
+}
