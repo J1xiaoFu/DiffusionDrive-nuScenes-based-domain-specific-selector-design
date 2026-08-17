@@ -1,0 +1,160 @@
+{
+  "schema": "drive_opd.forward_only_rc2_authorization.v1",
+  "recorded_at": "2026-08-17",
+  "status": "AUTHORIZED_SOURCE_CPU_REPAIR_ONLY",
+  "authority": {
+    "controller_branch": "codex/iclr2027-dual-server-controller",
+    "controller_commit": "BOUND_BY_ENCLOSING_GIT_COMMIT",
+    "authorization_is_execution_unlock": false
+  },
+  "immutable_rc1": {
+    "branch": "codex/iclr2027-drive-opd-07g-p0-rc",
+    "commit": "7edaaa05c199174e5b7d5f0cf46e45f50cd7e9f4",
+    "parent": "d1cee1916f8f2329b4e3f3a1140e79e5d22c124e",
+    "tree": "0e6e9a0adda280765ce41ab377de9bbbaea0cff1",
+    "changed_path_count": 34,
+    "mutation_forbidden": true
+  },
+  "destination": {
+    "branch": "codex/iclr2027-drive-opd-07g-p0-rc2",
+    "worktree": "/home/khwang/domain-selector-p0-rc2",
+    "base_commit": "7edaaa05c199174e5b7d5f0cf46e45f50cd7e9f4",
+    "required_commit_count_from_base": 1,
+    "merge_commit_allowed": false,
+    "required_parent": "7edaaa05c199174e5b7d5f0cf46e45f50cd7e9f4",
+    "required_clean_final_status": true
+  },
+  "repair_scope": {
+    "p0": [
+      {
+        "id": "RC1-P0-01",
+        "name": "authoritative_final_test_chronology",
+        "requirements": [
+          "family_declares_canonical_access_ledger_path",
+          "family_commit_contains_empty_ledger",
+          "access_commit_contains_one_unique_bound_event",
+          "event_sequence_derived_from_canonical_ledger_position",
+          "family_commit_is_ancestor_of_access_commit",
+          "strict_utc_family_commit_time_lte_authorized_at_lte_access_commit_time_lte_evaluator_start",
+          "family_spec_path_hash_ledger_path_hash_event_cell_protocol_and_domain_bound",
+          "self_asserted_count_and_noncanonical_path_rejected"
+        ],
+        "required_negative_fixtures": [
+          "authorization_year_1900",
+          "authorization_after_access_or_evaluator_start",
+          "nonempty_family_freeze_ledger",
+          "duplicate_access_event",
+          "wrong_ledger_path_or_family",
+          "asserted_count_substitution"
+        ]
+      },
+      {
+        "id": "RC1-P0-02",
+        "name": "measured_production_budget",
+        "requirements": [
+          "dataset_returns_stable_cache_token_identity",
+          "main_batch_current_and_old_presentations_measured",
+          "main_batch_unique_identities_measured",
+          "agem_replay_presentations_and_identities_measured",
+          "observed_budget_never_copies_or_spreads_target_budget",
+          "promotion_requires_measured_target_equality",
+          "partial_or_max_steps_run_remains_incomplete"
+        ],
+        "required_cpu_fixtures": [
+          "complete_run",
+          "partial_max_steps_run",
+          "step_matched_replay",
+          "full_replay",
+          "agem_replay",
+          "loader_delivery_target_mismatch_rejected"
+        ]
+      },
+      {
+        "id": "RC1-P0-03",
+        "name": "executable_seed_design_replay",
+        "requirements": [
+          "one_deterministic_importable_pure_module",
+          "generator_and_validator_share_computation",
+          "pilot_matrix_content_and_hash_bound",
+          "normalized_inputs_seed_repetitions_effects_and_calibration_bound",
+          "program_source_path_and_computed_hash_bound",
+          "normalized_invocation_bound",
+          "critical_values_metric_power_and_heldout_fwer_exactly_replayed",
+          "positive_fixture_invokes_generator"
+        ],
+        "required_negative_fixtures": [
+          "handwritten_output",
+          "altered_seed_or_repetitions",
+          "altered_effect_or_pilot",
+          "altered_program_path_hash_or_invocation",
+          "altered_critical_value_power_or_fwer"
+        ]
+      }
+    ],
+    "p1": [
+      "aler_search_and_repair_measured_by_capture_query_audit_before_optimizer_step",
+      "common_baseline_shared_cells_allow_unique_comparisons_and_projected_coordinates",
+      "transient_storage_defined_and_measured",
+      "new_chronology_and_seed_bypasses_added_to_named_p0_harness"
+    ]
+  },
+  "authorized_actions": [
+    "create_separate_branch_and_worktree_from_exact_rc1",
+    "edit_source_config_tests_and_paper_audit_response_for_scoped_repairs",
+    "run_static_checks_and_synthetic_cpu_tests_with_cuda_hidden",
+    "expand_p0_attack_harness",
+    "generate_temporary_cpu_audit_outputs",
+    "create_one_auditable_rc2_commit",
+    "report_exact_identity_paths_hashes_commands_and_results"
+  ],
+  "prohibited_actions": [
+    "move_or_modify_existing_rc1_research_recovery_or_controller_refs",
+    "merge_rebase_amend_reset_force_push_delete_or_history_rewrite",
+    "publication_push_review_task_creation_controller_promotion_or_06g_dispatch",
+    "navsim_or_raw_data_read",
+    "cache_read_or_build",
+    "dataset_adapter_execution",
+    "real_model_import_or_preflight",
+    "t0_gpu_cuda_training_evaluation_or_performance_claim",
+    "official_population_partition_change_or_final_test_unseal"
+  ],
+  "test_environment": {
+    "cuda_visible_devices": "",
+    "python_dont_write_bytecode": "1",
+    "pytest_cache_provider_disabled": true,
+    "temporary_git_fixtures_allowed": true,
+    "scratch_outputs_outside_repository": true
+  },
+  "required_rc2_report": [
+    "commit_parent_tree_and_one_commit_identity",
+    "clean_status",
+    "exact_changed_path_and_blob_inventory",
+    "path_sha256_inventory",
+    "static_check_commands_and_hashes",
+    "frozen_five_suite_cpu_replay",
+    "expanded_p0_harness_and_individual_mutation_receipts",
+    "artifact_boundary_attestation"
+  ],
+  "subsequent_controller_only_actions": [
+    "exact_rc2_intake_and_acceptance_decision",
+    "source_and_receipt_publication",
+    "new_context_free_gpt_5_6_sol_xhigh_exact_rc2_review",
+    "isolated_06g_source_cpu_replay"
+  ],
+  "gate_boundary": {
+    "rc2_source_cpu_repair": "AUTHORIZED",
+    "rc2_publication": "STOPPED_PENDING_CONTROLLER_INTAKE",
+    "fresh_context_free_exact_rc2_xhigh_review": "STOPPED_PENDING_CONTROLLER_FREEZE",
+    "destination_replay": "STOPPED_PENDING_REVIEW_AND_PUBLICATION",
+    "dataset_provenance_adapter": "STOPPED",
+    "session_atomic_cl_manifest": "STOPPED",
+    "cache": "STOPPED",
+    "real_model_preflight": "STOPPED",
+    "t0": "STOPPED",
+    "model": "STOPPED",
+    "gpu": "STOPPED",
+    "training": "STOPPED",
+    "evaluation": "STOPPED",
+    "performance_claim": "STOPPED"
+  }
+}

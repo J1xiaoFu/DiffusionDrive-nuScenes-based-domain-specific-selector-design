@@ -173,6 +173,28 @@ authorization, forward-only repair and a new exact-RC xhigh review. Dataset prov
 session-atomic CL manifest, cache, real-model preflight, T0, model, GPU, training, evaluation and
 performance claims remain stopped.
 
+## RC2 forward-only source/CPU authorization
+
+- immutable base: exact RC1 `7edaaa05c199174e5b7d5f0cf46e45f50cd7e9f4`, parent
+  `d1cee1916f8f2329b4e3f3a1140e79e5d22c124e`, tree
+  `0e6e9a0adda280765ce41ab377de9bbbaea0cff1`
+- authorized destination: new branch `codex/iclr2027-drive-opd-07g-p0-rc2` in new worktree
+  `/home/khwang/domain-selector-p0-rc2`, with exactly one non-merge commit whose parent is RC1
+- P0 closure: authoritative ledger-backed final-test chronology and real Git time ordering; measured
+  per-batch production and A-GEM budgets with stable identities; executable deterministic seed-design
+  replay bound to pilot inputs, program source, invocation and exact normalized results
+- included P1: measured ALER query counts, shared-cell/common-baseline family handling, measured
+  transient storage and adversarial chronology/seed harness coverage
+- authorized activity: source/config/test/paper-response edits, static checks, synthetic temporary-Git
+  fixtures, CPU tests with CUDA hidden, one auditable RC2 commit and a complete identity/hash receipt
+- immutable boundary: RC1, research, recovery and controller refs may not move; no merge/rebase/amend,
+  reset, force-push, publication, review dispatch or 06G dispatch is authorized
+
+Decision: **AUTHORIZED FOR RC2 SOURCE/CPU REPAIR ONLY.** RC2 publication, exact-RC2 xhigh review and
+06G isolated replay remain controller-held future decisions. Dataset/raw-data access, session-atomic
+CL manifests, cache, real-model preflight, T0, model, CUDA/GPU, training, evaluation and performance
+claims remain stopped.
+
 ## 06G R1 session-integrity intake
 
 - remote audit commit: `af9213b216b0260b184d3d3ae109a4ed1bed70b8`, parent
