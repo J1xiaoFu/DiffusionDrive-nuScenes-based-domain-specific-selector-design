@@ -39,6 +39,16 @@ stage manifest, T0, real-model preflight, GPU training, evaluation, or paper-per
   tree `35bb05a80290b2de5df0b79523fb34a1583cf710`; all three Git blob IDs matched the local
   controller files from `2274ec96f1a04b7b9d5f160d4cc541239c8f4927`, and the published manifest replayed
   the audit and intake SHA256 values
+- final publication-receipt commit: `1a5ddf47acfb8150ab28247ac7cbe26a30bb9ae1`, parent
+  `4c42746002fe05cae78525e1e2ab5c8496504de4`, tree
+  `afaba2d606a80694a71d393b74568b30b0546458`; 06G independently fetched it over ordinary
+  HTTPS, matched its exact three-path diff and Git blobs, then replayed the published `SHA256SUMS`
+  set 9/9 in isolation
+- 06G preserved its source/origin and recorded that replay in one audit-only commit
+  `eb3cc6d0fbe8fa46daab5c9e1aed41abd49f7414`, parent
+  `af9213b216b0260b184d3d3ae109a4ed1bed70b8`, tree
+  `9484997b5f185d4586a70f6d2d454b075633ad3e`; its sole receipt JSON has SHA256
+  `31c356dd13305952b3d34be16263bfcf7c716ef6e629d9d8f03e141b6fdb8cbb`
 
 This is a dispatch/receipt publication snapshot. It deliberately excludes the rejected/unreleased
 `9dabf423` claim-protocol source and cannot serve as a source/transfer execution authorization.

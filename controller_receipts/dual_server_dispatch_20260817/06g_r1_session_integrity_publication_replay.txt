@@ -1,0 +1,49 @@
+06G R1 SESSION-INTEGRITY PUBLICATION REPLAY RECEIPT
+
+Decision: PASS, limited to publication reachability and byte identity. No execution gate is unlocked.
+
+Published source:
+- repository: https://github.com/J1xiaoFu/DiffusionDrive-nuScenes-based-domain-specific-selector-design.git
+- branch: codex/iclr2027-dual-server-dispatch-publication
+- commit: 1a5ddf47acfb8150ab28247ac7cbe26a30bb9ae1
+- parent: 4c42746002fe05cae78525e1e2ab5c8496504de4
+- tree: afaba2d606a80694a71d393b74568b30b0546458
+- fetch: ordinary HTTPS to FETCH_HEAD; no checkout, merge, rebase or remote change
+
+Exact changed-path replay:
+- controller_receipts/dual_server_dispatch_20260817/06g_r1_session_integrity_publication.txt
+  Git blob: 7cddca55fb868ae8c9692e17195d7dfdd12f9e4e
+  SHA256: 73fcf3e7037a059230a27ee6f3ae3dc78ccea4e6fc3f9194bb3b60bbd3678256
+- controller_receipts/dual_server_dispatch_20260817/AUDIT.md
+  Git blob: e0ad332e427d5a3a2825da43e91932f9e4d6052b
+  SHA256: f32f3f05b44388ea908ef2a92c83df522aa8d83d2aca2527d9a6dd1cc65d0431
+- controller_receipts/dual_server_dispatch_20260817/SHA256SUMS
+  Git blob: 203da2b92473d898f46c25c4f54af82719c293fa
+  SHA256: c781c76286140fe0621bfb4ec82876819c177561fcf7d715b47805ac1bc4cc90
+
+Independent 06G replay:
+- isolated extraction: /tmp/06g-r1-publication-replay.ETHd7y
+- sha256sum -c SHA256SUMS: PASS 9/9
+- publication receipt SHA256: 73fcf3e7037a059230a27ee6f3ae3dc78ccea4e6fc3f9194bb3b60bbd3678256
+- intake SHA256: 1d08dadb6dcde901b3dfd6c65c31f80460c77326aaa30423fdf040d02c315a58
+
+06G audit-only commit:
+- branch: codex/iclr2027-diffusiondrive-06g
+- parent: af9213b216b0260b184d3d3ae109a4ed1bed70b8
+- commit: eb3cc6d0fbe8fa46daab5c9e1aed41abd49f7414
+- tree: 9484997b5f185d4586a70f6d2d454b075633ad3e
+- exact changed path: reports/r1_session_integrity_publication_replay_1a5ddf47_20260817/receipt.json
+- receipt Git blob: d7053b36fc358bd38b80fd82b3c8fad22d5cbd4e
+- receipt SHA256: 31c356dd13305952b3d34be16263bfcf7c716ef6e629d9d8f03e141b6fdb8cbb
+- full-index diff SHA256: 43769eedbd4636c21643ed199b3d610940ffc12c8b944aa5ea70283dd5e91ecb
+- python3 -m json.tool: PASS
+- git show --check: PASS
+- post-commit status: clean
+- origin: https://github.com/hustvl/DiffusionDrive.git (unchanged)
+- publication FETCH_HEAD: 1a5ddf47acfb8150ab28247ac7cbe26a30bb9ae1
+
+Evidence boundary:
+This receipt proves only controller publication reachability, exact Git-object/content identity and the
+previously accepted limited R1 session-atomic representability. It does not freeze a CL manifest and
+does not authorize cache construction, real-model preflight, T0, model/GPU work, training, evaluation
+or a paper-performance claim.
