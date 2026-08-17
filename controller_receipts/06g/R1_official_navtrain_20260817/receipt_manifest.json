@@ -1,0 +1,43 @@
+{
+  "schema": "drive_opd.controller_remote_receipt.v1",
+  "server": "06G",
+  "milestone": "R1_official_navtrain_source_population",
+  "decision": "PASS_LIMITED_SOURCE_POPULATION_AND_OFFICIAL_TRAIN_VAL_PARTITION",
+  "controller_candidate": "83aecf7918b3b587ce8ea4921c27e3aef04d9133",
+  "remote": {
+    "repository": "https://github.com/hustvl/DiffusionDrive.git",
+    "branch": "codex/iclr2027-diffusiondrive-06g",
+    "parent_commit": "9b52ed0ec06b073d82d6f392ab084c7b301c8681",
+    "evidence_commit": "1bc9cc2957eeccc6927f3dc826135ce85bfae790",
+    "tree": "2a6cffd88ec048730a7d97a437c1d69ac3a8412a",
+    "status_short": "",
+    "upstream_navsim_changed": false,
+    "format_patch_sha256": "8ce8d78ed1d0d32953c7c9ca396caaa57f3a24db4c3a4f16826d7f62ed50c542"
+  },
+  "receipt": {
+    "path": "receipt.json",
+    "expected_sha256": "fa2f8c417957c22d3fce83d36544c373353a533302deeb5b9a618d9db4aedb1a",
+    "schema": "drive_opd.navsim_pristine_scene_selection_receipt.v1",
+    "status": "passed"
+  },
+  "counts": {
+    "full": 103288,
+    "train": 85109,
+    "validation": 18179,
+    "logs": 1192,
+    "sessions": 162
+  },
+  "token_sha256": {
+    "full": "5614a8a32a7030bda7cc71696e085f59116df442ba6c0b2604bb0649fea7f083",
+    "train": "6e625045dc4f0b453c634c1165071b7dd008ac2df0445b8f1cd37c95db400207",
+    "validation": "2ba748b9f4bcff790aee60d7da889a7503515246797d51e7045aab9eb108024a"
+  },
+  "explicitly_not_proven": [
+    "claim_bearing_training_cache",
+    "session_atomic_continual_learning_stages",
+    "T0_training",
+    "GPU_gate",
+    "Drive_OPD_performance"
+  ],
+  "compute_authorization": "STOPPED_PENDING_CONTROLLER_GATES"
+}

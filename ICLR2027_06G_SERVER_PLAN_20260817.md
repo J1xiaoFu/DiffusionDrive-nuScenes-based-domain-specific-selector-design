@@ -1,6 +1,6 @@
 # ICLR 2027 Drive-OPD：06G 官方实验目标与执行规划
 
-状态：DISPATCHED，等待 06G 返回 `REMOTE_GOAL_SET`
+状态：NAVSIM PRIMARY LANE；R1 SOURCE POPULATION PASS；CACHE / T0 / GPU STOPPED
 
 责任服务器：06G
 
@@ -9,6 +9,10 @@
 远端工作区：`/home/xlxia/drive_opd_remote_20260817T150443_06g`
 
 目标分支：`codex/iclr2027-diffusiondrive-06g`
+
+双服务器修订：`ICLR2027_DUAL_SERVER_EXECUTION_PLAN_20260817.md` 是当前职责、基线层级与
+receipt 合同的上位计划。07G 并行承担 nuScenes 方法/外部有效性线；06G 不再是唯一计算
+服务器，但仍是唯一 pristine NAVSIM 主证据执行器。
 
 ## 1. 唯一目标
 
@@ -20,6 +24,9 @@ pristine 官方 DiffusionDrive 的持续学习缓存、T0、Seed-0 方法漏斗�
 
 06G 是执行器而不是方法定义的第二来源：不得在远端静默改变数据协议、损失语义、
 baseline 公平预算或最终测试边界。发现问题时先报告证据，由当前服务器更新冻结配置。
+
+07G nuScenes 的进度不解锁、替代或阻塞本线 NAVSIM 数据门。两线指标与显著性 family
+独立；06G 不接收 nuScenes checkpoint，也不根据 nuScenes 结果事后改变 NAVSIM split。
 
 ## 2. 06G AutoResearch-Drive 闭环
 
@@ -56,6 +63,17 @@ baseline 公平预算或最终测试边界。发现问题时先报告证据，�
 - 本机已有 devkit 不是官方 DiffusionDrive；必须使用上述冻结官方 commit，不得把
   TransFuser 或本地修改版当作官方基线。
 - 最近一次资源快照中 GPU1 有外部 VLLM；每次启动前必须重查，不能占用或终止他人任务。
+
+2026-08-17 R1 更新：06G 已在干净分支提交 `1bc9cc2957eeccc6927f3dc826135ce85bfae790`。
+官方 SceneLoader 重建得到 103,288 个 navtrain token，其中官方 train/val 为
+85,109/18,179；完整 token SHA256 与总控的独立重建完全一致。该结果只解除“官方源总体
+未知”这一子门，不解除 cache、session-atomic CL manifest、T0 或 GPU 计算门。总控审计见
+`controller_receipts/06g/R1_official_navtrain_20260817/`。
+
+06G safety-point 更正：旧 9.5G cache 继续原样封存且不得用于 pristine 主实验；
+`a1e1c77acd886b23324d8d0f4f0ad6fb9b07ea6388dd9c3feb8f7b182d963b8a` 是审计报告按有序
+token path 与两个 builder 文件大小计算的 `post_scan.canonical_cache_index_sha256`，不是
+某个 `cache_index.json` 文件的 SHA。禁止在后续 receipt 中虚构该文件路径。
 
 ## 4. 阶段门与交付
 
@@ -96,11 +114,14 @@ baseline 公平预算或最终测试边界。发现问题时先报告证据，�
 - 在任何蒸馏训练前，完成 scheduler-consistent 状态/时间合同和官方模型负对照；OPD 与
   LwF 输入同一状态时，response/mode loss 与梯度必须在容差内相同。
 - 使用同一官方训练脚本、初始化、AdamW、学习率、batch、增强和总步数训练 Stage-1 T0。
-- 在 Stage-2 运行最小四臂：顺序训练、LwF、固定教师 OPD、`m=0.99` EMA-OPD。
+- Stage-2 首先运行完整核心漏斗：sequential、step-matched replay、LwF、Drive-OPD；
+  T0 是 reference，joint/all-seen 是非 CL 上界。
 - 所有方法保持一次联合 forward/backward 和一次 AdamW 更新；LwF 与 OPD 只允许查询
   状态分布不同。
 - 先统一完成训练，再用同一 evaluator 评测，不在训练中混入会扰动状态的临时评测。
-- 按当前服务器冻结配置补充 planner-only、replay、DER++、EWC/A-GEM 和完整 Drive-OPD。
+- 主表补充 full-exposure replay 与为连续轨迹明确冻结语义的 DER++。fixed/EMA OPD、
+  planner-only/perception-only 是消融；EWC/A-GEM 只在 real-adapter receipt 通过后做次要
+  Seed-0。ALER-Drive、TALR、O-LoRA、GoalFlow 不进入关键路径。
 
 交付：每臂 endpoint/rolling optimizer checkpoint、loss CSV、配置与 checkpoint SHA、
 逐日志指标，以及对应该 claim 的论文级章节、表图、数学分析和相关工作检索。只永久
@@ -109,8 +130,11 @@ baseline 公平预算或最终测试边界。发现问题时先报告证据，�
 ### R3：配置冻结与三种子主实验（8月29日至9月4日）
 
 - Seed-0 只用于筛选，不反复针对最终测试调参。
-- 当前服务器确认晋级方法和配置 SHA 后，扩展到三种子。
+- 当前服务器确认晋级方法和配置 SHA 后，扩展 Tier A/B 冻结方法到三种子。
 - 同时运行 step-matched replay 与 full-exposure replay，显式分离额外 exposure 收益。
+- joint/all-seen oracle 单独报告，不参加同预算优胜声明；所有方法报告实际 unique-token
+  exposure、forward/backward、optimizer updates、teacher/student queries、wall time、峰值
+  显存和存储字节。
 - 每个阶段评测所有已见域；输出阶段×域×PDMS/NC/DAC/TTC/comfort/progress 矩阵。
 
 交付：三种子 JSON/CSV、逐日志结果、训练与评测曲线、失败清单和完整运行 manifest。
@@ -160,6 +184,11 @@ metric_json / per_log_csv / loss_curve_csv
 sample_count / failure_count
 gpu_uuid / environment_summary
 evidence_boundary / known_deviations
+method_id / method_registry_sha256
+checkpoint_stage / evaluation_stage / evaluation_domain / domain_registry_sha256
+run_id / stage_start_state_sha256 / result_checkpoint_lineage_sha256
+current_unique_tokens / old_unique_tokens / teacher_queries / student_queries
+forward_backward_count / optimizer_update_count / wall_time / peak_vram / stored_bytes
 ```
 
 缺少代码 commit、配置 SHA 或数据 manifest SHA 的运行不得进入论文主表。

@@ -1,0 +1,34 @@
+07G DUTY/GOAL CONTRACT COMMIT COMPLETE — DOCS ONLY, NO GPU
+
+branch=codex/iclr2027-drive-opd-07g-research
+parent=9dabf42371e8dde72e1b2061bac4fa9d11b34230
+commit=d1cee1916f8f2329b4e3f3a1140e79e5d22c124e
+
+Committed files only:
+- AGENTS.md sha256=8bb62a6ec37ba943ba32a85d5fd114229d235767508d4829e4c4a91a8ad0c34a
+- ICLR2027_07G_NUSCENES_RESEARCH_GOAL_20260817.md sha256=73b2850fb202e7f2fae394159763175f40aa8e3e62f2df9033865b8f7f7a7742
+
+Checks:
+- git diff --check on both docs: PASS
+- git show --check HEAD: PASS
+- commit contains exactly 2 files
+- no cache/T0/GPU run; no process signalled or terminated
+
+Fresh read-only resource evidence (2026-08-17 19:47 +08):
+- 8x RTX3090 util=65,100,96,95,91,99,97,93%
+- PIDs 906467..906474, owner root, /workspace/criticell-heterosta DreamPlace tasks; untouched
+- /home available=51G (<100G hard safety floor)
+- /home/khwang/datasets/nuscenes=474G; no duplicate made
+- local metadata counts: trainval 850 scenes/34149 samples/68 logs; test 150/6008/15
+- preliminary sensor file inventory: samples 481873, sweeps 2612100, maps 14, can_bus 7832, symlinks 0
+These are preliminary N0 presence/metadata evidence, not an N0 pass; final test remains sealed.
+
+git status --short after commit contains ONLY the pre-existing/in-progress P0 source-review work, intentionally excluded:
+ M selector_bench/scripts/41_train_drive_cl_diffusiondrive.py
+ M selector_bench/scripts/42_export_drive_cl_eval_tokens.py
+ M selector_bench/selector_bench/continual/evaluation_contract.py
+ ?? paper_iterations/P001_scheduler_session_contract/POST_REVIEW_INTERNAL_AUDIT.md
+ ?? selector_bench/selector_bench/continual/claim_protocol.py
+
+push=NO
+exact blocker=controller must first audit this docs-only dispatch receipt; the underlying 9dabf423 source is explicitly a 3/10 rejected, non-release candidate, and current P0 repairs are not frozen/reviewed. Publishing this branch now must not be mistaken for a claim-protocol handoff.

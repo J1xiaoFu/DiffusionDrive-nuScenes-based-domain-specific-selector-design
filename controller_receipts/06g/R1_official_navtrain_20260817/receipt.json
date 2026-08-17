@@ -1,0 +1,107 @@
+{
+  "annotation_data_hashes": {
+    "all_raw_annotation_logs_content_tree_sha256": "e7736b044390567c0748870283ca4bbe9d0acc9bc2fb3a4ee6f8a8f3d8ab7182",
+    "method": "sha256(relative_file_name\\0size_bytes\\0content_sha256\\n), sorted by file name",
+    "whitelist_annotation_logs_content_tree_sha256": "e870de7d51390c9124bd91bc6a83e1c72bc9c3ad5370a5921afc52c3e643b0f9"
+  },
+  "artifact_sha256": {
+    "cross_log_duplicate_tokens.json": "8d458ccc95351e7ff26f1f36768e22ef268326fa583df826c32a8c3c1366273d",
+    "official_config_token_allowlist.txt": "5614a8a32a7030bda7cc71696e085f59116df442ba6c0b2604bb0649fea7f083",
+    "official_navtrain_tokens.txt": "5614a8a32a7030bda7cc71696e085f59116df442ba6c0b2604bb0649fea7f083",
+    "official_train_tokens.txt": "6e625045dc4f0b453c634c1165071b7dd008ac2df0445b8f1cd37c95db400207",
+    "official_val_tokens.txt": "2ba748b9f4bcff790aee60d7da889a7503515246797d51e7045aab9eb108024a",
+    "per_log_selection_reasons.csv": "ca950ed8894b54367bc19f7e6f1c69935d94aeb126a980acc06df1f1676f34db",
+    "per_session_selection_reasons.csv": "0cddb469798688c44fe42863304f20519d25debbc85b5afa44f8b231d1ee5ddd",
+    "raw_annotation_logs.csv": "2693977d7314b84cb8ccbe888a8a64601f71add64ffcf90cfe6ab3cba4e30866",
+    "selected_tokens.csv": "64c3209e0f9a35050496fbc6775c7f5b2bc3714bfa8a69befa658dd5434f7fdc",
+    "unlisted_annotation_logs.txt": "43b19b7f3d5a41602f87a98b111a6b416139493781d4d351e6ee95672e7f5f48"
+  },
+  "controller": {
+    "commit": "90e5314d92fc127e65d2d8207569ee5c08a899b3",
+    "plan": "ICLR2027_06G_SERVER_PLAN_20260817.md",
+    "plan_blob_sha256": "319aa23f8e6f611c1d88a8aee784114cedf82b13554ffb86156bc98becc74e00"
+  },
+  "evidence_boundary": {
+    "gpu_used": false,
+    "metric_cache_built": false,
+    "old_10444_cache_used_to_select_tokens": false,
+    "sensor_blob_contents_hashed": false,
+    "sensor_digest_is_metadata_only": true,
+    "training_cache_built": false
+  },
+  "log_contract": {
+    "annotation_root": "/home/xlxia/datasets/navsim-navtrain/trainval_navsim_logs/trainval",
+    "missing_whitelist_logs": [],
+    "official_config_train_log_count": 13180,
+    "official_config_val_log_count": 1381,
+    "official_navtrain_whitelist_count": 1192,
+    "raw_annotation_log_count": 1310,
+    "session_count": 162,
+    "unlisted_raw_annotation_log_count": 118,
+    "whitelist_train_log_count": 978,
+    "whitelist_unassigned_log_count": 0,
+    "whitelist_val_log_count": 214
+  },
+  "official_source": {
+    "audit_script_sha256": "9ea51381e3db5e04a1b5487abd51feee6ac86e76cdcc397a1d4cf2cf86a1e63b",
+    "commit": "9b52ed0ec06b073d82d6f392ab084c7b301c8681",
+    "experiment_branch": "codex/iclr2027-diffusiondrive-06g",
+    "repository": "https://github.com/hustvl/DiffusionDrive.git",
+    "selection_source_sha256": {
+      "navsim/common/dataclasses.py": "803b2c610cd3aff62ba5514bbddefc58af2c09a5e7e800c859c11447617200d3",
+      "navsim/common/dataloader.py": "ac13146262ae7908a20c2230998562662f94aeec35aec3b1f57c605a3562c1d6",
+      "navsim/planning/script/config/common/default_common.yaml": "c3e0d572f2c788e527ddc6aaa3e4948aaabde9576a3a295e785b6d8c04404ec0",
+      "navsim/planning/script/config/common/train_test_split/navtrain.yaml": "074dcc29438e6fef80de80f5b2a7249098be72127d915a2312aa3745da730f8c",
+      "navsim/planning/script/config/common/train_test_split/scene_filter/navtrain.yaml": "5c756b5f97bdfaf88867a3db1f442209ea02669afc74456380a5a70cf779be9c",
+      "navsim/planning/script/config/training/default_train_val_test_log_split.yaml": "76a89093e8ba760bac20a716d23e189bdd72d769fbe710ca1949608150d8b333",
+      "navsim/planning/script/config/training/default_training.yaml": "204707c98700f998d88a457c2e4811ee46585bb4f7085a4fe415b9ce7c434fbf",
+      "navsim/planning/script/run_dataset_caching.py": "75c533095869844d2169bb43ff5a175958b4e3c8bfdf145332cdb1ef8b96b3bd",
+      "navsim/planning/script/run_training.py": "812216811df8cec27274b0a3708ca9b3fd47f970a0bb119423d6a75864487178"
+    },
+    "tracked_navsim_diff_from_frozen_head": false,
+    "tree": "d675e332193f564b66edc0c416f822e3d5f5488d"
+  },
+  "resolved_scene_filter": {
+    "configured_sorted_token_allowlist_sha256": "5614a8a32a7030bda7cc71696e085f59116df442ba6c0b2604bb0649fea7f083",
+    "configured_token_allowlist_count": 103288,
+    "frame_interval": 1,
+    "has_route": true,
+    "max_scenes": null,
+    "num_frames": 14,
+    "num_future_frames": 10,
+    "num_history_frames": 4
+  },
+  "schema": "drive_opd.navsim_pristine_scene_selection_receipt.v1",
+  "selection": {
+    "cross_log_duplicate_token_count": 0,
+    "legal_windows_before_token_allowlist": 651526,
+    "legal_windows_rejected_by_token_allowlist": 548238,
+    "official_navtrain_sorted_token_sha256": "5614a8a32a7030bda7cc71696e085f59116df442ba6c0b2604bb0649fea7f083",
+    "official_navtrain_token_count": 103288,
+    "official_train_sorted_token_sha256": "6e625045dc4f0b453c634c1165071b7dd008ac2df0445b8f1cd37c95db400207",
+    "official_train_token_count": 85109,
+    "official_val_sorted_token_sha256": "2ba748b9f4bcff790aee60d7da889a7503515246797d51e7045aab9eb108024a",
+    "official_val_token_count": 18179,
+    "unassigned_token_count": 0
+  },
+  "sensor_blob_inventory": {
+    "file_count": 1372455,
+    "metadata_sha256": "ea4a47798544aa6c93cd96c1020d1da8d3712b7c5da7321a0fc769ef332001aa",
+    "method": "sha256(relative_path\\0kind\\0target_size_bytes\\0symlink_target\\n); contents_not_read",
+    "root": "/home/xlxia/datasets/navsim-navtrain/trainval_sensor_blobs/trainval",
+    "status": "passed",
+    "symlink_count": 0,
+    "total_target_bytes": 474981722578
+  },
+  "status": "passed",
+  "status_checks": {
+    "all_whitelist_logs_assigned_train_or_val": true,
+    "all_whitelist_logs_present": true,
+    "configured_token_allowlist_matches_selected": true,
+    "full_token_union_matches_train_val": true,
+    "manual_counts_match_official_scene_loader": true,
+    "no_cross_log_duplicate_tokens": true,
+    "no_unassigned_selected_tokens": true,
+    "train_val_token_disjoint": true
+  }
+}

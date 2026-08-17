@@ -1,0 +1,27 @@
+06G_RESPONSIBILITY_CONTRACT_COMMITTED
+
+branch=codex/iclr2027-diffusiondrive-06g
+parent=1bc9cc2957eeccc6927f3dc826135ce85bfae790
+commit=0c4fb7cbc4b4ecc4bc056027a011fa3bd1d29d27
+tree=b457366d0953d7a2370d7491430be52ad5ca0a89
+
+changed_files:
+1. /home/xlxia/drive_opd_remote_20260817T150443_06g/worktrees/diffusiondrive_navsim_06g/AGENTS.md
+   sha256=189b506905eef42ef361907a625bd7871f2e4920decdb959c1fcfcec15c87d7d
+2. /home/xlxia/drive_opd_remote_20260817T150443_06g/worktrees/diffusiondrive_navsim_06g/ICLR2027_06G_EXECUTION_OBJECTIVE.md
+   sha256=b47bb8e22ede30551cfce9e7a43a282e5f6d00c77f044c749723279a91356f8f
+
+audit:
+- applicable AGENTS scan before edit: none existed on the 06G worktree path; new root AGENTS was then read in full.
+- required-term assertions passed for 06G/07G separation, R1-only PASS, STOPPED gates, Tier A/B methods, fair-compute ledger, fail-closed run/evaluator/claim binding, and a1e1... safety correction.
+- git diff --cached --check: PASS.
+- post-commit git show --check: PASS.
+- exact commit path set: AGENTS.md + ICLR2027_06G_EXECUTION_OBJECTIVE.md only.
+- diff parent..HEAD -- navsim: empty/PASS.
+- git status --short: empty/clean.
+- no training code edits; no cache/T0/GPU actions.
+
+push=NO
+push_reason=origin is https://github.com/hustvl/DiffusionDrive.git and this local branch has NO_UPSTREAM_TRACKING; user requested an independent local atomic commit, and controller candidate 3013da9... is not an accessible source ref.
+
+exact_blocker=P0/P1 claim-protocol bypasses still require executable fixes and independent frozen review; after that 06G still needs an accessible full source/transfer ref with complete SHA chain, frozen session-atomic NAVSIM manifests derived from R1, and explicit controller gate authorization. Until then cache/real-model preflight/T0/CL/GPU remain STOPPED.

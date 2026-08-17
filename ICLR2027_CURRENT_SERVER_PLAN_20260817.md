@@ -1,14 +1,55 @@
 # ICLR 2027 Drive-OPD：当前服务器目标与执行规划
 
-状态：ACTIVE
+状态：ACTIVE — 07G NUSCENES METHOD / EXTERNAL-VALIDITY LANE；CLAIM GPU BLOCKED
 
-责任服务器：当前服务器（`/home/khwang/domain-selector`）
+责任服务器：07G（方法研究与 nuScenes 独立证据线）
 
 责任任务：`ICLR 2027｜Drive-OPD 方法与论文总控`
 
-工作分支：`codex/iclr2027-drive-opd-controller`
+研究工作分支：`codex/iclr2027-drive-opd-07g-research`
+
+总控工作树：`/home/khwang/domain-selector-controller`
+
+本机研究分支/工作树：`codex/iclr2027-drive-opd-07g-research` / `/home/khwang/domain-selector`
 
 计划冻结日：2026-08-17
+
+双服务器修订：`ICLR2027_DUAL_SERVER_EXECUTION_PLAN_20260817.md` 是当前职责、基线与门禁
+的上位合同；本文件中“07G 不承担计算”或“所有官方实验只在 06G”的旧表述由该合同取代。
+
+## 0. 分支职责与最新远端门状态
+
+- 总控任务 ID 为 `01a00dab-5dc6-7413-8ca7-930353db0e0c`；06G 执行任务 ID 为
+  `01a00e84-1f10-7331-ac52-fbc0c5d75a5a`。`01a00f54-8adc-7372-a8c5-bb3efe33fbef`
+  仅为已完成的 P001 独立盲审任务。根目录 `AGENTS.md` 固化了该身份与职责合同。
+- `codex/iclr2027-drive-opd-controller` 只管理跨机计划、冻结 manifest、远端 receipt、审稿
+  结论、晋级门和论文里程碑索引。
+- `codex/iclr2027-drive-opd-07g-research` 管理本机 Drive-OPD 方法、因果/统计实现、论文轮次、
+  测试与图表。
+- `codex/iclr2027-diffusiondrive-06g` 管理 pristine 官方 DiffusionDrive/NAVSIM 的数据、
+  cache 与 GPU 执行证据；它不是方法或协议定义的第二来源。
+
+2026-08-17 用户调度更新：07G 与 06G 都作为计算服务器，但按数据集隔离证据。06G 继续
+负责 pristine DiffusionDrive/NAVSIM 主表；07G 负责 DiffusionDrive/nuScenes 方法研究、
+持续学习协议、机制消融与外部有效性。两条线独立过门、独立成表，不合并 NAVSIM PDMS
+与 nuScenes planning L2/collision，也不允许一条线的 PASS 解锁另一条线。
+
+07G 本机只读资源快照发现 8×RTX 3090 均被现有任务占用，`/home` 仅余约 51 GB；已有
+`/home/khwang/datasets/nuscenes` 约 474 GB。不得终止他人任务、抢占 GPU 或复制第二份
+完整数据。先做 PID/所有者、数据版本、scene/sample、metadata 与磁盘水位 receipt。
+
+冻结候选 `9dabf42371e8dde72e1b2061bac4fa9d11b34230` 的新盲审为 3/10 reject；seed、
+CSV/checkpoint、method/domain identity、receipt discovery/uniqueness 存在可执行绕过。该 P0
+是数据集无关的共同门。修复、冻结并通过新盲审前，07G 只做源码、CPU、数据/切分审计，
+不运行 claim-bearing nuScenes cache、T0、训练或 GPU 评测。
+
+2026-08-17，06G R1 原子提交 `1bc9cc2957eeccc6927f3dc826135ce85bfae790`
+通过官方 navtrain 总体与官方 train/val 划分核验：103,288 = 85,109 + 18,179，完整 token
+SHA256 为 `5614a8a32a7030bda7cc71696e085f59116df442ba6c0b2604bb0649fea7f083`，与总控
+独立重建一致。审计源见 `controller_receipts/06g/R1_official_navtrain_20260817/`。
+
+该通过范围不包括训练 cache、三阶段持续学习 manifest、T0、GPU gate 或任何性能结果；
+这些计算继续封存。
 
 ## 1. 截止日与唯一总目标
 
@@ -19,9 +60,10 @@ ICLR 2027 官方摘要截止为 **2026-09-11 AOE**，全文截止为
 智驾原生持续学习论文：定义真实日志增量协议，验证 Drive-OPD 是否在学习新能力的
 同时保持旧能力，并用因果审计说明学生分布指导与感知漂移处理何时必要。
 
-当前服务器不承担 pristine 官方 DiffusionDrive 的大规模训练；它负责方法、协议、
-统计、证据审核、论文和双机总控。06G 权重不得复制到本机，只接收配置、commit、
-SHA256、JSON、CSV 和曲线。
+07G 承担 Drive-OPD 方法、协议、统计、证据审核和 nuScenes 计算；06G 承担 pristine 官方
+DiffusionDrive/NAVSIM 主实验。两机只交换源码、配置、manifest、SHA256、JSON、CSV 与
+曲线；因数据集不同，不跨机拼接 checkpoint 或把一台服务器的方法结果与另一台服务器
+的基线结果直接比较。
 
 ## 2. AutoResearch-Drive 论文交付闭环
 
@@ -82,7 +124,40 @@ paper_iterations/P###_<claim>/
 - 上述结果只能作为历史机制诊断证据，不能冒充 pristine 官方 DiffusionDrive
   主结果。官方复现和主实验由 06G 负责。
 
-## 4. 当前服务器工作包
+## 4. 07G 工作包
+
+以下 N0–N3 是当前执行目标；原 C0–C4 内容保留为治理/论文历史与 NAVSIM 接口背景，发生
+冲突时以 N0–N3 和双服务器计划为准。
+
+### N0：nuScenes 资源、数据与协议清点
+
+- 记录实际 GPU UUID/PID/所有者、磁盘安全水位，不抢占现有任务。
+- 对 `/home/khwang/datasets/nuscenes` 冻结版本、scene/sample counts、metadata hash、
+  maps/CAN bus 完整性与 trainval/test 边界；final test 继续封存。
+- 以 scene 为原子冻结 train/calibration/audit 与 Chronological-CL 规则；旧 40/10 scene
+  partial 只有在生成规则和 membership 可重放时才可升级。
+
+### N1：claim-protocol P0 与真实 nuScenes adapter
+
+- 修复 seed/run/config/protocol 绑定、checkpoint→evaluator→CSV lineage、method registry、
+  domain registry、显式 receipt inventory 和内容唯一性。
+- 增加非对角 checkpoint-stage × evaluation-stage/domain、恶意换 CSV/checkpoint、重复
+  receipt、未知 domain 等回归测试，并完成新一轮无上下文盲审。
+- 新盲审通过且 GPU 确认空闲后，才做一个真实 batch 的 loss/query/gradient/resume gate。
+
+### N2：nuScenes controlled-partial Seed-0
+
+- 核心臂：T0、sequential、step-matched replay、LwF、Drive-OPD、joint/all-seen oracle。
+- 使用官方 planning L2/collision horizons 与 scene-level retention/plasticity；不生成或借用
+  NAVSIM PDMS。
+- 没有同时出现新域塑性和非平凡旧域遗忘时停止扩臂，并按负结果收缩论文主张。
+
+### N3：nuScenes 扩展与机制
+
+- Seed-0 过门后才加入 full-exposure replay、DER++、fixed/EMA OPD 与三种子。
+- planner-only、perception-only、identical-state、no-drift/context-swap 属于消融；EWC、
+  A-GEM 只做 real-adapter 通过后的次要比较。
+- ALER-Drive、TALR、O-LoRA 和 GoalFlow 不进入关键路径。
 
 ### C0：治理与证据合同（8月17日）
 
@@ -126,11 +201,13 @@ manifest 完全一致，10,444 是其中三个 train split 的并集；但 14,95
 - 统一一次 forward/backward/AdamW 更新，保证 LwF 与 OPD 仅在查询状态分布上不同。
 - 先完成必要组件消融：顺序训练、planner-only、LwF、固定 OPD、EMA-OPD、仅感知
   保持、完整 Drive-OPD。
-- 再按公平预算接入 EWC、A-GEM、step-matched replay、full-exposure replay、DER++、
-  ALER-Drive；非关键 TALR/O-LoRA 只在主证据稳定后执行。
+- 旧基线列表由双服务器计划取代。NAVSIM 主表核心为 sequential、step-matched replay、
+  full-exposure replay、LwF、DER++、Drive-OPD 与 joint oracle；EWC/A-GEM 为验证通过后的
+  次要臂，ALER-Drive/TALR/O-LoRA 不在关键路径。
 
-晋级门：至少两个真实冲突转换显著优于顺序训练；在高师生支持偏移子集上优于
-LwF/ALER；Chronological-CL 不压制正迁移。
+晋级门：至少两个真实冲突转换达到预注册最小效应并优于顺序训练；在高师生支持偏移
+子集上优于 LwF 与 step-matched replay；Chronological-CL 不压制正迁移。所有检验进入
+同一冻结 Holm family，不以未校准的“显著”计数晋级。
 
 ### C3：06G 主实验审核与统计（8月26日至9月4日）
 
@@ -155,13 +232,15 @@ LwF/ALER；Chronological-CL 不压制正迁移。
 必须具备：
 
 1. Failure-Patch-CL 与 Chronological-CL 两种完整日志协议；
-2. pristine 官方 DiffusionDrive 的顺序训练、replay、LwF、Drive-OPD 及关键 CL 基线；
+2. 06G pristine NAVSIM 的顺序训练、两类 replay、LwF、DER++、Drive-OPD、joint oracle，
+   以及 07G 独立 nuScenes Tier-A 机制表；
 3. 至少三个种子、日志聚类统计、分指标安全分析；
 4. 感知漂移与学生分布指导的机制消融；
 5. 可审计代码、配置、manifest 和结果哈希。
 
-若算力或时间不足，按以下顺序降级：Flow Matching → O-LoRA/TALR → 非关键教师策略。
-不得删减三种子主表、LwF/replay、公平预算或最终测试封存。
+若算力或时间不足，按以下顺序降级：ALER/TALR/O-LoRA/Flow Matching → EWC/A-GEM →
+nuScenes 扩大规模 → nuScenes DER++。不得删减 06G NAVSIM 三种子主表、LwF/两类 replay、
+DER++、joint oracle、公平预算或最终测试封存。
 
 ## 6. 工作树与人工审计纪律
 
@@ -194,5 +273,7 @@ metric_json / per_log_csv / curve_csv
 sample_count / failure_count / environment_summary
 ```
 
-当前服务器给 06G 的唯一可执行输入是已冻结配置与 manifest；口头超参数或未提交补丁
-不得进入主实验。
+07G 与 06G 都只执行 controller 冻结的源码、配置和 manifest；口头超参数或未提交补丁
+不得进入实验。两机结果必须额外带 dataset/version、method registry、evaluation-domain
+registry、stage-start state SHA、result/checkpoint lineage、实际 query/forward/update/exposure
+预算和 GPU UUID。nuScenes 与 NAVSIM 结果保持独立表格和独立统计 family。
