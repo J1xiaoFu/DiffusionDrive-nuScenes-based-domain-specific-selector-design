@@ -254,6 +254,36 @@ fetchability and byte identity do not close the RC1 P0 findings. Isolated 06G so
 stopped pending the fresh review. Raw data, dataset adapters, session-atomic CL manifests, cache,
 real-model preflight, T0, model, CUDA/GPU, training, evaluation and performance claims remain stopped.
 
+## RC2 fresh context-free xhigh blind-review intake
+
+- authoritative reviewer task: `01a0106d-4a96-72d2-aa90-da0acd5f72c3`, fresh zero-parent
+  `gpt-5.6-sol` at `xhigh`; the earlier task `01a0105f-c503-7773-b2fa-757ea09e859f`
+  infrastructure-failed without a final verdict and is not authoritative
+- reviewed identity: public freeze `81973da8c2768e71f5f79cefc17888e19d2f6cbd`, logical source
+  `d527274d368b6d6def5809b002324b31e88ae1bd`, public source
+  `d262e3c14ba2bea31b48bd85ab1d721987b826b3`; 28/28 receipt rows and 41/41 logical plus
+  41/41 public source blobs matched, with zero logical/public source-blob differences
+- six isolated CPU suites: 62 tests plus 21 subtests passed; expanded shipped harness passed
+  15/15 attack nodes and rejected 32/32 included mutations before claim output
+- executable adversarial review found four uncovered P0 bypasses: non-monotonic Git and non-strict
+  family/authorization/access chronology; cross-family sealed-access receipt transplantation;
+  optional rather than mandatory multi-candidate common-baseline cells; and non-finite seed-design
+  inputs producing and replaying estimated power `1.0`
+- verdict: **3/10 REJECT / FAIL, confidence 5/5**; source/CPU P0 contract `NO`, non-promoting
+  source-only publication or isolated CPU replay `YES` only when explicitly labeled rejected, and
+  every execution gate `NO`
+- exact task-final message: 17,688 bytes, SHA256
+  `3dfa8d89b7222eaba0238566ccf38abcb2e801a0014485b008a171b0f729a431`; stored report
+  `07g_p0_rc2_blind_review.md` removes only two Markdown hard-break trailing spaces and appends one
+  terminal newline, yielding 17,685 bytes and SHA256
+  `78664e96f07209691f633330bad51e6e642c6b3c33ec1954fa928ad0087c66bd`
+- structured controller intake: `07g_p0_rc2_blind_review_intake.json`
+
+Decision: **RC2 REJECTED / FOUR P0 FINDINGS OPEN.** No 06G dispatch is authorized. A future RC3 must
+be forward-only, add the four reproductions to its frozen harness, and pass a new context-free exact-RC
+review. Dataset/raw-data access, provenance/adapter work, session-atomic CL manifests, cache,
+real-model preflight, T0, model, CUDA/GPU, training, evaluation and performance claims remain stopped.
+
 ## 06G R1 session-integrity intake
 
 - remote audit commit: `af9213b216b0260b184d3d3ae109a4ed1bed70b8`, parent

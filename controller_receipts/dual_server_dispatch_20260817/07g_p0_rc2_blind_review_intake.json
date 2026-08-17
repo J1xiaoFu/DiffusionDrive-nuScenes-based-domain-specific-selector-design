@@ -1,0 +1,192 @@
+{
+  "schema": "drive_opd.controller.rc2_blind_review_intake.v1",
+  "recorded_date": "2026-08-17",
+  "review": {
+    "review_id": "P001-DRIVE-OPD-P0-RC2-EXACT",
+    "authoritative_task": "01a0106d-4a96-72d2-aa90-da0acd5f72c3",
+    "superseded_infrastructure_failed_task": "01a0105f-c503-7773-b2fa-757ea09e859f",
+    "model": "gpt-5.6-sol",
+    "reasoning_effort": "xhigh",
+    "fresh_context_free": true,
+    "score": 3,
+    "score_denominator": 10,
+    "decision": "REJECT",
+    "verdict": "FAIL",
+    "confidence": 5,
+    "confidence_denominator": 5,
+    "task_final_message_bytes": 17688,
+    "task_final_message_sha256": "3dfa8d89b7222eaba0238566ccf38abcb2e801a0014485b008a171b0f729a431",
+    "stored_report_path": "controller_receipts/dual_server_dispatch_20260817/07g_p0_rc2_blind_review.md",
+    "stored_report_normalization": "remove two Markdown hard-break trailing spaces and append one terminal newline",
+    "stored_report_bytes": 17685,
+    "stored_report_sha256": "78664e96f07209691f633330bad51e6e642c6b3c33ec1954fa928ad0087c66bd"
+  },
+  "identities": {
+    "review_freeze_commit": "81973da8c2768e71f5f79cefc17888e19d2f6cbd",
+    "review_freeze_parent": "d262e3c14ba2bea31b48bd85ab1d721987b826b3",
+    "review_freeze_tree": "211d50d5e31b517a0062012068c07d5169d757d9",
+    "logical_source_commit": "d527274d368b6d6def5809b002324b31e88ae1bd",
+    "logical_source_parent": "7edaaa05c199174e5b7d5f0cf46e45f50cd7e9f4",
+    "logical_source_tree": "dce36d261b8a0f4bde4519a3a393471c54b05356",
+    "public_source_commit": "d262e3c14ba2bea31b48bd85ab1d721987b826b3",
+    "public_source_parent": "fda179f007e64614467791f1ab9ed3c229c8f0bb",
+    "public_source_tree": "c125b76a2f579016c2d4bcdafd9eb0db996f0a15",
+    "remote_public_head_verified": true,
+    "logical_changed_path_count": 22,
+    "public_changed_path_count": 20
+  },
+  "hash_audit": {
+    "sha256sum_rows_verified": 28,
+    "sha256sum_mismatches": 0,
+    "logical_source_blob_count": 41,
+    "public_source_blob_count": 41,
+    "logical_source_blob_mismatches": 0,
+    "public_source_blob_mismatches": 0,
+    "logical_public_source_blob_differences": 0,
+    "transfer_manifest_sha256": "9eadb5064f5bebd8234e910fb3a6e6aa8dc16aeb7d077fbd30803cda0af66932",
+    "logical_bundle_sha256": "5bc6f3339f1af5ccde9c21a8068b94053ae00ea920eed9f3ade7613d70a5cd88",
+    "canonical_bundle_algorithm_sha256": "958d537d6707f130f72834790ba8bdfcd3192431d214d5fdb4241ea61e023a78",
+    "review_manifest_sha256": "619a12ba27fe1c140da6f1c5b7c1e7019ee7ae91a115ea9969f4cf467abe669d",
+    "public_full_index_diff_sha256": "25e031f4ef7b78cd99b2b8e7ee3e0ecdf027a79560310366a7adb0d41ee37362",
+    "sorted_changed_paths_sha256": "acac582db6b9086505058c4c776cbaccf660bd921ba149037c84d02a03d8217a"
+  },
+  "cpu_replay": {
+    "interpreter": "/home/khwang/domain-selector/.conda/diffusiondrive_py310/bin/python3.10",
+    "cuda_visible_devices": "",
+    "python_dont_write_bytecode": "1",
+    "python_hash_seed": "0",
+    "pytest_cache_provider_disabled": true,
+    "test_functions_passed": 62,
+    "subtests_passed": 21,
+    "suite_failures": 0,
+    "suite_results": [
+      {
+        "suite": "test_navsim_continual_protocol.py",
+        "passed": 3,
+        "subtests": 0,
+        "elapsed_ns": 207697190,
+        "stdout_sha256": "c2cba0e5b1275bde99432021fd22a26635493fa35d0886fcd5cd38708b0f7cca"
+      },
+      {
+        "suite": "test_drive_opd_losses.py",
+        "passed": 13,
+        "subtests": 0,
+        "elapsed_ns": 1608852777,
+        "stdout_sha256": "0516f6ef8f9270b56985dab9c0c9c9877ee54ec0a71b4655372d2fbaa4415314"
+      },
+      {
+        "suite": "test_drive_cl_baselines.py",
+        "passed": 8,
+        "subtests": 0,
+        "elapsed_ns": 1540790247,
+        "stdout_sha256": "2963c080eaf15eb33f54f8ba947759f6f4106d0f0d10bcff7a1ae7e80667d24d"
+      },
+      {
+        "suite": "test_drive_cl_statistics.py",
+        "passed": 8,
+        "subtests": 0,
+        "elapsed_ns": 293402296,
+        "stdout_sha256": "092afb193e0565b502e8c29ec6c9f2e9ed67befee919192e41fe9bd294ef0cc2"
+      },
+      {
+        "suite": "test_drive_cl_claim_protocol.py",
+        "passed": 23,
+        "subtests": 21,
+        "elapsed_ns": 117580263739,
+        "stdout_sha256": "5bfe86292407dc4253af1a8faa74ec324d7192818593fb10beabe54b865570d2"
+      },
+      {
+        "suite": "test_drive_cl_run_budget.py",
+        "passed": 7,
+        "subtests": 0,
+        "elapsed_ns": 1163349192,
+        "stdout_sha256": "e555813f9983ff591aee5e97ab7ad4c928dcfe9fe0c82735ddd5a82a43ef21e1"
+      }
+    ],
+    "all_suite_stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "harness": {
+      "exit_code": 0,
+      "status": "PASS",
+      "elapsed_ns": 115082767834,
+      "attack_nodes_passed": 15,
+      "attack_nodes_total": 15,
+      "mutation_instances_rejected_nonzero": 32,
+      "mutation_instances_without_claim_output": 32,
+      "mutation_instances_total": 32,
+      "positive_fixture_exit_code": 0,
+      "stdout_sha256": "f23c4734d85915869e4bd48a7aeeff3246d49143f10ef2cf282e66d0b3506d0f",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "json_sha256": "d68ba4fd2b86db2f481dc9656804995bcd8af47b76e111e4ca6c4196f818833e"
+    }
+  },
+  "open_findings": [
+    {
+      "id": "RC2-P0-01",
+      "level": "P0",
+      "title": "non-monotonic Git and non-strict authorization chronology accepted",
+      "reproduction_exit_code": 0,
+      "elapsed_ns": 1237405624,
+      "stdout_sha256": "ae462c71425a2ace71583ee1ea6168e5af3839c0ca4fe688066fb7f781a739c7",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "RC2-P0-02",
+      "level": "P0",
+      "title": "sealed-test authorization can be transplanted between families",
+      "reproduction_exit_code": 0,
+      "elapsed_ns": 10060845931,
+      "stdout_sha256": "ce07a017d1764aa7dbcefebfad6ddf1b6855ea7e59478f43e9b8301da6c01b7e",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "RC2-P0-03",
+      "level": "P0",
+      "title": "single comparison satisfies the common-baseline family gate",
+      "reproduction_exit_code": 0,
+      "elapsed_ns": 1010174425,
+      "stdout_sha256": "7ab9ad4d8a9a8f3018316971511cf63497d0bee97b95051e5aced70a6e02660e",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "RC2-P0-04",
+      "level": "P0",
+      "title": "infinite effect size passes executable seed-design replay",
+      "reproduction_exit_code": 0,
+      "elapsed_ns": 1120565000,
+      "stdout_sha256": "4f0b331ba16cb726e8d88a30926a4a858b38f772f690c016173a8c2b679fb2c2",
+      "stderr_sha256": "8996aafcfb07c1e40b94a9d07c6e3e2c2a73ba4162c066a9cb1783341fa53b4c"
+    }
+  ],
+  "finding_counts": {
+    "open_p0": 4,
+    "open_p1": 0,
+    "open_p2": 0
+  },
+  "mandatory_rc1_dispositions": {
+    "chronology": "OPEN_P0",
+    "measured_production_and_agem_budgets": "CLOSED_SOURCE_CPU",
+    "executable_seed_design": "OPEN_P0",
+    "aler_query_capture": "CLOSED_SOURCE_CPU",
+    "shared_common_baseline_cells": "OPEN_P0",
+    "measured_transient_storage": "CLOSED_SOURCE_CPU"
+  },
+  "gate_decisions": {
+    "A_source_cpu_p0_contract": "NO",
+    "B_non_promoting_source_only_publication_and_cpu_replay": "YES_CONDITIONAL_ON_REJECTED_NON_PROMOTING_LABEL",
+    "C_execution_unlocked": "NO"
+  },
+  "controller_decision": {
+    "rc2": "REJECTED_P0_OPEN",
+    "dispatch_06g": "STOPPED",
+    "dataset_provenance_adapter": "STOPPED",
+    "session_atomic_cl_manifest": "STOPPED",
+    "cache": "STOPPED",
+    "real_model_preflight": "STOPPED",
+    "t0": "STOPPED",
+    "model": "STOPPED",
+    "gpu": "STOPPED",
+    "training": "STOPPED",
+    "evaluation": "STOPPED",
+    "performance_claim": "STOPPED"
+  }
+}
