@@ -1,0 +1,36 @@
+06G R1 PUBLICATION-REPLAY PUBLICATION VERIFICATION
+
+Decision: PASS, limited to controller receipt publication reachability and byte identity. No execution
+gate is unlocked.
+
+Local controller source:
+- branch: codex/iclr2027-dual-server-controller
+- commit: ae223719d82ae31c1a6bddea04ba3f11f85e091a
+- exact published path set:
+  - controller_receipts/dual_server_dispatch_20260817/06g_r1_session_integrity_publication_replay.txt
+  - controller_receipts/dual_server_dispatch_20260817/AUDIT.md
+  - controller_receipts/dual_server_dispatch_20260817/SHA256SUMS
+- local Git blobs:
+  - efdefc286be33f5a11e669c2728c7974e8d9ec7c
+  - 0b260d196d43c6d3fe942f28bd98ee947ea79cbe
+  - bb117c1b3d9d86a5533f08f8fdc8af00f7cbd5c8
+
+Published object:
+- repository: J1xiaoFu/DiffusionDrive-nuScenes-based-domain-specific-selector-design
+- branch: codex/iclr2027-dual-server-dispatch-publication
+- commit: 1f6e850ec7832f0680ebf5472bafa2ea15289ca9
+- parent: 1a5ddf47acfb8150ab28247ac7cbe26a30bb9ae1
+- tree: dd945bbff8632409795b47c3d0f2907f5777d5d8
+- transport: authenticated GitHub application; non-forced fast-forward ref update
+
+Independent controller verification:
+- GitHub branch ref resolves exactly to the published commit
+- raw Git commit parent and tree match the values above
+- commit API reports exactly the three intended changed paths
+- published Git blobs match the three local Git blob IDs
+- all three fetched blob contents are byte-identical to the local controller files
+
+Evidence boundary:
+This receipt does not freeze or publish the repaired 07G source candidate or a session-atomic CL stage
+manifest. It does not authorize cache construction, real-model preflight, T0, model/GPU work,
+training, evaluation, paper-performance claims, or promotion of the rejected 9dabf423 protocol.

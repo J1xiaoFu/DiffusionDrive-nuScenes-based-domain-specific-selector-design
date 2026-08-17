@@ -49,6 +49,11 @@ stage manifest, T0, real-model preflight, GPU training, evaluation, or paper-per
   `af9213b216b0260b184d3d3ae109a4ed1bed70b8`, tree
   `9484997b5f185d4586a70f6d2d454b075633ad3e`; its sole receipt JSON has SHA256
   `31c356dd13305952b3d34be16263bfcf7c716ef6e629d9d8f03e141b6fdb8cbb`
+- controller publication-replay receipt commit: `1f6e850ec7832f0680ebf5472bafa2ea15289ca9`,
+  parent `1a5ddf47acfb8150ab28247ac7cbe26a30bb9ae1`, tree
+  `dd945bbff8632409795b47c3d0f2907f5777d5d8`; the publication branch ref, raw commit
+  parent/tree, exact three-path diff and all three Git blobs were independently replayed, and each
+  fetched blob was byte-identical to the local controller file from `ae223719d82ae31c1a6bddea04ba3f11f85e091a`
 
 This is a dispatch/receipt publication snapshot. It deliberately excludes the rejected/unreleased
 `9dabf423` claim-protocol source and cannot serve as a source/transfer execution authorization.
