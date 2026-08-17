@@ -1,0 +1,175 @@
+{
+  "schema_version": 1,
+  "receipt_type": "p0_rc_destination_replay",
+  "status": "passed",
+  "scope": "public reachability, byte identity, CPU tests, and P0 fixture replay only",
+  "recorded_date": "2026-08-17",
+  "executor": {
+    "server": "06G",
+    "branch": "codex/iclr2027-diffusiondrive-06g",
+    "initial_head": "eb3cc6d0fbe8fa46daab5c9e1aed41abd49f7414",
+    "initial_tree": "9484997b5f185d4586a70f6d2d454b075633ad3e",
+    "initial_status_short": "",
+    "origin_fetch": "https://github.com/hustvl/DiffusionDrive.git",
+    "origin_push": "https://github.com/hustvl/DiffusionDrive.git"
+  },
+  "transport": {
+    "command": "GIT_TERMINAL_PROMPT=0 git fetch --no-tags --no-recurse-submodules https://github.com/J1xiaoFu/DiffusionDrive-nuScenes-based-domain-specific-selector-design.git refs/heads/codex/iclr2027-dual-server-dispatch-publication",
+    "destination": "FETCH_HEAD",
+    "repository": "J1xiaoFu/DiffusionDrive-nuScenes-based-domain-specific-selector-design",
+    "branch": "codex/iclr2027-dual-server-dispatch-publication",
+    "checkout_merge_rebase_performed": false,
+    "remote_configuration_changed": false
+  },
+  "final_publication_receipt": {
+    "commit": "d1665712535e101c948bec2bb7f7c21e64fe1f36",
+    "parent": "02e2784cb39cd636af6f582c2ff3f72d9274c58f",
+    "parent_count": 1,
+    "tree": "7ba0facb01a1dc7f4354d32964127a252f5dc2c2",
+    "identity_match": true,
+    "changed_path_set_exact": true,
+    "changed_paths": [
+      {
+        "path": "controller_receipts/dual_server_dispatch_20260817/07g_p0_rc_publication.txt",
+        "git_blob": "fd2a7f50831c4f1521d1951c7882d1ea4dac0005",
+        "sha256": "bcc48fd6abcd2778e34e0d099dcbd4e4c2e81ffba64fa316a16e54987a5fd7e1"
+      },
+      {
+        "path": "controller_receipts/dual_server_dispatch_20260817/AUDIT.md",
+        "git_blob": "55e09c8f7d285ad0df6cf7bb7176b217f2764bb3",
+        "sha256": "3eb899aac2e7fc3f1d702081c196fcc1a9fccba3fd300ec7c86c45a6cc6ef437"
+      },
+      {
+        "path": "controller_receipts/dual_server_dispatch_20260817/SHA256SUMS",
+        "git_blob": "36a691b58a0ece1618655a5e1cc5c0a12d8e0df6",
+        "sha256": "67035a037562d756020b4fdeef37a76cb9e3f13938127be2f8c5c08ee81ecc74"
+      }
+    ]
+  },
+  "source_publication": {
+    "commit": "02e2784cb39cd636af6f582c2ff3f72d9274c58f",
+    "parent": "94a30b148e3a7c6fe1ecdd2f8ce493ab8440946b",
+    "parent_count": 1,
+    "tree": "b95c40170c29c8408cc258ea22a173d2167d8a66",
+    "actual_diff_path_count": 35,
+    "recursive_manifest_source_path_count": 37,
+    "identity_match": true
+  },
+  "frozen_rc": {
+    "source_branch": "codex/iclr2027-drive-opd-07g-p0-rc",
+    "source_commit": "7edaaa05c199174e5b7d5f0cf46e45f50cd7e9f4",
+    "source_parent": "d1cee1916f8f2329b4e3f3a1140e79e5d22c124e",
+    "source_tree": "0e6e9a0adda280765ce41ab377de9bbbaea0cff1",
+    "controller_freeze_commit": "4e5822bc68744d0bfecbb620a04fea4e63315c7b"
+  },
+  "isolated_extraction": {
+    "root": "/tmp/07g-p0-rc-destination-replay.eXQYck",
+    "selector_bench_source_commit": "02e2784cb39cd636af6f582c2ff3f72d9274c58f",
+    "controller_receipts_commit": "d1665712535e101c948bec2bb7f7c21e64fe1f36",
+    "extracted_top_level_paths": [
+      "selector_bench",
+      "controller_receipts"
+    ],
+    "existing_06g_source_modified": false
+  },
+  "published_receipt_set": {
+    "command": "LC_ALL=C sha256sum -c SHA256SUMS",
+    "entry_count": 14,
+    "passed_count": 14,
+    "status": "passed",
+    "output_path": "/tmp/07g-p0-rc-destination-replay.eXQYck/sha256sums_replay_output.txt",
+    "output_bytes": 465,
+    "output_sha256": "19097dfb6a71d70573442afed5dcea926534014b873cad56ca13ae70ed6f1f6a",
+    "publication_receipt_sha256": "bcc48fd6abcd2778e34e0d099dcbd4e4c2e81ffba64fa316a16e54987a5fd7e1",
+    "transfer_manifest_sha256": "70b9f99bc96633a6be9a9437b106e48dc1d8effdac55fbc8439869c3dbc2ed78"
+  },
+  "source_bundle_replay": {
+    "manifest_path": "controller_receipts/dual_server_dispatch_20260817/07g_p0_rc_transfer_manifest.json",
+    "algorithm_source_path": "selector_bench/scripts/51_freeze_drive_opd_06g_transfer.py",
+    "algorithm_source_sha256": "846e28eaa8a4aeaa2d4cb13de2626f3bca10275eedb6fe07f25fd081960019bc",
+    "canonical_serialization": "sort source_files by path; serialize each as path + NUL + sha256; join rows with LF and append trailing LF; SHA256 the UTF-8 bytes",
+    "declared_file_count": 37,
+    "observed_file_count": 37,
+    "missing_file_count": 0,
+    "mismatched_file_count": 0,
+    "declared_source_bundle_sha256": "ee681bf3cdb0cc2dfd198f860ce927971d738904250daacb2d8cfbf47349de93",
+    "computed_source_bundle_sha256": "ee681bf3cdb0cc2dfd198f860ce927971d738904250daacb2d8cfbf47349de93",
+    "status": "passed",
+    "output_path": "/tmp/07g-p0-rc-destination-replay.eXQYck/bundle_replay_summary.json",
+    "output_bytes": 643,
+    "output_sha256": "eb97e373224bf79b7dd278190eef10fea11230aa74010e683642349c0bc143f8"
+  },
+  "cpu_environment": {
+    "python": "/home/xlxia/drive_opd_remote_20260817T150443_06g/envs/diffusiondrive_navsim_9b52ed0/bin/python",
+    "python_version": "3.9.23",
+    "pytest_version": "8.4.2",
+    "cuda_visible_devices": "",
+    "python_dont_write_bytecode": "1",
+    "pytest_cache_provider_disabled": true
+  },
+  "five_suite_replay": {
+    "command": "CUDA_VISIBLE_DEVICES='' PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 PYTHONPATH=<isolated>/selector_bench <approved-python> -m pytest -q -p no:cacheprovider selector_bench/tests/test_navsim_continual_protocol.py selector_bench/tests/test_drive_opd_losses.py selector_bench/tests/test_drive_cl_baselines.py selector_bench/tests/test_drive_cl_statistics.py selector_bench/tests/test_drive_cl_claim_protocol.py",
+    "exit_code": 0,
+    "passed": 49,
+    "failed": 0,
+    "duration_seconds": 151.28,
+    "output_path": "/tmp/07g-p0-rc-destination-replay.eXQYck/five_suite_output.txt",
+    "output_bytes": 111,
+    "output_sha256": "ddc36e301c06a795c52b37c2ce381daf856bcf4a16d8010065e34a9b58057f92",
+    "status": "passed"
+  },
+  "p0_attack_replay": {
+    "command": "CUDA_VISIBLE_DEVICES='' PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 PYTEST_ADDOPTS='-p no:cacheprovider' PYTHONPATH=<isolated>/selector_bench <approved-python> selector_bench/scripts/57_audit_drive_cl_p0_attacks.py --repo <isolated> --python <approved-python> --output <isolated>/p0_attack_audit.json",
+    "exit_code": 0,
+    "attack_family_count": 12,
+    "attack_family_passed_count": 12,
+    "mutation_receipt_count": 19,
+    "mutation_cli_nonzero_count": 19,
+    "claim_output_absent_before_assertion_count": 19,
+    "positive_fixture_exit_code": 0,
+    "positive_fixture_status": "passed",
+    "audit_path": "/tmp/07g-p0-rc-destination-replay.eXQYck/p0_attack_audit.json",
+    "audit_bytes": 26942,
+    "audit_sha256": "ecc9623cf6830e0eb239cdbfaaa2ebb321a6ae107c52f80788d17d97c45c4c63",
+    "stdout_path": "/tmp/07g-p0-rc-destination-replay.eXQYck/p0_harness_stdout.jsonl",
+    "stdout_bytes": 23642,
+    "stdout_sha256": "687c7de24dc1bc6f2fff79d3749bb0a7be7c1f6d9813f196f6278393832390ef",
+    "stderr_path": "/tmp/07g-p0-rc-destination-replay.eXQYck/p0_harness_stderr.txt",
+    "stderr_bytes": 0,
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "status": "passed"
+  },
+  "artifact_boundary": {
+    "pytest_cache_paths_created": 0,
+    "python_bytecode_paths_created": 0,
+    "model_checkpoint_paths_created": 0,
+    "cache_read_or_built": false,
+    "real_model_imported": false,
+    "gpu_or_cuda_action_performed": false
+  },
+  "decision": {
+    "public_reachability": "passed",
+    "byte_identity": "passed",
+    "cpu_source_replay": "passed",
+    "p0_fixture_replay": "passed",
+    "fresh_context_free_blind_review": "pending",
+    "dataset_provenance_adapter": "stopped",
+    "session_atomic_cl_manifest": "stopped",
+    "cache": "stopped",
+    "real_model_preflight": "stopped",
+    "t0": "stopped",
+    "model": "stopped",
+    "gpu": "stopped",
+    "training": "stopped",
+    "evaluation": "stopped",
+    "performance_claim": "stopped"
+  },
+  "preservation": {
+    "local_branch_and_checkout_unchanged_by_fetch": true,
+    "origin_unchanged": true,
+    "navsim_tracked_source_changed": false,
+    "official_population_or_partition_changed": false,
+    "old_10444_cache_touched": false,
+    "existing_cache_or_data_changed": false
+  }
+}

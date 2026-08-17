@@ -60,6 +60,11 @@ stage manifest, T0, real-model preflight, GPU training, evaluation, or paper-per
   raw commit and recursive tree, matching 37/37 frozen source blobs and 4/4 controller receipt
   blobs. The non-forced fast-forward has 35 actual diff paths because six source paths were already
   byte-identical in its parent.
+- final 07G P0 RC publication receipt: `d1665712535e101c948bec2bb7f7c21e64fe1f36`,
+  parent `02e2784cb39cd636af6f582c2ff3f72d9274c58f`, tree
+  `7ba0facb01a1dc7f4354d32964127a252f5dc2c2`; 06G fetched it to `FETCH_HEAD`, matched the exact
+  three-path diff and all blobs, replayed the published `SHA256SUMS` 14/14, and recomputed the
+  37-file source bundle with zero missing or mismatched files.
 
 This is a dispatch/receipt publication snapshot. It deliberately excludes the rejected/unreleased
 `9dabf423` claim-protocol source and cannot serve as a source/transfer execution authorization.
@@ -87,9 +92,32 @@ that both servers can audit the same gate bytes; it does not prove the rejected 
   `70b9f99bc96633a6be9a9437b106e48dc1d8effdac55fbc8439869c3dbc2ed78`
 
 Decision: **PASS only for exact RC identity, static/CPU/P0-fixture checks, source-only manifest
-freeze and publication byte identity.** Fresh context-free review and 06G destination replay remain pending.
-Dataset provenance/adapter, cache, real-model preflight, T0, GPU, training, evaluation and
-performance gates remain stopped.
+freeze, publication byte identity and independent 06G destination replay.** Fresh context-free review
+remains pending. Dataset provenance/adapter, session-atomic CL manifest, cache, real-model preflight,
+T0, GPU, training, evaluation and performance gates remain stopped.
+
+## 06G P0 RC destination replay
+
+- 06G audit-only commit: `7bcfbf5f173cc567228904bc76413c508194dfe7`, parent
+  `eb3cc6d0fbe8fa46daab5c9e1aed41abd49f7414`, tree
+  `2717af0aa87c8abf82eecd713244eb160be8ff1f`; its sole receipt JSON has SHA256
+  `89503b3763e31a8383fe02bb6746783344b474a2cd8e11108730466fdef045e5` and Git blob
+  `37e8df8901e6ab5f706b7f8eb2b83b956be9f521`
+- controller reconstructed the receipt and deterministic XZ from the structured task log; receipt,
+  XZ and decompressed full-index diff byte counts and SHA256 values all matched the read-only export
+- public replay: final receipt commit/parent/tree and exact path set matched; published checksum set
+  passed 14/14; the 37-file logical bundle recomputed to
+  `ee681bf3cdb0cc2dfd198f860ce927971d738904250daacb2d8cfbf47349de93`
+- isolated destination tests: 49 passed in 151.28 s; P0 harness passed 12/12 attack families and
+  19/19 mutation receipts, with every mutated CLI rejected before claim output and the positive
+  fixture accepted
+- no cache, bytecode, pytest cache or checkpoint was created; no real model was imported and no
+  GPU/CUDA action occurred; 06G branch, checkout, origin and NAVSIM source stayed unchanged
+
+Decision: **PASS only for public reachability, byte identity, CPU source replay and P0 fixture
+replay.** Fresh context-free exact-RC blind review remains pending. Dataset provenance/adapter,
+session-atomic CL manifest, cache, real-model preflight, T0, model, GPU, training, evaluation and
+performance claims remain stopped.
 
 ## 06G R1 session-integrity intake
 

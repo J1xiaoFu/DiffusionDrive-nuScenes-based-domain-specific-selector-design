@@ -1,0 +1,60 @@
+06G 07G-P0-RC DESTINATION REPLAY INTAKE
+
+Decision: PASS, limited to public reachability, byte identity, source/CPU replay and P0 fixture replay.
+This receipt does not authorize a dataset adapter, CL manifest, cache, real-model preflight, T0,
+GPU work, training, evaluation or a performance claim.
+
+06G audit-only receipt identity
+- branch: codex/iclr2027-diffusiondrive-06g
+- commit: 7bcfbf5f173cc567228904bc76413c508194dfe7
+- parent: eb3cc6d0fbe8fa46daab5c9e1aed41abd49f7414
+- tree: 2717af0aa87c8abf82eecd713244eb160be8ff1f
+- sole path: reports/p0_rc_destination_replay_d1665712_20260817/receipt.json
+- receipt bytes: 8311
+- receipt SHA256: 89503b3763e31a8383fe02bb6746783344b474a2cd8e11108730466fdef045e5
+- receipt Git blob: 37e8df8901e6ab5f706b7f8eb2b83b956be9f521
+- ordinary full-index diff bytes: 8841
+- ordinary full-index diff SHA256: 41791358c642338b03295e2bd6ae87421837df26957f79d82e86688f0905227c
+- deterministic XZ bytes: 3176
+- deterministic XZ SHA256: 11bca05441503893bc5e85c80724b581a8bfe7adf1b013982f97252e0c03d248
+
+Controller reconstruction
+- source: controller-host structured JSONL task log; one unique wrapped delegation matched the
+  exact READ_ONLY_RECEIPT_EXPORT_7BCFBF5 marker
+- base64 character counts replayed: receipt 11084/11084; deterministic XZ 4236/4236
+- decoded receipt byte count, SHA256 and Git blob all match the 06G export
+- decoded XZ byte count and SHA256 match; decompression yields exactly 8841 bytes with the advertised
+  full-index diff SHA256
+- JSON syntax validation passed
+
+Published identity replayed by 06G
+- final publication receipt: d1665712535e101c948bec2bb7f7c21e64fe1f36, parent
+  02e2784cb39cd636af6f582c2ff3f72d9274c58f, tree
+  7ba0facb01a1dc7f4354d32964127a252f5dc2c2; exact three-path diff and all blobs matched
+- source publication: 02e2784cb39cd636af6f582c2ff3f72d9274c58f, parent
+  94a30b148e3a7c6fe1ecdd2f8ce493ab8440946b, tree
+  b95c40170c29c8408cc258ea22a173d2167d8a66
+- published SHA256SUMS replay: 14/14 passed; output SHA256
+  19097dfb6a71d70573442afed5dcea926534014b873cad56ca13ae70ed6f1f6a
+- frozen 37-file source bundle: 37 observed, zero missing and zero mismatched; declared and computed
+  logical SHA256 ee681bf3cdb0cc2dfd198f860ce927971d738904250daacb2d8cfbf47349de93
+
+Isolated CPU/P0 replay
+- approved Python 3.9.23 and pytest 8.4.2; CUDA_VISIBLE_DEVICES was empty, bytecode writing and the
+  pytest cache provider were disabled
+- five suites: exit 0, 49 passed, 0 failed in 151.28 s; output SHA256
+  ddc36e301c06a795c52b37c2ce381daf856bcf4a16d8010065e34a9b58057f92
+- P0 harness: exit 0; 12/12 attack families and 19/19 mutation receipts passed; all 19 mutated
+  CLIs returned nonzero and no claim output existed before assertion; positive fixture passed
+- P0 audit SHA256 ecc9623cf6830e0eb239cdbfaaa2ebb321a6ae107c52f80788d17d97c45c4c63
+- P0 stdout SHA256 687c7de24dc1bc6f2fff79d3749bb0a7be7c1f6d9813f196f6278393832390ef
+- P0 stderr was empty
+
+Preservation and remaining gates
+- fetch targeted FETCH_HEAD only; 06G branch, checkout and origin stayed unchanged
+- no NAVSIM tracked source, official population/partition, existing cache or data changed
+- no pytest cache, Python bytecode or model checkpoint path was created
+- no cache was read or built; no real model was imported; no GPU/CUDA action occurred
+- fresh context-free exact-RC blind review remains pending
+- dataset provenance/adapter, session-atomic CL manifest, cache, real-model preflight, T0, model,
+  GPU, training, evaluation and performance-claim gates remain stopped
