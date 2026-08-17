@@ -1,0 +1,90 @@
+06G_R1_SESSION_INTEGRITY_INTAKE_PASS_LIMITED
+
+remote_identity:
+source_thread=01a00e84-1f10-7331-ac52-fbc0c5d75a5a
+branch=codex/iclr2027-diffusiondrive-06g
+commit=af9213b216b0260b184d3d3ae109a4ed1bed70b8
+parent=0c4fb7cbc4b4ecc4bc056027a011fa3bd1d29d27
+tree=875f78ee1f56e0d23b6d54f21afcf792b4b9c0db
+subject=Freeze R1 navtrain session-integrity receipt
+
+transport_manifest:
+chunk_count=8
+chunk_lengths=144644,144644,144644,144644,144644,144644,144644,144624
+total_base64_chars=1157132
+total_base64_sha256=be3b59cc33ecd611d26a8f2c9255635ed95582958042f1326edf8e3e9a1a5971
+xz_bytes=867848
+xz_sha256=6b509fd72a0c6ad357519e283a7fae1bae185c6d96768fc22570e9ab24481c76
+patch_bytes=2116560
+patch_sha256=d14756359855e507940d7cf756698b14b0cf11539d948b2f971999787095506c
+chunk_sha256_01=fbbf9cba607fd1195709e4c15262f7a239b912c9f9f76e8b2a87197f518c1edf
+chunk_sha256_02=90f632aac650e033b2369c67debc5901f7b5f62b700a795db82e5f105a924fd2
+chunk_sha256_03=eb1ec7938dcc0e0528c705fd8a5e9d73d38a6d28b0d590aa4bff1a23bffef987
+chunk_sha256_04=95ebf51a877b67899cad41721a9860b716d1d261f26dd750f53824828efa5831
+chunk_sha256_05=e22d816fc21d419216049bc1db8aca96b21f2455fd3ef0bfaf31e88b716c4800
+chunk_sha256_06=280d8a25654e4451ad5486d9da6ca3369ae758549a5c978c27a0fbf89a0dd267
+chunk_sha256_07=af26f11ac688a8e6b08ecabaf4812a6d9d3a440976aa261e4f909e3d9453f1f0
+chunk_sha256_08=015939b08231d8a5e4ba8c8fb169c02a65e989197015eb9c1e751a8fe390dce0
+
+controller_reconstruction:
+source=local structured Codex rollout JSONL; exact delegation source thread required
+selection=complete delegation strings only; exact INDEX deduplication; LEN and SHA256 fail closed
+valid_duplicate_counts_by_index=3,2,2,2,2,2,2,3
+all_valid_duplicates_byte_identical=YES
+per_chunk_sha256=PASS
+total_base64_length_and_sha256=PASS
+base64_decode=PASS
+xz_length_and_sha256=PASS
+xz_test=PASS
+patch_length_and_sha256=PASS
+
+patch_audit:
+format=git format-patch unified diff
+header_commit=af9213b216b0260b184d3d3ae109a4ed1bed70b8
+files_added=5
+existing_files_modified=0
+git_apply_check=PASS
+git_apply_reverse_check=PASS
+python3_py_compile=PASS
+sha256sums_sha256=94033ab0d5ac45294960ea4311a838ffed2e2875067aacb695290bf4009e0232
+receipt_json_sha256=7156370a742df6328b03350f48c7b55a1608e9d0498dbd131f17ac075a2e63bd
+sessions_jsonl_sha256=cf12df3e215874362c67a6ce404a8bb8ae054fdc5c393f7a58385abd2453fa08
+producer_script_sha256=b3777777966c7ca18cb828c029df0b58730a4649a3403c149582768b03506089
+producer_test_sha256=0ccacb981a1a4b1766ea615b7343c69589f3fc09ee12a1641172631e567b324e
+sessions_jsonl_bytes=2080941
+sessions_jsonl_rows=162
+
+independent_derived_table_audit:
+canonical_jsonl_rows=162
+train_sessions=101
+val_sessions=61
+train_logs=978
+val_logs=214
+train_tokens=85109
+val_tokens=18179
+global_logs=1192
+global_unique_tokens=103288
+global_session_ids_unique=YES
+global_log_ids_unique=YES
+global_token_ids_unique=YES
+train_val_session_overlap=0
+train_val_log_overlap=0
+train_val_token_overlap=0
+missing_chronology=0
+duplicate_chronology=0
+invalid_chronology=0
+synthetic_positive_and_fail_closed_cases=4_PASS
+
+unresolved_independent_checks:
+- controller did not fetch the remote af9213b or parent 0c4fb7c Git objects, so the advertised
+  remote tree identity is recorded as a remote attestation rather than independently resolved.
+- the controller did not receive the sealed R1 input CSV/token files or the exact parent helper
+  scripts; therefore it did not rerun the full producer command or independently recompute the
+  helper source/function hashes from those parent files.
+
+decision:
+PASS only for transport integrity, patch-content intake, derived session-table integrity and the
+claim that the official R1 population admits a prospective session-atomic representation under the
+recorded session-key rule. This is not a frozen CL stage manifest, cache-builder replay, model or
+adapter preflight, T0/GPU authorization, training result, evaluation result or paper-performance
+claim. All such gates remain stopped.

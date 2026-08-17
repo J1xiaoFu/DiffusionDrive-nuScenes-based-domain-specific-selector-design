@@ -41,6 +41,29 @@ This is a dispatch/receipt publication snapshot. It deliberately excludes the re
 The published acceptance contract itself records `FAIL / OPEN P0`. Its reachability PASS only proves
 that both servers can audit the same gate bytes; it does not prove the rejected protocol has been fixed.
 
+## 06G R1 session-integrity intake
+
+- remote audit commit: `af9213b216b0260b184d3d3ae109a4ed1bed70b8`, parent
+  `0c4fb7cbc4b4ecc4bc056027a011fa3bd1d29d27`, advertised tree
+  `875f78ee1f56e0d23b6d54f21afcf792b4b9c0db`
+- transport: eight exact base64 chunks reconstructed from the controller host's structured task log;
+  every chunk SHA256, the 1,157,132-character aggregate SHA256, the 867,848-byte XZ SHA256 and the
+  2,116,560-byte patch SHA256 matched the remote manifest; `xz -t` passed
+- patch boundary: five new audit/receipt files and zero modifications to existing source; isolated
+  apply and reverse-apply checks passed, and every advertised payload hash replayed
+- controller-derived table replay: canonical 162-row JSONL; 101/61 train/validation sessions,
+  978/214 logs and 85,109/18,179 tokens; all session, log and token identifiers are globally unique,
+  train/validation overlap is zero, and missing/duplicate/invalid chronology counts are all zero
+- fail-closed replay: one positive and three adversarial synthetic cases passed against the received
+  analyzer without reading raw NAVSIM, importing a model or using a GPU
+- unresolved boundary: the remote commit/tree objects, sealed R1 input CSV/token payloads and exact
+  parent helper files were not independently fetched on the controller; the full producer command and
+  helper source/function hashes were therefore not replayed here
+
+Decision: **PASS only for remote-patch intake, derived-table integrity and prospective session-atomic
+representability.** It is not a frozen CL stage manifest or an independently replayed cache-builder
+receipt, and it does not unlock cache construction, T0, GPU work, training, evaluation or a paper claim.
+
 ## 07G receipt
 
 - branch: `codex/iclr2027-drive-opd-07g-research`
