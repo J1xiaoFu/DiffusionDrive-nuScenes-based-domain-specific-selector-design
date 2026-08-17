@@ -11,7 +11,7 @@ from __future__ import annotations
 import contextlib
 import copy
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Callable, Iterable, Mapping, Sequence
 
 import numpy as np
@@ -88,6 +88,26 @@ class DriveOPDConfig:
     lambda_planning: float = 1.0
     perception: PerceptionDistillationConfig = PerceptionDistillationConfig()
     planning: PlanningDistillationConfig = PlanningDistillationConfig()
+
+
+@dataclass
+class PlannerQueryAudit:
+    """Runtime trace emitted by the real adapter query path."""
+
+    records: list[dict[str, Any]] = field(default_factory=list)
+
+    def count(self, role: str) -> int:
+        return sum(record["role"] == role for record in self.records)
+
+    def assert_budget(self, *, student: int, teacher: int) -> None:
+        observed_student = self.count("student")
+        observed_teacher = self.count("teacher")
+        if observed_student != student or observed_teacher != teacher:
+            raise DriveOPDError(
+                "real adapter query budget mismatch: "
+                f"student expected={student} observed={observed_student}; "
+                f"teacher expected={teacher} observed={observed_teacher}"
+            )
 
 
 def _zero_like(tensor: torch.Tensor) -> torch.Tensor:
@@ -303,10 +323,20 @@ def configure_rollout_schedule(
     scheduler.set_timesteps(inference_steps, device)
     registered = getattr(scheduler, "timesteps", None)
     if registered is not None:
-        registered_set = {int(value) for value in registered}
+        registered_values = [int(value) for value in registered]
+        registered_set = set(registered_values)
         missing = sorted(set(timesteps) - registered_set)
         if missing:
             raise DriveOPDError(f"scheduler did not register rollout timesteps: {missing}")
+        for left, right in zip(timesteps, timesteps[1:]):
+            position = registered_values.index(left)
+            if (
+                position + 1 >= len(registered_values)
+                or registered_values[position + 1] != right
+            ):
+                raise DriveOPDError(
+                    f"scheduler does not transition directly from {left} to {right}"
+                )
     return RolloutSchedule(
         query_timesteps=timesteps,
         initial_noise_timestep=config.initial_noise_timestep,
@@ -371,6 +401,7 @@ class DiffusionDriveOPDAdapter:
         for parameter in self.teacher.parameters():
             parameter.requires_grad_(False)
         self.teacher.eval()
+        self._active_query_audit: PlannerQueryAudit | None = None
 
     @staticmethod
     def encode_context(model: torch.nn.Module, features: TensorMap) -> DiffusionContext:
@@ -431,7 +462,7 @@ class DiffusionDriveOPDAdapter:
         }
 
     @staticmethod
-    def query(
+    def _query_impl(
         planner: torch.nn.Module,
         context: DiffusionContext,
         normalized_state: torch.Tensor,
@@ -460,6 +491,47 @@ class DiffusionDriveOPDAdapter:
         )
         response = head.norm_odo(regressions[-1])
         return response, logits[-1]
+
+    def query(
+        self,
+        planner: torch.nn.Module,
+        context: DiffusionContext,
+        normalized_state: torch.Tensor,
+        timesteps: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        if planner is self.student:
+            role = "student"
+        elif planner is self.teacher:
+            role = "teacher"
+        else:
+            raise DriveOPDError("planner query does not belong to the registered student/teacher")
+        audit = getattr(self, "_active_query_audit", None)
+        if audit is not None:
+            audit.records.append(
+                {
+                    "role": role,
+                    # Never read CUDA values here: the audit must not introduce
+                    # a device synchronization or host copy on the hot query path.
+                    "timestep_shape": tuple(int(value) for value in timesteps.shape),
+                    "timestep_dtype": str(timesteps.dtype),
+                    "timestep_device": str(timesteps.device),
+                    "state_shape": tuple(int(value) for value in normalized_state.shape),
+                }
+            )
+        return self._query_impl(planner, context, normalized_state, timesteps)
+
+    @contextlib.contextmanager
+    def capture_query_audit(self) -> Iterable[PlannerQueryAudit]:
+        """Capture calls made by the actual DiffusionDrive adapter query method."""
+
+        if getattr(self, "_active_query_audit", None) is not None:
+            raise DriveOPDError("nested planner query audits are not supported")
+        audit = PlannerQueryAudit()
+        self._active_query_audit = audit
+        try:
+            yield audit
+        finally:
+            self._active_query_audit = None
 
     def deterministic_contexts(self, features: TensorMap) -> tuple[DiffusionContext, DiffusionContext]:
         # Aux contexts use eval behavior for both networks.  Student gradients are

@@ -44,6 +44,8 @@ def parse_args() -> argparse.Namespace:
         ),
     )
     parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument("--dataset-version", required=True)
+    parser.add_argument("--dataset-root-metadata-sha256", required=True)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--safety-fraction", type=float, default=0.3)
     parser.add_argument("--efficiency-fraction", type=float, default=0.3)
@@ -66,12 +68,18 @@ def main() -> None:
             raise SystemExit(f"required source is missing: {path}")
     inventory = load_cache_inventory(args.cache_index)
     chronological = build_chronological_protocol(
-        inventory, cache_index=args.cache_index, seed=args.seed
+        inventory,
+        cache_index=args.cache_index,
+        dataset_version=args.dataset_version,
+        dataset_root_metadata_sha256=args.dataset_root_metadata_sha256,
+        seed=args.seed,
     )
     failure_patch = build_failure_patch_protocol(
         inventory,
         cache_index=args.cache_index,
         metrics_csv=args.metrics_csv,
+        dataset_version=args.dataset_version,
+        dataset_root_metadata_sha256=args.dataset_root_metadata_sha256,
         seed=args.seed,
         safety_fraction=args.safety_fraction,
         efficiency_fraction=args.efficiency_fraction,

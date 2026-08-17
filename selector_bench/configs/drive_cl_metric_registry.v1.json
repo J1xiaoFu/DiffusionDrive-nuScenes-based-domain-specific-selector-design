@@ -1,0 +1,13 @@
+{
+  "schema": "selector_bench.drive_cl_metric_registry.v1",
+  "registry_id": "navsim_pdm_claim_metrics_20260817",
+  "metrics": [
+    "score",
+    "no_at_fault_collisions",
+    "drivable_area_compliance",
+    "time_to_collision_within_bound",
+    "comfort",
+    "ego_progress",
+    "driving_direction_compliance"
+  ]
+}

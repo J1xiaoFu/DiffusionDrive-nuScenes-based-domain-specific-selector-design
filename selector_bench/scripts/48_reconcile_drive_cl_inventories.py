@@ -11,10 +11,13 @@ from __future__ import annotations
 
 import argparse
 import csv
+import gzip
 import hashlib
+import io
 import json
 import os
 import pickle
+import re
 import time
 from collections import defaultdict
 from pathlib import Path
@@ -32,6 +35,14 @@ class ReconciliationError(RuntimeError):
     pass
 
 
+def is_sha256(value: object) -> bool:
+    return isinstance(value, str) and re.fullmatch(r"[0-9a-f]{64}", value) is not None
+
+
+def is_git_commit(value: object) -> bool:
+    return isinstance(value, str) and re.fullmatch(r"[0-9a-f]{40}", value) is not None
+
+
 def sha256_bytes(value: bytes) -> str:
     return hashlib.sha256(value).hexdigest()
 
@@ -47,6 +58,43 @@ def sha256_file(path: Path) -> str:
 def token_set_sha256(tokens: Iterable[str]) -> str:
     values = sorted(set(tokens))
     return sha256_bytes(("\n".join(values) + "\n").encode())
+
+
+def token_to_log_sha256(mapping: Mapping[str, str]) -> str:
+    rows = [f"{token}\t{mapping[token]}" for token in sorted(mapping)]
+    return sha256_bytes(("\n".join(rows) + "\n").encode())
+
+
+def replay_selection_rule(
+    receipt: Mapping[str, Any],
+    *,
+    configured_interval: set[str],
+    unit_stride: set[str],
+) -> set[str]:
+    """Execute one of the frozen, reviewable cache selection rules."""
+
+    rule = receipt.get("selection_rule")
+    if not isinstance(rule, Mapping):
+        raise ReconciliationError("cache provenance selection_rule must be an object")
+    rule_type = rule.get("type")
+    if rule_type == "official_configured_interval":
+        return set(configured_interval)
+    if rule_type == "full_unit_stride_eligible":
+        return set(unit_stride)
+    if rule_type == "sha256_rank_prefix":
+        seed = int(rule["seed"])
+        count = int(rule["count"])
+        if count <= 0 or count > len(unit_stride):
+            raise ReconciliationError("sha256_rank_prefix count is out of range")
+        return set(
+            sorted(
+                unit_stride,
+                key=lambda token: hashlib.sha256(
+                    f"{seed}\0{token}".encode("utf-8")
+                ).digest(),
+            )[:count]
+        )
+    raise ReconciliationError(f"unsupported executable selection rule: {rule_type!r}")
 
 
 def write_csv(path: Path, rows: list[Mapping[str, Any]]) -> None:
@@ -333,19 +381,72 @@ def main() -> None:
 
     contract = portable.get("remote_training_cache_contract", {})
     source_manifest_sha = sha256_file(args.protocol_manifest)
+    scene_filter_sha = sha256_file(args.scene_filter_yaml)
+    scene_loader_sha = sha256_file(args.scene_loader_source)
+    raw_tree_sha = sha256_bytes(("\n".join(selected_tree_rows) + "\n").encode())
     cache_provenance = (
         json.loads(args.cache_provenance.read_text())
         if args.cache_provenance is not None
         else None
     )
+    cache_provenance_errors: list[str] = []
+    replayed_selection: set[str] | None = None
+    if cache_provenance is not None:
+        environment_lock_path = Path(
+            str(cache_provenance.get("environment_lock_path", ""))
+        )
+        environment_lock_sha = cache_provenance.get("environment_lock_sha256")
+        checks = {
+            "schema": cache_provenance.get("schema")
+            == "selector_bench.drive_cl_cache_provenance.v2",
+            "cache_index_sha256": cache_provenance.get("cache_index_sha256")
+            == sha256_bytes(cache_bytes),
+            "selected_token_sha256": cache_provenance.get("selected_token_sha256")
+            == token_set_sha256(cache_tokens),
+            "selected_token_to_log_sha256": cache_provenance.get(
+                "selected_token_to_log_sha256"
+            )
+            == token_to_log_sha256(cache_token_to_log),
+            "input_allowlist_sha256": cache_provenance.get("input_allowlist_sha256")
+            == token_set_sha256(allowed_tokens),
+            "scene_filter_sha256": cache_provenance.get("scene_filter_sha256")
+            == scene_filter_sha,
+            "scene_loader_sha256": cache_provenance.get("scene_loader_sha256")
+            == scene_loader_sha,
+            "raw_selected_tree_sha256": cache_provenance.get(
+                "raw_selected_tree_sha256"
+            )
+            == raw_tree_sha,
+            "builder_repository": isinstance(
+                cache_provenance.get("builder_repository"), str
+            )
+            and bool(cache_provenance["builder_repository"]),
+            "builder_commit": is_git_commit(cache_provenance.get("builder_commit")),
+            "builder_worktree_clean": cache_provenance.get("builder_worktree_clean") is True,
+            "builder_command": isinstance(cache_provenance.get("builder_command"), list)
+            and bool(cache_provenance["builder_command"]),
+            "environment_lock_path": environment_lock_path.is_file(),
+            "environment_lock_sha256_format": is_sha256(environment_lock_sha),
+            "environment_lock_sha256_matches": environment_lock_path.is_file()
+            and is_sha256(environment_lock_sha)
+            and sha256_file(environment_lock_path) == environment_lock_sha,
+            "replay_status": cache_provenance.get("replay_status") == "PASS",
+        }
+        cache_provenance_errors.extend(
+            name for name, passed in checks.items() if not passed
+        )
+        try:
+            replayed_selection = replay_selection_rule(
+                cache_provenance,
+                configured_interval=sampled_tokens,
+                unit_stride=unit_stride_eligible_tokens,
+            )
+        except (KeyError, TypeError, ValueError, ReconciliationError) as exc:
+            cache_provenance_errors.append(f"selection_rule:{exc}")
+        if replayed_selection is not None and replayed_selection != cache_tokens:
+            cache_provenance_errors.append("replayed_selection_does_not_equal_cache")
     cache_provenance_valid = bool(
-        cache_provenance
-        and cache_provenance.get("cache_index_sha256") == sha256_bytes(cache_bytes)
-        and cache_provenance.get("selected_token_sha256")
-        == token_set_sha256(cache_tokens)
-        and cache_provenance.get("input_allowlist_sha256")
-        == token_set_sha256(allowed_tokens)
-        and cache_provenance.get("selection_rule")
+        cache_provenance is not None and not cache_provenance_errors
     )
     invariants = {
         "configured_logs_unique_and_present": not missing_logs
@@ -388,6 +489,41 @@ def main() -> None:
     session_csv = args.output_dir / "per_session_reconciliation.csv"
     write_csv(log_csv, per_log)
     write_csv(session_csv, session_rows)
+    membership_path = args.output_dir / "exact_token_membership.tsv.gz"
+    with membership_path.open("wb") as raw_stream:
+        with gzip.GzipFile(filename="", mode="wb", fileobj=raw_stream, mtime=0) as compressed:
+            with io.TextIOWrapper(compressed, encoding="utf-8", newline="") as stream:
+                writer = csv.writer(stream, delimiter="\t", lineterminator="\n")
+                writer.writerow(
+                    [
+                        "token",
+                        "raw_log",
+                        "unit_stride_eligible",
+                        "configured_interval",
+                        "cache",
+                        "protocol",
+                        "protocol_cell",
+                    ]
+                )
+                for token in sorted(allowed_tokens):
+                    writer.writerow(
+                        [
+                            token,
+                            allowlisted_token_to_log[token],
+                            int(token in unit_stride_eligible_tokens),
+                            int(token in sampled_tokens),
+                            int(token in cache_tokens),
+                            int(token in protocol_tokens),
+                            token_to_cell.get(token, ""),
+                        ]
+                    )
+
+    source_snapshot_dir = args.output_dir / "source_snapshots"
+    source_snapshot_dir.mkdir(exist_ok=True)
+    scene_filter_snapshot = source_snapshot_dir / "scene_filter.yaml"
+    scene_loader_snapshot = source_snapshot_dir / "scene_loader.py"
+    scene_filter_snapshot.write_bytes(args.scene_filter_yaml.read_bytes())
+    scene_loader_snapshot.write_bytes(args.scene_loader_source.read_bytes())
     payload = {
         "schema": "selector_bench.drive_cl_inventory_reconciliation.v1",
         "status": status,
@@ -421,9 +557,10 @@ def main() -> None:
         },
         "cache_selection_diagnosis": {
             "configured_interval_matches_cache": sampled_tokens == cache_tokens,
-            "cache_is_post_hoc_subset_of_allowlist": cache_tokens < allowed_tokens,
+            "cache_is_unreproduced_subset_of_allowlist": cache_tokens < allowed_tokens,
             "declared_provenance_receipt_available": cache_provenance is not None,
             "declared_provenance_receipt_valid": cache_provenance_valid,
+            "declared_provenance_errors": cache_provenance_errors,
             "required_remediation": (
                 "Rebuild the cache from a frozen config with a machine-readable receipt, "
                 "or supply the original subset-selection receipt; then regenerate the CL manifest."
@@ -443,20 +580,26 @@ def main() -> None:
             "portable_train": token_set_sha256(portable_train),
         },
         "sources": {
+            "audit_script": {
+                "path": str(Path(__file__).resolve()),
+                "sha256": sha256_file(Path(__file__).resolve()),
+            },
             "scene_filter_yaml": {
                 "path": str(args.scene_filter_yaml.resolve()),
-                "sha256": sha256_file(args.scene_filter_yaml),
+                "sha256": scene_filter_sha,
+                "committed_snapshot": str(scene_filter_snapshot.resolve()),
+                "committed_snapshot_sha256": sha256_file(scene_filter_snapshot),
             },
             "scene_loader_source": {
                 "path": str(args.scene_loader_source.resolve()),
-                "sha256": sha256_file(args.scene_loader_source),
+                "sha256": scene_loader_sha,
+                "committed_snapshot": str(scene_loader_snapshot.resolve()),
+                "committed_snapshot_sha256": sha256_file(scene_loader_snapshot),
             },
             "raw_selected_tree": {
                 "path": str(args.raw_log_root.resolve()),
                 "selected_bytes": selected_bytes,
-                "content_sha256": sha256_bytes(
-                    ("\n".join(selected_tree_rows) + "\n").encode()
-                ),
+                "content_sha256": raw_tree_sha,
             },
             "cache_index": {
                 "path": str(args.cache_index.resolve()),
@@ -484,6 +627,8 @@ def main() -> None:
             "per_log_csv_sha256": sha256_file(log_csv),
             "per_session_csv": str(session_csv.resolve()),
             "per_session_csv_sha256": sha256_file(session_csv),
+            "exact_token_membership_tsv_gz": str(membership_path.resolve()),
+            "exact_token_membership_tsv_gz_sha256": sha256_file(membership_path),
         },
         "invariants": invariants,
         "failed_invariants": sorted(

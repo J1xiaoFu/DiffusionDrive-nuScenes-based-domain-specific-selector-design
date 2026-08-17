@@ -1,0 +1,57 @@
+07G P0 RC CONTROLLER ACCEPTANCE — CPU/SOURCE ONLY; REVIEW AND DESTINATION REPLAY PENDING
+
+Controller audit date: 2026-08-17
+
+RC identity
+- source branch: codex/iclr2027-drive-opd-07g-p0-rc
+- commit: 7edaaa05c199174e5b7d5f0cf46e45f50cd7e9f4
+- parent: d1cee1916f8f2329b4e3f3a1140e79e5d22c124e
+- tree: 0e6e9a0adda280765ce41ab377de9bbbaea0cff1
+- commits from parent: exactly 1
+- changed paths: 34
+- source and detached verification worktrees: clean
+- selector_bench bytes versus precursor 7b3b1e0dfae0babc3104ff90d26e81e83fbac87e: identical
+
+Independent controller checks
+- exact name-status inventory SHA256: f8adebf5a5287c79d5626c8dee2b9ba9c2b0236039e5c2174fcb1cce95df4537
+- exact path/content inventory SHA256: b07949de23b0361c8a362d000d0d0cbe824f9649689e865f855a723f078cb44d
+- all 34 advertised per-file SHA256 values: matched
+- git show --check: PASS
+- ROUND_MANIFEST and both final audit JSON files: valid JSON
+- paper boundary: RC identity is externally bound; no performance or execution claim is made
+
+Independent controller five-suite replay
+- exact checkout: 7edaaa05c199174e5b7d5f0cf46e45f50cd7e9f4
+- result: 49 passed, 9 subtests passed in 91.50s
+- output SHA256: a27d1444495b2756f7584fbda45791916bbda9eae8a356d16b6566e77973fae3
+
+Independent controller P0 harness replay
+- status: PASS
+- attack families: 12/12
+- mutation receipts: 19/19
+- every mutated CLI exit: nonzero
+- every claim output before rejection assertion: absent
+- positive family fixture: PASS
+- harness stdout SHA256: 130164662385aa1179ab0511b2203c4a90f8880a6f2b9dee06a1b7ddf41ba06d
+- generated attack JSON SHA256: 2c62ffde6fa90f6aedb142b8b944eab46be6b84f7b8860f873ecbf8d72502887
+- positive fixture output SHA256: 861de68fcfab1cd8c228eb58ef60e4a4ecfa6e210c841dcb0dca0bda78c2cd45
+- test source SHA256: 5cf4f6747755f3df5364a4aa6acfac7cd301b031cb38825e7bc524c9f456a5de
+
+Frozen migration manifest
+- path: controller_receipts/dual_server_dispatch_20260817/07g_p0_rc_transfer_manifest.json
+- generator: selector_bench/scripts/51_freeze_drive_opd_06g_transfer.py at exact RC
+- source file count: 37
+- logical source bundle SHA256: ee681bf3cdb0cc2dfd198f860ce927971d738904250daacb2d8cfbf47349de93
+- generated manifest SHA256: 70b9f99bc96633a6be9a9437b106e48dc1d8effdac55fbc8439869c3dbc2ed78
+- transfer mode: source_only_git_branch
+- destination task: 01a00e84-1f10-7331-ac52-fbc0c5d75a5a
+
+Decision boundary
+PASS is limited to exact RC identity, static consistency, CPU tests, adversarial fixtures, and
+freezing the source-only migration manifest. It does not constitute the required fresh
+context-free blind review, publication verification, or independent 06G replay.
+
+The following remain PENDING: fresh GPT-5.6-sol xhigh context-free review of the exact RC,
+publication to a content-addressed ordinary-HTTPS-fetchable ref, and destination replay.
+Dataset-specific provenance/adapter, cache, real-model preflight, T0, GPU, training, evaluation,
+performance and superiority gates remain STOPPED.

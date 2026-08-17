@@ -209,6 +209,8 @@ def _protocol_envelope(
     source_files: Mapping[str, str | Path],
     stages: Sequence[Mapping[str, Any]],
     selection: Mapping[str, Any],
+    dataset_version: str,
+    dataset_root_metadata_sha256: str,
 ) -> dict[str, Any]:
     sources = {
         label: {"path": str(Path(path).resolve()), "sha256": hash_file(path)}
@@ -219,6 +221,11 @@ def _protocol_envelope(
         "protocol_id": protocol_id,
         "protocol_type": protocol_type,
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
+        "dataset_identity": {
+            "dataset": "NAVSIM",
+            "dataset_version": dataset_version,
+            "dataset_root_metadata_sha256": dataset_root_metadata_sha256,
+        },
         "seed": seed,
         "atomic_unit": "complete_timestamp_vehicle_session",
         "session_pattern": SESSION_PATTERN.pattern,
@@ -243,6 +250,8 @@ def build_chronological_protocol(
     inventory: Mapping[str, Mapping[str, Any]],
     *,
     cache_index: str | Path,
+    dataset_version: str,
+    dataset_root_metadata_sha256: str,
     protocol_id: str = "chronological_cl_v1",
     seed: int = 0,
 ) -> dict[str, Any]:
@@ -283,6 +292,8 @@ def build_chronological_protocol(
             "cut_session_indices": [cut1, cut2],
             "positive_transfer_is_not_assumed_to_be_conflict": True,
         },
+        dataset_version=dataset_version,
+        dataset_root_metadata_sha256=dataset_root_metadata_sha256,
     )
 
 
@@ -398,6 +409,8 @@ def build_failure_patch_protocol(
     *,
     cache_index: str | Path,
     metrics_csv: str | Path,
+    dataset_version: str,
+    dataset_root_metadata_sha256: str,
     protocol_id: str = "failure_patch_cl_v1",
     seed: int = 0,
     safety_fraction: float = 0.3,
@@ -502,6 +515,8 @@ def build_failure_patch_protocol(
             "efficiency_patch_min_efficiency_risk": efficiency_cutoff,
             "binary_any_failure_rule_rejected": True,
         },
+        dataset_version=dataset_version,
+        dataset_root_metadata_sha256=dataset_root_metadata_sha256,
     )
 
 
@@ -510,6 +525,23 @@ def validate_protocol(protocol: Mapping[str, Any]) -> None:
 
     if protocol.get("schema") != SCHEMA:
         raise ProtocolError(f"unsupported protocol schema: {protocol.get('schema')}")
+    dataset = protocol.get("dataset_identity")
+    if not isinstance(dataset, dict) or set(dataset) != {
+        "dataset",
+        "dataset_version",
+        "dataset_root_metadata_sha256",
+    }:
+        raise ProtocolError("protocol lacks a complete dataset identity")
+    digest = dataset.get("dataset_root_metadata_sha256")
+    if (
+        dataset.get("dataset") != "NAVSIM"
+        or not isinstance(dataset.get("dataset_version"), str)
+        or not dataset["dataset_version"]
+        or not isinstance(digest, str)
+        or len(digest) != 64
+        or any(character not in "0123456789abcdef" for character in digest)
+    ):
+        raise ProtocolError("protocol dataset identity is malformed")
     stages = protocol.get("stages")
     if not isinstance(stages, list) or len(stages) != 3:
         raise ProtocolError("protocol must contain exactly three stages")

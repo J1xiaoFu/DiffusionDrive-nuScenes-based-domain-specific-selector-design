@@ -15,6 +15,8 @@ import json
 import math
 import os
 import random
+import socket
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -40,6 +42,22 @@ ARMS = (
     "planning_only",
 )
 CHECKPOINT_SCHEMA = "selector_bench.drive_cl_diffusiondrive_checkpoint.v1"
+TRAINING_PROTOCOL_SCHEMA = "selector_bench.drive_cl_diffusiondrive_run.v3"
+TRAINING_RESULT_SCHEMA = "selector_bench.drive_cl_diffusiondrive_result.v3"
+METHOD_BY_ARM = {
+    "sequential": "sequential",
+    "planner_only": "planner_only",
+    "ewc": "ewc",
+    "agem": "agem",
+    "aler_drive": "aler_drive",
+    "step_matched_replay": "step_matched_replay",
+    "full_exposure_replay": "full_exposure_replay",
+    "lwf": "lwf",
+    "fixed_opd": "drive_opd_fixed",
+    "ema099_opd": "drive_opd_ema099",
+    "perception_only": "drive_perception_only",
+    "planning_only": "drive_planning_only",
+}
 
 
 class RunnerError(RuntimeError):
@@ -57,6 +75,98 @@ def sha256_file(path: Path) -> str:
         for block in iter(lambda: stream.read(1024 * 1024), b""):
             digest.update(block)
     return digest.hexdigest()
+
+
+def git_text(repository: Path, *arguments: str) -> str:
+    process = subprocess.run(
+        ["git", "-C", str(repository), *arguments],
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        check=False,
+    )
+    if process.returncode != 0:
+        raise RunnerError(
+            f"Git source identity failed: {' '.join(arguments)}\n{process.stdout}"
+        )
+    return process.stdout.strip()
+
+
+def verify_frozen_registration(
+    repository: Path, registration: Path, freeze_commit: str
+) -> dict[str, Any]:
+    repository = repository.resolve()
+    registration = registration.resolve()
+    try:
+        relative = registration.relative_to(repository).as_posix()
+    except ValueError as exc:
+        raise RunnerError("run registration must be inside its Git repository") from exc
+    resolved = git_text(repository, "rev-parse", f"{freeze_commit}^{{commit}}")
+    if resolved != freeze_commit or len(resolved) != 40:
+        raise RunnerError("run registration requires a full immutable commit SHA")
+    frozen = subprocess.check_output(
+        ["git", "-C", str(repository), "show", f"{freeze_commit}:{relative}"]
+    )
+    if frozen != registration.read_bytes():
+        raise RunnerError("run registration differs from its frozen Git blob")
+    payload = json.loads(registration.read_text())
+    if payload.get("schema") != "selector_bench.drive_cl_run_registration.v1":
+        raise RunnerError("unsupported run-registration schema")
+    return payload
+
+
+def optimizer_state_sha256(state: Mapping[str, Any]) -> str:
+    """Content hash independent of torch.save container metadata."""
+
+    digest = hashlib.sha256()
+
+    def update(value: Any) -> None:
+        if isinstance(value, torch.Tensor):
+            tensor = value.detach().cpu().contiguous()
+            digest.update(b"tensor\0")
+            digest.update(str(tensor.dtype).encode())
+            digest.update(b"\0")
+            digest.update(json.dumps(list(tensor.shape)).encode())
+            digest.update(b"\0")
+            digest.update(tensor.numpy().tobytes())
+        elif isinstance(value, Mapping):
+            digest.update(b"mapping\0")
+            for key in sorted(value, key=lambda item: str(item)):
+                digest.update(str(key).encode())
+                digest.update(b"\0")
+                update(value[key])
+        elif isinstance(value, (list, tuple)):
+            digest.update(b"sequence\0")
+            for item in value:
+                update(item)
+        else:
+            digest.update(type(value).__name__.encode())
+            digest.update(b"\0")
+            digest.update(repr(value).encode())
+            digest.update(b"\0")
+
+    update(state)
+    return digest.hexdigest()
+
+
+def current_gpu_uuid() -> str:
+    process = subprocess.run(
+        [
+            "nvidia-smi",
+            "--query-compute-apps=pid,gpu_uuid",
+            "--format=csv,noheader,nounits",
+        ],
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+        check=False,
+    )
+    if process.returncode == 0:
+        for line in process.stdout.splitlines():
+            fields = [value.strip() for value in line.split(",", maxsplit=1)]
+            if len(fields) == 2 and fields[0] == str(os.getpid()) and fields[1]:
+                return fields[1]
+    raise RunnerError("could not bind the training process to a physical GPU UUID")
 
 
 def atomic_json(path: Path, payload: object) -> None:
@@ -254,6 +364,28 @@ def training_tokens(
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--experiment-config",
+        type=Path,
+        default=(
+            Path(__file__).resolve().parents[1]
+            / "configs"
+            / "drive_opd_native_cl_failure_patch_seed0_v1.json"
+        ),
+    )
+    parser.add_argument(
+        "--method-registry",
+        type=Path,
+        default=(
+            Path(__file__).resolve().parents[1]
+            / "configs"
+            / "drive_cl_method_registry.v1.json"
+        ),
+    )
+    parser.add_argument("--environment-lock", type=Path, required=True)
+    parser.add_argument("--run-registration", type=Path, required=True)
+    parser.add_argument("--run-registration-repository", type=Path, required=True)
+    parser.add_argument("--run-registration-commit", required=True)
     parser.add_argument("--arm", choices=ARMS, required=True)
     parser.add_argument("--protocol-manifest", type=Path, required=True)
     parser.add_argument("--stage-index", type=int, choices=(1, 2, 3), required=True)
@@ -287,6 +419,10 @@ def parse_args() -> argparse.Namespace:
     if args.stage_index > 1 and args.source_checkpoint is None:
         parser.error("stage 2/3 requires the preceding stage endpoint checkpoint")
     for label, path in (
+        ("experiment config", args.experiment_config),
+        ("method registry", args.method_registry),
+        ("environment lock", args.environment_lock),
+        ("run registration", args.run_registration),
         ("protocol manifest", args.protocol_manifest),
         ("RAP root", args.rap_root),
         ("cache", args.cache),
@@ -336,15 +472,121 @@ def main() -> None:
     if not torch.cuda.is_available() or torch.cuda.device_count() != 1:
         raise RunnerError("bind exactly one idle GPU through /home/rguo/bin/gpu-run")
     args.output_dir.mkdir(parents=True, exist_ok=True)
+    protocol_path = args.output_dir / "protocol.json"
+    result_path = args.output_dir / "result.json"
+    if protocol_path.exists() or result_path.exists():
+        raise RunnerError(
+            "claim-eligible runs require a fresh output directory; preserve the old run identity"
+        )
     free_bytes = os.statvfs(args.output_dir).f_bavail * os.statvfs(args.output_dir).f_frsize
     if not args.no_save and free_bytes < 4 * 1024**3:
         raise RunnerError("less than 4 GiB free before checkpointed run")
     manifest = json.loads(args.protocol_manifest.read_text())
+    experiment_config = json.loads(args.experiment_config.read_text())
+    method_registry = json.loads(args.method_registry.read_text())
+    registered_methods = {
+        str(item["method_id"]): str(item["training_arm"])
+        for item in method_registry.get("methods", [])
+        if isinstance(item, dict)
+        and set(item) == {"method_id", "training_arm"}
+    }
+    method_id = METHOD_BY_ARM[args.arm]
+    if (
+        method_registry.get("schema") != "selector_bench.drive_cl_method_registry.v1"
+        or registered_methods.get(method_id) != args.arm
+        or len(registered_methods) != len(METHOD_BY_ARM)
+    ):
+        raise RunnerError("method registry does not bind this paper method to its arm")
+    dataset_identity = manifest.get("dataset_identity")
+    if not isinstance(dataset_identity, dict) or set(dataset_identity) != {
+        "dataset",
+        "dataset_version",
+        "dataset_root_metadata_sha256",
+    }:
+        raise RunnerError("protocol manifest lacks a complete dataset identity")
+    source_repository = Path(__file__).resolve().parents[2]
+    source_dirty = bool(git_text(source_repository, "status", "--porcelain"))
+    if source_dirty:
+        raise RunnerError("claim-eligible training requires a clean source worktree")
+    source_commit = git_text(source_repository, "rev-parse", "HEAD")
+    source_tree = git_text(source_repository, "rev-parse", "HEAD^{tree}")
+    registration = verify_frozen_registration(
+        args.run_registration_repository,
+        args.run_registration,
+        args.run_registration_commit,
+    )
+    preliminary_registration = {
+        "method_id": method_id,
+        "arm": args.arm,
+        "seed": args.seed,
+        "stage_index": args.stage_index,
+        "dataset_identity": dataset_identity,
+        "source_code": {
+            "repository": str(source_repository),
+            "commit": source_commit,
+            "tree": source_tree,
+            "dirty": source_dirty,
+        },
+        "protocol_manifest_sha256": sha256_file(args.protocol_manifest),
+        "protocol_content_sha256": manifest.get("content_sha256"),
+        "experiment_config_sha256": sha256_file(args.experiment_config),
+        "method_registry_sha256": sha256_file(args.method_registry),
+        "environment_lock_sha256": sha256_file(args.environment_lock),
+        "source_checkpoint_sha256": (
+            sha256_file(args.source_checkpoint) if args.source_checkpoint else None
+        ),
+        "stage_start_state_sha256": (
+            sha256_file(args.source_checkpoint) if args.source_checkpoint else None
+        ),
+        "max_steps": args.max_steps,
+    }
+    for field, expected in preliminary_registration.items():
+        if registration.get(field) != expected:
+            raise RunnerError(f"run registration {field} does not match execution")
+    if experiment_config.get("protocol_content_sha256") != manifest.get(
+        "content_sha256"
+    ):
+        raise RunnerError("experiment config and protocol manifest content hashes differ")
+    distillation_contract = experiment_config["distillation"]
+    declared_timesteps = tuple(
+        int(value) for value in distillation_contract["rollout_timesteps"]
+    )
+    if len(declared_timesteps) < 2:
+        raise RunnerError("experiment config has an invalid rollout timetable")
+    declared_stride = declared_timesteps[0] - declared_timesteps[1]
+    if declared_stride != int(distillation_contract["ddim_transition_stride"]):
+        raise RunnerError("experiment config rollout stride is internally inconsistent")
+    if 1000 // declared_stride != int(
+        distillation_contract["scheduler_inference_steps"]
+    ):
+        raise RunnerError("experiment config scheduler inference steps are inconsistent")
     tokens = training_tokens(
         manifest, args.arm, args.stage_index, args.seed, batch_size=args.batch_size
     )
     if not tokens:
         raise RunnerError("training token list is empty")
+
+    run_id = str(registration.get("run_id"))
+    if len(run_id) != 32:
+        raise RunnerError("run registration has an invalid run ID")
+    rng_record_path = args.output_dir / "rng_record.json"
+    atomic_json(
+        rng_record_path,
+        {
+            "schema": "selector_bench.drive_cl_rng_record.v1",
+            "run_id": run_id,
+            "seed": args.seed,
+            "python_seed": args.seed,
+            "numpy_seed": args.seed,
+            "torch_seed": args.seed,
+            "cuda_seed": args.seed,
+            "batch_seed_rule": "sha256(stock,seed,stage,epoch,batch)",
+            "order_seed_rule": "sha256(order,seed,stage,epoch)",
+            "distillation_seed_rule": "sha256(distill,seed,stage,epoch,batch)",
+            "cudnn_benchmark": False,
+            "cudnn_deterministic": True,
+        },
+    )
 
     random.seed(args.seed)
     np.random.seed(args.seed)
@@ -426,15 +668,83 @@ def main() -> None:
         agem_dataset = TokenDataset(full_dataset, agem_buffer_tokens)
     start_epoch = completed_epoch + 1
     end_epoch = completed_epoch + args.epochs
+    current_identities = set(stage_tokens(manifest, args.stage_index, "train"))
+    old_identities = {
+        token
+        for prior_stage in range(1, args.stage_index)
+        for token in stage_tokens(manifest, prior_stage, "train")
+    }
+    updates_per_epoch = math.ceil(len(tokens) / args.batch_size)
+    target_updates = updates_per_epoch * args.epochs
+    query_per_update = 0
+    if args.arm == "aler_drive":
+        query_per_update = 2
+    elif args.arm in distillation_arms and args.arm != "perception_only":
+        query_per_update = len(declared_timesteps)
+    target_budget = {
+        "epochs": args.epochs,
+        "optimizer_updates": target_updates,
+        "current_unique_identities": len(current_identities & set(tokens)),
+        "old_unique_identities": len(old_identities & set(tokens)),
+        "current_presentations": sum(token in current_identities for token in tokens)
+        * args.epochs,
+        "old_presentations": sum(token in old_identities for token in tokens)
+        * args.epochs,
+        "forward_calls": target_updates * (2 if args.arm == "agem" else 1),
+        "backward_calls": target_updates * (2 if args.arm == "agem" else 1),
+        "student_queries": target_updates * query_per_update,
+        "teacher_queries": target_updates * query_per_update,
+    }
+    if args.arm == "agem":
+        replay_batch_sizes = [
+            min(args.agem_replay_batch, len(agem_buffer_tokens) - offset)
+            for offset in range(0, len(agem_buffer_tokens), args.agem_replay_batch)
+        ]
+        target_budget["old_unique_identities"] = len(agem_buffer_tokens)
+        target_budget["old_presentations"] = sum(
+            replay_batch_sizes[index % len(replay_batch_sizes)]
+            for index in range(target_updates)
+        )
+    for field, expected in (
+        ("start_epoch", start_epoch),
+        ("end_epoch", end_epoch),
+        ("target_budget", target_budget),
+    ):
+        if registration.get(field) != expected:
+            raise RunnerError(f"run registration {field} does not match derived execution")
     protocol = {
-        "schema": "selector_bench.drive_cl_diffusiondrive_run.v1",
+        "schema": TRAINING_PROTOCOL_SCHEMA,
+        "run_id": run_id,
+        "method_id": method_id,
         "arm": args.arm,
+        "dataset_identity": dataset_identity,
+        "source_code": {
+            "repository": str(source_repository),
+            "commit": source_commit,
+            "tree": source_tree,
+            "dirty": source_dirty,
+        },
         "protocol_manifest": str(args.protocol_manifest.resolve()),
         "protocol_manifest_sha256": sha256_file(args.protocol_manifest),
+        "experiment_config": str(args.experiment_config.resolve()),
+        "experiment_config_sha256": sha256_file(args.experiment_config),
+        "method_registry": str(args.method_registry.resolve()),
+        "method_registry_sha256": sha256_file(args.method_registry),
+        "environment_lock": str(args.environment_lock.resolve()),
+        "environment_lock_sha256": sha256_file(args.environment_lock),
+        "rng_record": str(rng_record_path.resolve()),
+        "rng_record_sha256": sha256_file(rng_record_path),
+        "run_registration_repository": str(
+            args.run_registration_repository.resolve()
+        ),
+        "run_registration": str(args.run_registration.resolve()),
+        "run_registration_sha256": sha256_file(args.run_registration),
+        "run_registration_commit": args.run_registration_commit,
         "protocol_content_sha256": manifest.get("content_sha256"),
         "stage_index": args.stage_index,
         "source_checkpoint": str(args.source_checkpoint.resolve()) if args.source_checkpoint else None,
         "source_checkpoint_sha256": sha256_file(args.source_checkpoint) if args.source_checkpoint else None,
+        "stage_start_state_sha256": sha256_file(args.source_checkpoint) if args.source_checkpoint else None,
         "teacher_policy": (
             "ema_m0.99" if args.arm == "ema099_opd" else "fixed_stage_start"
             if args.arm in distillation_arms
@@ -461,13 +771,19 @@ def main() -> None:
         "lambda_planning": args.lambda_planning,
         "seed": args.seed,
         "max_steps": args.max_steps,
+        "target_budget": target_budget,
+        "budget_semantics": (
+            "forward/backward count optimizer-objective graph evaluations; planner denoiser "
+            "calls are separately counted as student/teacher queries"
+        ),
         "checkpoint_policy": "stage_endpoint_plus_one_rolling_optimizer_state",
         "ewc_fisher": str(args.ewc_fisher.resolve()) if args.ewc_fisher else None,
         "ewc_lambda": args.ewc_lambda if args.arm == "ewc" else None,
         "agem_buffer_tokens": len(agem_buffer_tokens) if args.arm == "agem" else None,
         "agem_replay_batch": args.agem_replay_batch if args.arm == "agem" else None,
     }
-    atomic_json(args.output_dir / "protocol.json", protocol)
+    atomic_json(protocol_path, protocol)
+    protocol_sha256 = sha256_file(protocol_path)
     print(json.dumps({"event": "protocol", **protocol}, sort_keys=True), flush=True)
 
     distill_config = DriveOPDConfig(
@@ -481,11 +797,22 @@ def main() -> None:
             agent_confidence=args.agent_confidence,
             bev_confidence=args.bev_confidence,
         ),
-        planning=PlanningDistillationConfig(),
+        planning=PlanningDistillationConfig(
+            rollout_timesteps=declared_timesteps,
+            initial_noise_timestep=int(
+                distillation_contract["initial_noise_timestep"]
+            ),
+        ),
     )
     step_log = args.output_dir / "steps.jsonl"
     epoch_log = args.output_dir / "epochs.jsonl"
+    run_started = time.monotonic()
     steps_this_invocation = 0
+    observed_forward_calls = 0
+    observed_backward_calls = 0
+    observed_student_queries = 0
+    observed_teacher_queries = 0
+    run_peak_vram_bytes = 0
     stopped_early = False
     for epoch in range(start_epoch, end_epoch + 1):
         order_generator = torch.Generator()
@@ -600,18 +927,37 @@ def main() -> None:
                         "aler_manifold_l2_mean": float(manifold.mean().item()),
                     }
                 else:
-                    distillation, distill_metrics = adapter.distillation_loss(
-                        distill_features,
-                        distill_targets,
-                        distill_config,
-                        support="exogenous" if args.arm == "lwf" else "student",
-                        generator=opd_generator,
+                    with adapter.capture_query_audit() as query_audit:
+                        distillation, distill_metrics = adapter.distillation_loss(
+                            distill_features,
+                            distill_targets,
+                            distill_config,
+                            support="exogenous" if args.arm == "lwf" else "student",
+                            generator=opd_generator,
+                        )
+                    declared_student = int(distill_metrics["student_denoiser_queries"])
+                    declared_teacher = int(distill_metrics["teacher_denoiser_queries"])
+                    query_audit.assert_budget(
+                        student=declared_student,
+                        teacher=declared_teacher,
+                    )
+                    distill_metrics.update(
+                        {
+                            "real_adapter_query_audit_pass": 1.0,
+                            "actual_student_denoiser_queries": float(
+                                query_audit.count("student")
+                            ),
+                            "actual_teacher_denoiser_queries": float(
+                                query_audit.count("teacher")
+                            ),
+                        }
                     )
             # Distillation is evaluated before the official train-mode forward.
             # Otherwise the student's current-batch BN buffer update is falsely
             # measured against the unchanged stage-start teacher as historical
             # perception drift even when both checkpoints are initially equal.
             predictions = agent.forward(features, targets)
+            observed_forward_calls += 1
             stock_terms = agent.compute_loss(features, targets, predictions)
             stock_loss = stock_terms["loss"]
             total_loss = stock_loss
@@ -622,6 +968,7 @@ def main() -> None:
                 total_loss = total_loss + args.ewc_lambda * ewc_penalty
                 distill_metrics["ewc_penalty"] = float(ewc_penalty.detach().item())
             total_loss.backward()
+            observed_backward_calls += 1
             if agem_iterator is not None:
                 parameters = trainable_parameters(agent)
                 current_gradient = capture_gradient(parameters)
@@ -642,11 +989,13 @@ def main() -> None:
                 replay_targets = move_to_device(replay_targets, device)
                 with preserve_module_buffers(agent):
                     replay_predictions = agent.forward(replay_features, replay_targets)
+                    observed_forward_calls += 1
                     replay_terms = agent.compute_loss(
                         replay_features, replay_targets, replay_predictions
                     )
                     reference_loss = replay_terms["loss"]
                     reference_loss.backward()
+                    observed_backward_calls += 1
                 reference_gradient = capture_gradient(parameters)
                 set_gradient_(parameters, current_gradient)
                 del current_gradient
@@ -672,6 +1021,21 @@ def main() -> None:
                 update_ema_teacher_(teacher, agent, momentum=0.99)
             global_step += 1
             steps_this_invocation += 1
+            observed_student_queries += int(
+                distill_metrics.get(
+                    "actual_student_denoiser_queries",
+                    distill_metrics.get("student_denoiser_queries", 0.0),
+                )
+            )
+            observed_teacher_queries += int(
+                distill_metrics.get(
+                    "actual_teacher_denoiser_queries",
+                    distill_metrics.get("teacher_denoiser_queries", 0.0),
+                )
+            )
+            run_peak_vram_bytes = max(
+                run_peak_vram_bytes, int(torch.cuda.max_memory_allocated(device))
+            )
             current_batch = int(next(iter(features.values())).shape[0])
             samples += current_batch
             batches += 1
@@ -742,22 +1106,89 @@ def main() -> None:
     if not args.no_save and not stopped_early:
         rolling = args.output_dir / "resume_latest.ckpt"
         endpoint_path = args.output_dir / f"stage_{args.stage_index}_endpoint.ckpt"
-        if not endpoint_path.exists():
-            os.link(rolling, endpoint_path)
+        if endpoint_path.exists():
+            raise RunnerError(f"refusing to reuse a pre-existing endpoint: {endpoint_path}")
+        os.link(rolling, endpoint_path)
         endpoint = str(endpoint_path.resolve())
         endpoint_sha256 = sha256_file(endpoint_path)
+    optimizer_digest = optimizer_state_sha256(optimizer.state_dict())
+    optimizer_receipt_path = args.output_dir / "optimizer_state_receipt.json"
+    atomic_json(
+        optimizer_receipt_path,
+        {
+            "schema": "selector_bench.drive_cl_optimizer_state_receipt.v1",
+            "run_id": protocol["run_id"],
+            "optimizer": type(optimizer).__name__,
+            "optimizer_state_sha256": optimizer_digest,
+            "endpoint_sha256": endpoint_sha256,
+        },
+    )
+    complete_budget = not stopped_early and steps_this_invocation == target_updates
+    observed_budget = {
+        **target_budget,
+        "epochs": max(0, completed_epoch - start_epoch + 1),
+        "optimizer_updates": steps_this_invocation,
+        "current_presentations": (
+            target_budget["current_presentations"] if complete_budget else 0
+        ),
+        "old_presentations": target_budget["old_presentations"] if complete_budget else 0,
+        "forward_calls": observed_forward_calls,
+        "backward_calls": observed_backward_calls,
+        "student_queries": observed_student_queries,
+        "teacher_queries": observed_teacher_queries,
+    }
+    persistent_bytes = sum(
+        path.stat().st_size
+        for path in args.output_dir.rglob("*")
+        if path.is_file() and not path.is_symlink()
+    )
     result = {
-        "schema": "selector_bench.drive_cl_diffusiondrive_result.v1",
-        "arm": args.arm,
-        "stage_index": args.stage_index,
+        "schema": TRAINING_RESULT_SCHEMA,
+        "training_protocol": str(protocol_path.resolve()),
+        "training_protocol_sha256": protocol_sha256,
+        "run_id": protocol["run_id"],
+        "method_id": protocol["method_id"],
+        "arm": protocol["arm"],
+        "seed": protocol["seed"],
+        "stage_index": protocol["stage_index"],
+        "dataset_identity": protocol["dataset_identity"],
+        "source_code": protocol["source_code"],
+        "protocol_manifest_sha256": protocol["protocol_manifest_sha256"],
+        "protocol_content_sha256": protocol["protocol_content_sha256"],
+        "experiment_config_sha256": protocol["experiment_config_sha256"],
+        "method_registry_sha256": protocol["method_registry_sha256"],
+        "environment_lock_sha256": protocol["environment_lock_sha256"],
+        "rng_record_sha256": protocol["rng_record_sha256"],
+        "run_registration_sha256": protocol["run_registration_sha256"],
+        "run_registration_commit": protocol["run_registration_commit"],
+        "source_checkpoint_sha256": protocol["source_checkpoint_sha256"],
+        "stage_start_state_sha256": protocol["stage_start_state_sha256"],
+        "start_epoch": protocol["start_epoch"],
+        "end_epoch": protocol["end_epoch"],
+        "max_steps": protocol["max_steps"],
+        "target_budget": protocol["target_budget"],
         "completed_epoch": completed_epoch,
         "global_step": global_step,
         "steps_this_invocation": steps_this_invocation,
         "stopped_early": stopped_early,
+        "observed_budget": observed_budget,
         "endpoint": endpoint,
         "endpoint_sha256": endpoint_sha256,
+        "optimizer_state_receipt": str(optimizer_receipt_path.resolve()),
+        "optimizer_state_receipt_sha256": sha256_file(optimizer_receipt_path),
+        "optimizer_state_sha256": optimizer_digest,
+        "parent_checkpoint_sha256": protocol["source_checkpoint_sha256"],
+        "resources": {
+            "wall_seconds": time.monotonic() - run_started,
+            "peak_vram_bytes": run_peak_vram_bytes,
+            "persistent_bytes": persistent_bytes,
+            "transient_bytes": 0,
+            "host": socket.gethostname(),
+            "execution_device": "cuda",
+            "gpu_uuid": current_gpu_uuid(),
+        },
     }
-    atomic_json(args.output_dir / "result.json", result)
+    atomic_json(result_path, result)
     print(json.dumps({"event": "result", **result}, sort_keys=True), flush=True)
 
 

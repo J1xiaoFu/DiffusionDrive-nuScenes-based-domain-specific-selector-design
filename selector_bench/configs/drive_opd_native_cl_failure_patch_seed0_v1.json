@@ -87,11 +87,15 @@
       "drivable_area_compliance",
       "time_to_collision_within_bound",
       "comfort",
-      "ego_progress"
+      "ego_progress",
+      "driving_direction_compliance"
     ],
     "cluster_unit": "timestamp_vehicle_session",
     "bootstrap_repetitions": 10000,
-    "confidence_interval": 0.95
+    "confidence_interval": 0.95,
+    "seed0_inference_scope": "screening_only_not_claim_bearing",
+    "multi_seed_design": "crossed_training_seed_by_shared_evaluation_session",
+    "confirmatory_multiplicity": "one_preregistered_global_Holm_family_after_method_and_inventory_freeze"
   },
   "promotion_gate": {
     "drive_opd_beats_sequential_on_at_least_two_conflict_transitions": true,

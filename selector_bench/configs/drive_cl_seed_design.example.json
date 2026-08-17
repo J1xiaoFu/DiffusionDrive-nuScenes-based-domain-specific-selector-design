@@ -1,0 +1,39 @@
+{
+  "schema": "selector_bench.drive_cl_seed_design.v1",
+  "status": "REPLACE_WITH_PASSED_ONLY_AFTER_EXECUTABLE_AUDIT",
+  "design_split": "audit",
+  "designed_seed_ids": [0, 1, 2, 3, 4, 5, 6, 7, 8],
+  "minimum_relevant_effect": "REPLACE_POSITIVE_EFFECT",
+  "target_power": 0.8,
+  "estimated_power": "REPLACE_ESTIMATED_POWER",
+  "family_alpha": 0.05,
+  "family_metric_count": 7,
+  "power_simulation_repetitions": 10000,
+  "simulation_seed": 0,
+  "minimum_seed_count_for_two_sided_family_tail_resolution": 9,
+  "calibration_status": "REPLACE_WITH_PASSED_ONLY_AFTER_SMALL_SAMPLE_CALIBRATION",
+  "calibration_method": "heldout_null_crossed_resampling_max_statistic_over_seven_metrics",
+  "power_method": "audit_only_crossed_resampling_at_minimum_relevant_effect",
+  "pilot_matrix": "REPLACE_AUDIT_PILOT_MATRIX.json",
+  "pilot_matrix_sha256": "REPLACE_AUDIT_PILOT_MATRIX_SHA256",
+  "candidate_seed_audits": [
+    {
+      "seed_count": 9,
+      "minimum_metric_power": "REPLACE_ESTIMATED_POWER",
+      "metric_power": {
+        "score": "REPLACE_POWER",
+        "no_at_fault_collisions": "REPLACE_POWER",
+        "drivable_area_compliance": "REPLACE_POWER",
+        "time_to_collision_within_bound": "REPLACE_POWER",
+        "comfort": "REPLACE_POWER",
+        "ego_progress": "REPLACE_POWER",
+        "driving_direction_compliance": "REPLACE_POWER"
+      },
+      "heldout_null_fwer": "REPLACE_HELDOUT_NULL_FWER",
+      "null_fwer_tolerance": "REPLACE_MONTE_CARLO_TOLERANCE",
+      "calibration_simulations": 5000,
+      "evaluation_simulations": 5000
+    }
+  ],
+  "audit_source_receipt_sha256": ["REPLACE_AUDIT_ONLY_PILOT_RECEIPT_SHA256"]
+}

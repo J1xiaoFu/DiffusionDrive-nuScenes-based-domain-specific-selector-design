@@ -10,8 +10,9 @@ import os
 from pathlib import Path
 
 from selector_bench.continual.navsim_protocol import session_id_from_log
+from selector_bench.continual.evaluation_contract import load_evaluation_cell_contract
 from selector_bench.continual.statistics import (
-    holm_adjusted_pvalues,
+    PDM_DEFAULT_METRICS,
     paired_session_bootstrap,
     read_pdm_rows,
 )
@@ -52,29 +53,29 @@ def parse_args() -> argparse.Namespace:
     names = [name for name, _ in args.candidate]
     if len(names) != len(set(names)):
         parser.error("candidate names must be unique")
+    args.metrics = PDM_DEFAULT_METRICS
     return args
 
 
 def main() -> None:
     args = parse_args()
-    receipt = json.loads(args.receipt.read_text())
-    manifest_path = Path(receipt["protocol_manifest"])
-    manifest = json.loads(manifest_path.read_text())
-    stage = next(
-        item for item in manifest["stages"] if item["stage_index"] == receipt["stage_index"]
+    contract = load_evaluation_cell_contract(args.receipt)
+    receipt = contract.receipt
+    manifest = contract.protocol
+    expected = set(contract.tokens)
+    token_to_log = contract.token_to_log
+    baseline = read_pdm_rows(
+        args.baseline_csv,
+        expected_tokens=expected,
+        required_metrics=args.metrics,
     )
-    cell = stage["splits"][receipt["split"]]
-    expected = set(cell["tokens"])
-    token_to_log = cell["token_to_log"]
-    baseline = read_pdm_rows(args.baseline_csv, expected_tokens=expected)
 
     comparisons = {}
     for offset, (name, path) in enumerate(args.candidate):
-        rows = read_pdm_rows(path, expected_tokens=expected)
-        metrics = sorted(
-            set.intersection(
-                *(set(baseline[token]) & set(rows[token]) for token in sorted(expected))
-            )
+        rows = read_pdm_rows(
+            path,
+            expected_tokens=expected,
+            required_metrics=args.metrics,
         )
         comparisons[name] = {
             "candidate_csv": str(path.resolve()),
@@ -83,25 +84,17 @@ def main() -> None:
                 baseline,
                 rows,
                 token_to_log,
-                metrics=metrics,
+                metrics=args.metrics,
                 repetitions=args.bootstrap_repetitions,
                 seed=args.seed + offset,
             ),
         }
 
-    family = {
-        (name, metric): values["bootstrap_two_sided_pvalue"]
-        for name, comparison in comparisons.items()
-        for metric, values in comparison["candidate_minus_baseline"].items()
-    }
-    for (name, metric), value in holm_adjusted_pvalues(family).items():
-        comparisons[name]["candidate_minus_baseline"][metric][
-            "family_holm_adjusted_pvalue"
-        ] = value
-
     payload = {
-        "schema": "selector_bench.drive_cl_paired_pdm_comparison.v2",
+        "schema": "selector_bench.drive_cl_paired_pdm_comparison.v3",
         "protocol_content_sha256": manifest["content_sha256"],
+        "evaluation_cell_receipt": str(contract.receipt_path),
+        "evaluation_cell_receipt_sha256": sha256(contract.receipt_path),
         "stage_index": receipt["stage_index"],
         "stage_name": receipt["stage_name"],
         "split": receipt["split"],
@@ -109,7 +102,14 @@ def main() -> None:
         "session_clusters": len(
             {session_id_from_log(value) for value in token_to_log.values()}
         ),
-        "multiplicity_family": "all_candidate_by_metric_comparisons_in_this_report",
+        "required_metrics": list(args.metrics),
+        "metric_contract": "frozen_claim_bearing_seven_metric_family",
+        "claim_eligibility": "single_seed_screening_only",
+        "raw_pvalue_method": "null_centered_studentized_session_cluster_bootstrap",
+        "multiplicity_status": (
+            "raw_pvalues_only; claim-bearing Holm adjustment must be applied once "
+            "over the preregistered global P003 family, never per cell"
+        ),
         "bootstrap_repetitions": args.bootstrap_repetitions,
         "baseline_csv": str(args.baseline_csv.resolve()),
         "baseline_csv_sha256": sha256(args.baseline_csv),

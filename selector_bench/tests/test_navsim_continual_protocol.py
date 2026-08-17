@@ -74,12 +74,18 @@ class NavsimContinualProtocolTest(unittest.TestCase):
             index_path, csv_path = self._fixture(Path(tmp))
             inventory = load_cache_inventory(index_path)
             chronological = build_chronological_protocol(
-                inventory, cache_index=index_path, seed=17
+                inventory,
+                cache_index=index_path,
+                dataset_version="fixture-v1",
+                dataset_root_metadata_sha256="a" * 64,
+                seed=17,
             )
             failure = build_failure_patch_protocol(
                 inventory,
                 cache_index=index_path,
                 metrics_csv=csv_path,
+                dataset_version="fixture-v1",
+                dataset_root_metadata_sha256="a" * 64,
                 seed=17,
                 safety_fraction=0.25,
                 efficiency_fraction=0.25,
@@ -90,6 +96,8 @@ class NavsimContinualProtocolTest(unittest.TestCase):
                 inventory,
                 cache_index=index_path,
                 metrics_csv=csv_path,
+                dataset_version="fixture-v1",
+                dataset_root_metadata_sha256="a" * 64,
                 seed=17,
                 safety_fraction=0.25,
                 efficiency_fraction=0.25,
@@ -111,7 +119,10 @@ class NavsimContinualProtocolTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             index_path, _ = self._fixture(Path(tmp))
             protocol = build_chronological_protocol(
-                load_cache_inventory(index_path), cache_index=index_path
+                load_cache_inventory(index_path),
+                cache_index=index_path,
+                dataset_version="fixture-v1",
+                dataset_root_metadata_sha256="a" * 64,
             )
             leaked = protocol["stages"][0]["splits"]["train"]["sessions"][0]
             protocol["stages"][0]["splits"]["audit"]["sessions"].append(leaked)

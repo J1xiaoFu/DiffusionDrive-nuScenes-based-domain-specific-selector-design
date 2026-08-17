@@ -1,0 +1,100 @@
+{
+  "created_at": "2026-08-17",
+  "data_gate": {
+    "forbid_claim_bearing_training_before_pass": true,
+    "required_receipt_schema": "selector_bench.drive_cl_cache_provenance.v2",
+    "status": "BLOCKED_UNTIL_06G_REPLAY_RECEIPT_PASSES"
+  },
+  "destination_host": "06G",
+  "destination_project": "AutoDrive",
+  "destination_thread_id": "01a00e84-1f10-7331-ac52-fbc0c5d75a5a",
+  "initial_arms": [
+    "sequential",
+    "lwf",
+    "fixed_opd",
+    "ema099_opd"
+  ],
+  "optimizer_contract": {
+    "forward_backward_per_step": 1,
+    "joint_official_and_distillation_loss": true,
+    "optimizer": "AdamW",
+    "optimizer_updates_per_step": 1,
+    "teacher_stop_gradient": true
+  },
+  "optimizer_states_remain_on_origin_host": true,
+  "preflight_gates": [
+    "record_remote_code_commit_and_dataset_roots",
+    "replay_official_cache_selection_and_verify_exact_token_hash",
+    "record_gpu_uuid_inventory_without_interrupting_other_users",
+    "one_batch_official_loss_equivalence",
+    "identical_fixed_teacher_student_distillation_near_zero",
+    "matched_lwf_and_opd_teacher_query_budget",
+    "one_step_checkpoint_resume_with_optimizer_state"
+  ],
+  "remote_result_contract": {
+    "do_not_sync_back": [
+      "model_weights",
+      "optimizer_states",
+      "dataset",
+      "feature_cache"
+    ],
+    "sync_back": [
+      "environment_inventory.json",
+      "cache_provenance.json",
+      "experiment_manifest.json",
+      "checkpoint_sha256.json",
+      "steps.jsonl",
+      "epochs.jsonl",
+      "evaluation.csv",
+      "summary.json",
+      "plots"
+    ]
+  },
+  "schema": "selector_bench.drive_opd_cross_host_migration.v2",
+  "source_branch": "codex/iclr2027-drive-opd-07g-p0-rc",
+  "source_bundle_sha256": "ee681bf3cdb0cc2dfd198f860ce927971d738904250daacb2d8cfbf47349de93",
+  "source_commit": "7edaaa05c199174e5b7d5f0cf46e45f50cd7e9f4",
+  "source_files": {
+    "selector_bench/configs/drive_cl_crossed_comparison_spec.example.json": "5f74e35f38f2d5cbea1f0a39a4d30e885e8abe8e2ebba9e3e38a309035ea193e",
+    "selector_bench/configs/drive_cl_global_holm_family.example.json": "e6bd554c59a75e53441e5b7454195d922f57de8366eee5c61d30efe3341cadbc",
+    "selector_bench/configs/drive_cl_method_registry.v1.json": "3ec1b3fde9a151fc98b69402493454302fe4f2995b5f40f239fe8a19cd8bc5c4",
+    "selector_bench/configs/drive_cl_metric_registry.v1.json": "fcb13d61b0c9174c21dc35abe27d357d928e7310e550c1c10320f773eaa107dc",
+    "selector_bench/configs/drive_cl_seed_design.example.json": "5012de095e13ffa9b792025e12e2426c2adc1806e678ebbfb000971fcb32cdf3",
+    "selector_bench/configs/drive_opd_native_cl_failure_patch_seed0_v1.json": "14fb98f9d24c0b4942f09e9211963038ad833b533b560177249abb4f3b71ce74",
+    "selector_bench/scripts/40_build_drive_cl_protocol.py": "49c2ca6fb6b6c2420e278ddf4b3c690e05bf0284c87dac502860dfbbdbbf6f02",
+    "selector_bench/scripts/41_train_drive_cl_diffusiondrive.py": "7e001ae4c850cf05660f47a44aeea852b5cd806deb8ba0c08c0fc71b5b0d78f0",
+    "selector_bench/scripts/42_export_drive_cl_eval_tokens.py": "c988d749eea532eab330676a4e81e97ae2fdc3c7dce65fcad25c56c698c00dd3",
+    "selector_bench/scripts/43_audit_diffusiondrive_context_swap.py": "b085841a48cffd93b2cf5dccb594efe352eaf3d20d0de4f52488d2d623a6eb5b",
+    "selector_bench/scripts/44_compute_drive_cl_fisher.py": "469595b3ed2f03713e1983b3afc8a810399287f612b777d56ff97bacf6ed84a5",
+    "selector_bench/scripts/45_summarize_drive_cl_pdm.py": "078a9f0c99dcd29338ecb075e17940ae478cd23dac6dd460992c1ccb41653d9a",
+    "selector_bench/scripts/46_compare_drive_cl_pdm.py": "8fb194c9e98b6491b3e9e2ebd40918ecfc721d69a4b02e2a546d05606de647c1",
+    "selector_bench/scripts/47_export_drive_cl_training_manifest.py": "365b2fa42ed0e883e1efa104cfcb13a5a0f17570df6618f3612115af079fe7e9",
+    "selector_bench/scripts/48_reconcile_drive_cl_inventories.py": "7dadeea43362fa19935fda7ecb7c12dd1392802433075020097826ba5f88f555",
+    "selector_bench/scripts/49_audit_drive_opd_rollout_schedule.py": "3207d7016187b09b94a4340387dd3eafa464744914431c7198d723910a0807dd",
+    "selector_bench/scripts/50_apply_drive_cl_global_holm.py": "0792258f5957a2b3fef8835cb936d86d3fb93b99201f2cfbcae21a647cbf2b2a",
+    "selector_bench/scripts/51_freeze_drive_opd_06g_transfer.py": "846e28eaa8a4aeaa2d4cb13de2626f3bca10275eedb6fe07f25fd081960019bc",
+    "selector_bench/scripts/52_compare_drive_cl_crossed_pdm.py": "3f91f272af3d599b7ef7489a20398e6e6e6acd3ca881858e3ed2a169ab465fec",
+    "selector_bench/scripts/53_audit_drive_cl_claim_protocol.py": "61b04dc4156e3c63dcd0694d2c6f50a797e41d9e2da71f27663626dffd6e65fe",
+    "selector_bench/scripts/54_run_drive_cl_navsim_evaluator.py": "6b7c29b2042f71559534ed3e6b2672f7324a3acaa226e8ee4dc294dea613156e",
+    "selector_bench/scripts/55_design_drive_cl_confirmatory_seeds.py": "29dd1e3d580485f1c4186bcae86939842e95a98c67b5b67c0d89a5e23f018dce",
+    "selector_bench/scripts/56_build_drive_cl_evidence_inventory.py": "535b96d1120e115cc84d7adae7d31586fc2aabcf28ad6d9e3492282d533189c7",
+    "selector_bench/scripts/57_audit_drive_cl_p0_attacks.py": "26efb065bcdca939d016f85ab20662d9f567ab687c4198a51b4ac40f028d573d",
+    "selector_bench/scripts/58_register_drive_cl_run.py": "b4a7b7f3ff8649e2d12ed3dd98c7bbaa902d526976c0968df5f475deaef9bc96",
+    "selector_bench/selector_bench/continual/__init__.py": "501e4ecb5e575a4bb7f78e4f65403bb58e00b48f6efc0430094ab8592f5331bf",
+    "selector_bench/selector_bench/continual/baselines.py": "2e0df164f47cc17b3d2a810c0660c140b0b93730c37ae7dd5bb8d61ec3337daf",
+    "selector_bench/selector_bench/continual/claim_protocol.py": "19ae570fa830ee5db2f4b3c5a2418153c2fff6ef56e82f381d14c741fdc193b1",
+    "selector_bench/selector_bench/continual/drive_opd.py": "6ecb3d9f2c430960038208a84a67a7a0df75ae2e55e517061c050aa3bbcd89fc",
+    "selector_bench/selector_bench/continual/evaluation_contract.py": "c6f5fc631b0fa57763c40a4adeddd7990b20ed48329ba2cd28ea7817d62af044",
+    "selector_bench/selector_bench/continual/navsim_protocol.py": "568ffc9f57f81f25241f6bdc12db584f8c3f3cf1038c6fdde92f701f4cf234ce",
+    "selector_bench/selector_bench/continual/statistics.py": "8016d76b0f80df267ec50e2fc8c29399d9f8e2ea12325260212e169834cf4228",
+    "selector_bench/tests/test_drive_cl_baselines.py": "6096831c9b8c87dad0ad87ecf4bdb2c70642fdfbe1cf069226675e4e52aca439",
+    "selector_bench/tests/test_drive_cl_claim_protocol.py": "5cf4f6747755f3df5364a4aa6acfac7cd301b031cb38825e7bc524c9f456a5de",
+    "selector_bench/tests/test_drive_cl_statistics.py": "ca1e3d0197944f5c2748e389cc7614d8ac80e6b45d713080806a0e17dbf6547f",
+    "selector_bench/tests/test_drive_opd_losses.py": "08dc934b31a6f69763d02fe3839cc96dd120e618b0389c0de73a7ec962b67a68",
+    "selector_bench/tests/test_navsim_continual_protocol.py": "37b072a66913416ea65948d334682664f958a1c5b8eaf5690301317f62834257"
+  },
+  "source_host": "07Gkhwang",
+  "source_worktree_clean": true,
+  "transfer_mode": "source_only_git_branch",
+  "weights_remain_on_origin_host": true
+}

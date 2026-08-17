@@ -1,0 +1,18 @@
+{
+  "schema": "selector_bench.drive_cl_method_registry.v1",
+  "registry_id": "drive_cl_paper_methods_20260817",
+  "methods": [
+    {"method_id": "sequential", "training_arm": "sequential"},
+    {"method_id": "planner_only", "training_arm": "planner_only"},
+    {"method_id": "ewc", "training_arm": "ewc"},
+    {"method_id": "agem", "training_arm": "agem"},
+    {"method_id": "aler_drive", "training_arm": "aler_drive"},
+    {"method_id": "step_matched_replay", "training_arm": "step_matched_replay"},
+    {"method_id": "full_exposure_replay", "training_arm": "full_exposure_replay"},
+    {"method_id": "lwf", "training_arm": "lwf"},
+    {"method_id": "drive_opd_fixed", "training_arm": "fixed_opd"},
+    {"method_id": "drive_opd_ema099", "training_arm": "ema099_opd"},
+    {"method_id": "drive_perception_only", "training_arm": "perception_only"},
+    {"method_id": "drive_planning_only", "training_arm": "planning_only"}
+  ]
+}

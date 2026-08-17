@@ -1,0 +1,51 @@
+{
+  "schema": "selector_bench.drive_cl_crossed_comparison_spec.v2",
+  "comparison_id": "REPLACE_COMPARISON_ID",
+  "analysis_scope": "confirmatory",
+  "metric_family": [
+    "score",
+    "no_at_fault_collisions",
+    "drivable_area_compliance",
+    "time_to_collision_within_bound",
+    "comfort",
+    "ego_progress",
+    "driving_direction_compliance"
+  ],
+  "expected_seed_ids": [0, 1, 2, 3, 4, 5, 6, 7, 8],
+  "bootstrap_repetitions": 10000,
+  "bootstrap_seed": 0,
+  "artifact_root": "REPLACE_ARTIFACT_ROOT",
+  "protocol_manifest": "REPLACE_PROTOCOL_MANIFEST.json",
+  "evaluation_cell_receipt": "REPLACE_EVALUATION_CELL_RECEIPT.json",
+  "checkpoint_stage_index": 2,
+  "baseline": {
+    "method_id": "sequential",
+    "training_arm": "sequential",
+    "runs": [
+      {"training_seed": 0, "training_protocol": "REPLACE_BASELINE_SEED0/protocol.json", "training_result": "REPLACE_BASELINE_SEED0/result.json", "cell_summary": "REPLACE_BASELINE_SEED0/summary.json", "run_registration": "REPLACE_BASELINE_SEED0/run_registration.json", "run_registration_sha256": "REPLACE_RUN_REGISTRATION_SHA256", "run_registration_commit": "REPLACE_FULL_RUN_REGISTRATION_COMMIT"},
+      {"training_seed": 1, "training_protocol": "REPLACE_BASELINE_SEED1/protocol.json", "training_result": "REPLACE_BASELINE_SEED1/result.json", "cell_summary": "REPLACE_BASELINE_SEED1/summary.json", "run_registration": "REPLACE_BASELINE_SEED1/run_registration.json", "run_registration_sha256": "REPLACE_RUN_REGISTRATION_SHA256", "run_registration_commit": "REPLACE_FULL_RUN_REGISTRATION_COMMIT"},
+      {"training_seed": 2, "training_protocol": "REPLACE_BASELINE_SEED2/protocol.json", "training_result": "REPLACE_BASELINE_SEED2/result.json", "cell_summary": "REPLACE_BASELINE_SEED2/summary.json", "run_registration": "REPLACE_BASELINE_SEED2/run_registration.json", "run_registration_sha256": "REPLACE_RUN_REGISTRATION_SHA256", "run_registration_commit": "REPLACE_FULL_RUN_REGISTRATION_COMMIT"},
+      {"training_seed": 3, "training_protocol": "REPLACE_BASELINE_SEED3/protocol.json", "training_result": "REPLACE_BASELINE_SEED3/result.json", "cell_summary": "REPLACE_BASELINE_SEED3/summary.json", "run_registration": "REPLACE_BASELINE_SEED3/run_registration.json", "run_registration_sha256": "REPLACE_RUN_REGISTRATION_SHA256", "run_registration_commit": "REPLACE_FULL_RUN_REGISTRATION_COMMIT"},
+      {"training_seed": 4, "training_protocol": "REPLACE_BASELINE_SEED4/protocol.json", "training_result": "REPLACE_BASELINE_SEED4/result.json", "cell_summary": "REPLACE_BASELINE_SEED4/summary.json", "run_registration": "REPLACE_BASELINE_SEED4/run_registration.json", "run_registration_sha256": "REPLACE_RUN_REGISTRATION_SHA256", "run_registration_commit": "REPLACE_FULL_RUN_REGISTRATION_COMMIT"},
+      {"training_seed": 5, "training_protocol": "REPLACE_BASELINE_SEED5/protocol.json", "training_result": "REPLACE_BASELINE_SEED5/result.json", "cell_summary": "REPLACE_BASELINE_SEED5/summary.json", "run_registration": "REPLACE_BASELINE_SEED5/run_registration.json", "run_registration_sha256": "REPLACE_RUN_REGISTRATION_SHA256", "run_registration_commit": "REPLACE_FULL_RUN_REGISTRATION_COMMIT"},
+      {"training_seed": 6, "training_protocol": "REPLACE_BASELINE_SEED6/protocol.json", "training_result": "REPLACE_BASELINE_SEED6/result.json", "cell_summary": "REPLACE_BASELINE_SEED6/summary.json", "run_registration": "REPLACE_BASELINE_SEED6/run_registration.json", "run_registration_sha256": "REPLACE_RUN_REGISTRATION_SHA256", "run_registration_commit": "REPLACE_FULL_RUN_REGISTRATION_COMMIT"},
+      {"training_seed": 7, "training_protocol": "REPLACE_BASELINE_SEED7/protocol.json", "training_result": "REPLACE_BASELINE_SEED7/result.json", "cell_summary": "REPLACE_BASELINE_SEED7/summary.json", "run_registration": "REPLACE_BASELINE_SEED7/run_registration.json", "run_registration_sha256": "REPLACE_RUN_REGISTRATION_SHA256", "run_registration_commit": "REPLACE_FULL_RUN_REGISTRATION_COMMIT"},
+      {"training_seed": 8, "training_protocol": "REPLACE_BASELINE_SEED8/protocol.json", "training_result": "REPLACE_BASELINE_SEED8/result.json", "cell_summary": "REPLACE_BASELINE_SEED8/summary.json", "run_registration": "REPLACE_BASELINE_SEED8/run_registration.json", "run_registration_sha256": "REPLACE_RUN_REGISTRATION_SHA256", "run_registration_commit": "REPLACE_FULL_RUN_REGISTRATION_COMMIT"}
+    ]
+  },
+  "candidate": {
+    "method_id": "drive_opd_fixed",
+    "training_arm": "fixed_opd",
+    "runs": [
+      {"training_seed": 0, "training_protocol": "REPLACE_CANDIDATE_SEED0/protocol.json", "training_result": "REPLACE_CANDIDATE_SEED0/result.json", "cell_summary": "REPLACE_CANDIDATE_SEED0/summary.json", "run_registration": "REPLACE_CANDIDATE_SEED0/run_registration.json", "run_registration_sha256": "REPLACE_RUN_REGISTRATION_SHA256", "run_registration_commit": "REPLACE_FULL_RUN_REGISTRATION_COMMIT"},
+      {"training_seed": 1, "training_protocol": "REPLACE_CANDIDATE_SEED1/protocol.json", "training_result": "REPLACE_CANDIDATE_SEED1/result.json", "cell_summary": "REPLACE_CANDIDATE_SEED1/summary.json", "run_registration": "REPLACE_CANDIDATE_SEED1/run_registration.json", "run_registration_sha256": "REPLACE_RUN_REGISTRATION_SHA256", "run_registration_commit": "REPLACE_FULL_RUN_REGISTRATION_COMMIT"},
+      {"training_seed": 2, "training_protocol": "REPLACE_CANDIDATE_SEED2/protocol.json", "training_result": "REPLACE_CANDIDATE_SEED2/result.json", "cell_summary": "REPLACE_CANDIDATE_SEED2/summary.json", "run_registration": "REPLACE_CANDIDATE_SEED2/run_registration.json", "run_registration_sha256": "REPLACE_RUN_REGISTRATION_SHA256", "run_registration_commit": "REPLACE_FULL_RUN_REGISTRATION_COMMIT"},
+      {"training_seed": 3, "training_protocol": "REPLACE_CANDIDATE_SEED3/protocol.json", "training_result": "REPLACE_CANDIDATE_SEED3/result.json", "cell_summary": "REPLACE_CANDIDATE_SEED3/summary.json", "run_registration": "REPLACE_CANDIDATE_SEED3/run_registration.json", "run_registration_sha256": "REPLACE_RUN_REGISTRATION_SHA256", "run_registration_commit": "REPLACE_FULL_RUN_REGISTRATION_COMMIT"},
+      {"training_seed": 4, "training_protocol": "REPLACE_CANDIDATE_SEED4/protocol.json", "training_result": "REPLACE_CANDIDATE_SEED4/result.json", "cell_summary": "REPLACE_CANDIDATE_SEED4/summary.json", "run_registration": "REPLACE_CANDIDATE_SEED4/run_registration.json", "run_registration_sha256": "REPLACE_RUN_REGISTRATION_SHA256", "run_registration_commit": "REPLACE_FULL_RUN_REGISTRATION_COMMIT"},
+      {"training_seed": 5, "training_protocol": "REPLACE_CANDIDATE_SEED5/protocol.json", "training_result": "REPLACE_CANDIDATE_SEED5/result.json", "cell_summary": "REPLACE_CANDIDATE_SEED5/summary.json", "run_registration": "REPLACE_CANDIDATE_SEED5/run_registration.json", "run_registration_sha256": "REPLACE_RUN_REGISTRATION_SHA256", "run_registration_commit": "REPLACE_FULL_RUN_REGISTRATION_COMMIT"},
+      {"training_seed": 6, "training_protocol": "REPLACE_CANDIDATE_SEED6/protocol.json", "training_result": "REPLACE_CANDIDATE_SEED6/result.json", "cell_summary": "REPLACE_CANDIDATE_SEED6/summary.json", "run_registration": "REPLACE_CANDIDATE_SEED6/run_registration.json", "run_registration_sha256": "REPLACE_RUN_REGISTRATION_SHA256", "run_registration_commit": "REPLACE_FULL_RUN_REGISTRATION_COMMIT"},
+      {"training_seed": 7, "training_protocol": "REPLACE_CANDIDATE_SEED7/protocol.json", "training_result": "REPLACE_CANDIDATE_SEED7/result.json", "cell_summary": "REPLACE_CANDIDATE_SEED7/summary.json", "run_registration": "REPLACE_CANDIDATE_SEED7/run_registration.json", "run_registration_sha256": "REPLACE_RUN_REGISTRATION_SHA256", "run_registration_commit": "REPLACE_FULL_RUN_REGISTRATION_COMMIT"},
+      {"training_seed": 8, "training_protocol": "REPLACE_CANDIDATE_SEED8/protocol.json", "training_result": "REPLACE_CANDIDATE_SEED8/result.json", "cell_summary": "REPLACE_CANDIDATE_SEED8/summary.json", "run_registration": "REPLACE_CANDIDATE_SEED8/run_registration.json", "run_registration_sha256": "REPLACE_RUN_REGISTRATION_SHA256", "run_registration_commit": "REPLACE_FULL_RUN_REGISTRATION_COMMIT"}
+    ]
+  }
+}

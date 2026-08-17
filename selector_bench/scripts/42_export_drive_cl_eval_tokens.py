@@ -9,6 +9,8 @@ import json
 import os
 from pathlib import Path
 
+from selector_bench.continual.claim_protocol import canonical_evaluation_domain
+
 
 def sha256(path: Path) -> str:
     digest = hashlib.sha256()
@@ -49,8 +51,12 @@ def main() -> None:
         "protocol_manifest": str(args.protocol_manifest.resolve()),
         "protocol_manifest_sha256": sha256(args.protocol_manifest),
         "protocol_content_sha256": protocol["content_sha256"],
+        "dataset_identity": protocol["dataset_identity"],
+        "domain_registry": str(args.protocol_manifest.resolve()),
+        "domain_registry_sha256": sha256(args.protocol_manifest),
         "stage_index": args.stage_index,
         "stage_name": stage["name"],
+        "evaluation_domain": canonical_evaluation_domain(protocol, stage),
         "split": args.split,
         "session_count": cell["session_count"],
         "log_count": len(logs),

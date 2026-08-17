@@ -61,6 +61,30 @@ This is a dispatch/receipt publication snapshot. It deliberately excludes the re
 The published acceptance contract itself records `FAIL / OPEN P0`. Its reachability PASS only proves
 that both servers can audit the same gate bytes; it does not prove the rejected protocol has been fixed.
 
+## 07G P0 RC controller acceptance
+
+- isolated RC branch: `codex/iclr2027-drive-opd-07g-p0-rc`
+- commit: `7edaaa05c199174e5b7d5f0cf46e45f50cd7e9f4`, parent
+  `d1cee1916f8f2329b4e3f3a1140e79e5d22c124e`, tree
+  `0e6e9a0adda280765ce41ab377de9bbbaea0cff1`; exactly one commit, 34 changed paths and a
+  clean worktree
+- controller independently matched the exact name-status inventory SHA256
+  `f8adebf5a5287c79d5626c8dee2b9ba9c2b0236039e5c2174fcb1cce95df4537`, path/content
+  inventory SHA256 `b07949de23b0361c8a362d000d0d0cbe824f9649689e865f855a723f078cb44d`
+  and every advertised path hash
+- independent five-suite replay: 49 passed and 9 subtests in 91.50 s; output SHA256
+  `a27d1444495b2756f7584fbda45791916bbda9eae8a356d16b6566e77973fae3`
+- independent P0 replay: 12/12 attack families and 19/19 mutation receipts passed; every mutated
+  CLI returned nonzero before a claim output existed, and the positive fixture passed
+- frozen migration manifest: 37 source files, logical bundle SHA256
+  `ee681bf3cdb0cc2dfd198f860ce927971d738904250daacb2d8cfbf47349de93`, manifest SHA256
+  `70b9f99bc96633a6be9a9437b106e48dc1d8effdac55fbc8439869c3dbc2ed78`
+
+Decision: **PASS only for exact RC identity, static/CPU/P0-fixture checks and source-only manifest
+freeze.** Fresh context-free review, publication and 06G destination replay remain pending.
+Dataset provenance/adapter, cache, real-model preflight, T0, GPU, training, evaluation and
+performance gates remain stopped.
+
 ## 06G R1 session-integrity intake
 
 - remote audit commit: `af9213b216b0260b184d3d3ae109a4ed1bed70b8`, parent
