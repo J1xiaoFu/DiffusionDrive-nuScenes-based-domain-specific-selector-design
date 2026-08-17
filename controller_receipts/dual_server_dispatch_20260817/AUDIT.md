@@ -143,6 +143,36 @@ clear only the fresh context-free exact-RC review gate; dataset provenance/adapt
 manifest, cache, real-model preflight, T0, model, GPU, training, evaluation and performance claims
 remain stopped pending separate controller decisions and receipts.
 
+## RC1 fresh blind-review intake
+
+- reviewer task: `01a01004-4a38-70f2-9981-4e26d1e834cb`; exact RC, parent, tree, 34-path count and
+  clean-before/after status matched
+- structured-log provenance: model `gpt-5.6-sol`, reasoning effort `medium`; the task was fresh and
+  context-free, but it began before the controller's later xhigh review freeze and therefore did not
+  satisfy that strict xhigh contract
+- exact final review: 10,831 message bytes, SHA256
+  `a3f37e50be8a4e3b177fa1fc40210e68a64cab6393d37f15483c50d72d375a6b`; preserved with a
+  conventional terminal newline in `07g_p0_rc_blind_review_rc1.md`
+- reproduced positives: 49 tests plus 9 subtests passed in 96.38 s; all 12 named attack families and
+  19 mutation instances rejected before claim output; filename/order-invariant positive fixture passed
+- verdict: **4/10 REJECT, confidence 5/5**
+- open P0: final-test chronology accepts self-declared/timestamp-shaped authorization without an
+  authoritative ledger or time ordering; production observed presentation/identity budgets partly
+  copy target values; seed power/calibration claims are not bound to or replayed from script 55
+- open P1: ALER hardcodes query counts outside `capture_query_audit`; shared-cell family validation
+  may reject valid common-baseline designs; transient storage is declared zero; chronology and seed
+  positive fixtures need adversarial negative coverage
+- controller source inspection confirmed the three P0 code paths. The reviewer could not resolve the
+  external publication objects on its configured origin, while the controller's separate immutable
+  fetch and 37-file bundle replay had already passed; that transport distinction does not weaken the
+  local exact-RC P0 findings.
+
+Decision: **RC1 REJECTED / P0 OPEN.** The lower-than-frozen reasoning effort cannot promote RC1, and
+its executable P0 rejection is sufficient to terminate RC1. A future RC2 requires separate explicit
+authorization, forward-only repair and a new exact-RC xhigh review. Dataset provenance/adapter,
+session-atomic CL manifest, cache, real-model preflight, T0, model, GPU, training, evaluation and
+performance claims remain stopped.
+
 ## 06G R1 session-integrity intake
 
 - remote audit commit: `af9213b216b0260b184d3d3ae109a4ed1bed70b8`, parent

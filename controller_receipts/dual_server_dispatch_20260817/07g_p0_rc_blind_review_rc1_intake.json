@@ -1,0 +1,127 @@
+{
+  "schema": "drive_opd.context_free_review_intake.v1",
+  "recorded_at": "2026-08-17",
+  "status": "RC1_REJECTED_P0_OPEN",
+  "review": {
+    "task_id": "01a01004-4a38-70f2-9981-4e26d1e834cb",
+    "turn_id": "01a01004-7f59-77d2-8b2c-03aec0e28760",
+    "started_at_utc": "2026-08-17T13:58:45.346Z",
+    "completed_at_utc": "2026-08-17T14:08:36.255Z",
+    "model": "gpt-5.6-sol",
+    "reasoning_effort_from_structured_log": "medium",
+    "fresh_task": true,
+    "parent_conversation_preloaded": false,
+    "read_only": true,
+    "score_1_to_10": 4,
+    "confidence_1_to_5": 5,
+    "verdict": "REJECT",
+    "p0_contract_pass": false,
+    "source_only_non_promoting_publication_safe": true,
+    "execution_authorized": false
+  },
+  "review_contract_provenance": {
+    "review_input_acceptance_commit": "37448d7bac7721857148d49d6899d515c5dd0438",
+    "review_input_acceptance_path": "ICLR2027_P0_CLAIM_PROTOCOL_ACCEPTANCE_20260817.md",
+    "review_input_acceptance_sha256": "374d81fd57e4bd40bed396b4af26f86f1fa52f8f38e712de2b880fe45d295b7e",
+    "controller_xhigh_freeze_commit": "8ac75ed19dc1db4ae32093cd98008b053f46174c",
+    "controller_xhigh_freeze_created_after_review_started": true,
+    "xhigh_requirement_satisfied": false,
+    "strict_frozen_xhigh_review_contract_satisfied": false,
+    "rejection_is_decisive_for_rc1": true,
+    "interpretation": "The medium-effort fresh exact-RC review did not satisfy the later xhigh contract, but any reproduced P0 rejection is sufficient to keep RC1 rejected and all gates closed. A new exact-RC2 review must use the frozen xhigh contract."
+  },
+  "target": {
+    "branch": "codex/iclr2027-drive-opd-07g-p0-rc",
+    "commit": "7edaaa05c199174e5b7d5f0cf46e45f50cd7e9f4",
+    "parent": "d1cee1916f8f2329b4e3f3a1140e79e5d22c124e",
+    "tree": "0e6e9a0adda280765ce41ab377de9bbbaea0cff1",
+    "changed_path_count": 34,
+    "worktree_clean_before": true,
+    "worktree_clean_after": true,
+    "changed_path_content_manifest_sha256": "b07949de23b0361c8a362d000d0d0cbe824f9649689e865f855a723f078cb44d"
+  },
+  "preserved_review": {
+    "path": "controller_receipts/dual_server_dispatch_20260817/07g_p0_rc_blind_review_rc1.md",
+    "message_bytes_without_terminal_newline": 10831,
+    "message_sha256_without_terminal_newline": "a3f37e50be8a4e3b177fa1fc40210e68a64cab6393d37f15483c50d72d375a6b",
+    "file_bytes_with_terminal_newline": 10832,
+    "file_sha256": "b9114f27aa730e655f588ee1272e84d63944aa32f072c44ad519c05623d879c7",
+    "structured_log_path": "/home/khwang/.codex/sessions/2026/08/17/rollout-2026-08-17T21-58-31-01a01004-4a38-70f2-9981-4e26d1e834cb.jsonl",
+    "structured_log_bytes": 884015,
+    "structured_log_sha256": "7ad8435c4f828ffef7d90b49c987680a917f00d1e21dead2c5b29d73af4cfe17"
+  },
+  "reproduced_positive_results": {
+    "five_suite_exit_code": 0,
+    "five_suite_passed": 49,
+    "five_suite_subtests_passed": 9,
+    "five_suite_duration_seconds": 96.38,
+    "five_suite_output_sha256": "157694437a1e90a5edc3d07432796019f753487e3dc307704f5ae684fe943f4e",
+    "p0_named_attack_family_count": 12,
+    "p0_named_attack_family_passed_count": 12,
+    "p0_mutation_instance_count": 19,
+    "p0_mutation_rejected_before_claim_count": 19,
+    "positive_filename_order_invariant_fixture": "passed",
+    "p0_harness_stdout_sha256": "03b91fa3109dc391a26eb753bdeaeb1df857d42ffb8120107fb5d9c1330bc0d6",
+    "p0_harness_generated_receipt_sha256": "8a36ef29ba2c7d2a5acafc23a800e86dabbe734828e2bde073db12130bee6dc8"
+  },
+  "open_p0": [
+    {
+      "id": "RC1-P0-01",
+      "title": "final-test chronology is declarative and bypassable",
+      "evidence": "A sealed-access receipt declaring authorization at 1900-01-01T00:00:00+00:00 was committed after the family freeze and accepted for four evaluator fixtures.",
+      "attack_output_sha256": "c0b466b84814afd79baa425c5761c341ff5bd73bbdb62c8b58f7bd0f07925e7b",
+      "source": "selector_bench/scripts/54_run_drive_cl_navsim_evaluator.py",
+      "source_lines": "103-146",
+      "controller_static_confirmation": "The exact RC checks schema, a self-declared chronology boolean, timestamp shape, self-declared prior count, content hashes and Git ancestry, but performs no authoritative time or prior-access-ledger comparison."
+    },
+    {
+      "id": "RC1-P0-02",
+      "title": "production observed budget partly copies target budget",
+      "evidence": "Completion initializes observed_budget from target_budget and substitutes target presentation counts at complete step count instead of measuring actual loader and replay presentations.",
+      "source": "selector_bench/scripts/41_train_drive_cl_diffusiondrive.py",
+      "source_lines": "684-697,1126-1138",
+      "controller_static_confirmation": "The exact RC uses **target_budget and copies current/old presentation targets whenever complete_budget is true."
+    },
+    {
+      "id": "RC1-P0-03",
+      "title": "seed power and calibration receipt is not executable at the claim gate",
+      "evidence": "The validator verifies frozen schema and internally consistent claimed numbers but does not bind or replay script 55, its invocation, pilot computation, critical values, power or held-out FWER; the positive fixture handwrites passing values.",
+      "source": "selector_bench/selector_bench/continual/claim_protocol.py and selector_bench/tests/test_drive_cl_claim_protocol.py",
+      "source_lines": "claim_protocol.py:223-335; test_drive_cl_claim_protocol.py:575-605",
+      "controller_static_confirmation": "The exact RC validates declared seed-design fields and pilot hashes but does not recompute the design; the positive fixture writes the reported power and calibration fields directly."
+    }
+  ],
+  "open_p1": [
+    "ALER query counts are hardcoded and bypass capture_query_audit",
+    "family validation may block multiple method-versus-common-baseline comparisons sharing one cell",
+    "transient storage is declared zero rather than measured",
+    "chronology and seed-design positive fixtures should become adversarial negative tests"
+  ],
+  "publication_boundary": {
+    "reviewer_independently_verified_public_source_and_destination_commits": false,
+    "reviewer_reason": "The abbreviated public objects were not present on its configured local origin.",
+    "controller_independent_verification_before_intake": true,
+    "controller_public_source_commit": "02e2784cb39cd636af6f582c2ff3f72d9274c58f",
+    "controller_final_receipt_commit": "d1665712535e101c948bec2bb7f7c21e64fe1f36",
+    "controller_verified_source_file_count": 37,
+    "controller_verified_source_bundle_sha256": "ee681bf3cdb0cc2dfd198f860ce927971d738904250daacb2d8cfbf47349de93",
+    "interpretation": "The reviewer's transport caveat does not invalidate its exact local RC source findings; the controller's separate publication and 06G replay checks remain source/CPU evidence only."
+  },
+  "decision": {
+    "rc1": "REJECTED",
+    "p0_claim_protocol": "FAILED",
+    "source_only_non_promoting_audit_publication": "ALLOWED_WITH_REJECTED_LABEL",
+    "rc2_development": "NOT_AUTHORIZED_BY_THIS_INTAKE",
+    "fresh_exact_rc2_xhigh_review": "REQUIRED_AFTER_SEPARATE_FORWARD_ONLY_REPAIR",
+    "dataset_provenance_adapter": "STOPPED",
+    "session_atomic_cl_manifest": "STOPPED",
+    "cache": "STOPPED",
+    "real_model_preflight": "STOPPED",
+    "t0": "STOPPED",
+    "model": "STOPPED",
+    "gpu": "STOPPED",
+    "training": "STOPPED",
+    "evaluation": "STOPPED",
+    "performance_claim": "STOPPED"
+  }
+}
