@@ -232,6 +232,28 @@ Decision: **SOURCE BUNDLE FROZEN LOCALLY.** Public reachability is not yet estab
 review may use this immutable controller freeze, but isolated 06G replay remains stopped until review
 and public fetchability both pass. All execution gates remain stopped.
 
+## RC2 source publication and context-free review freeze
+
+- public source commit: `d262e3c14ba2bea31b48bd85ab1d721987b826b3`, sole parent
+  `fda179f007e64614467791f1ab9ed3c229c8f0bb`, tree
+  `c125b76a2f579016c2d4bcdafd9eb0db996f0a15`
+- publication used exact Git blobs and an exact tree, then one non-force ref update; an independent
+  HTTPS fetch reproduced the commit, parent and tree
+- local deterministic publication commit `59b1c93bbf7e81a481d8882603af9e8b4d8e910e` has the same parent
+  and tree; its content diff against the public commit is empty
+- public full-index diff SHA256:
+  `25e031f4ef7b78cd99b2b8e7ee3e0ecdf027a79560310366a7adb0d41ee37362`
+- publication receipt: `07g_p0_rc2_publication.txt`
+- frozen review: `P001-DRIVE-OPD-P0-RC2-EXACT`, new context-free `gpt-5.6-sol` at `xhigh`, read-only
+  exact-source/CPU audit with all RC1 failures and twelve historical requirements mandatory
+- review request: `07g_p0_rc2_context_free_review_request.md`
+- review manifest: `07g_p0_rc2_context_free_review_manifest.json`
+
+Decision: **PUBLIC SOURCE IDENTITY PASSED; EXACT-RC2 REVIEW AUTHORIZED BUT NOT YET PASSED.** Public
+fetchability and byte identity do not close the RC1 P0 findings. Isolated 06G source replay remains
+stopped pending the fresh review. Raw data, dataset adapters, session-atomic CL manifests, cache,
+real-model preflight, T0, model, CUDA/GPU, training, evaluation and performance claims remain stopped.
+
 ## 06G R1 session-integrity intake
 
 - remote audit commit: `af9213b216b0260b184d3d3ae109a4ed1bed70b8`, parent
