@@ -8,6 +8,10 @@
 
 控制起点：`3b6523de2f06f912e6e7834a0a5ce4166864f544`
 
+共同 claim-protocol 的唯一可执行 P0 验收门冻结在
+`ICLR2027_P0_CLAIM_PROTOCOL_ACCEPTANCE_20260817.md`。通过该门只允许进入各数据线后续
+provenance/adapter 审计，不自动授权 cache、T0、GPU、training 或性能 claim。
+
 ## 1. 总目标与调度决定
 
 论文主目标仍是验证 Drive-OPD 能否在真实驾驶分布的顺序变化中兼顾新域塑性与旧域
