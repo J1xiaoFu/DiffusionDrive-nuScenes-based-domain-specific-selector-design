@@ -1,0 +1,34 @@
+06G_R1_SESSION_INTEGRITY_PUBLICATION_PASS
+
+controller_source:
+branch=codex/iclr2027-dual-server-controller
+commit=2274ec96f1a04b7b9d5f160d4cc541239c8f4927
+direct_push=FAIL_NO_GITHUB_CREDENTIALS
+
+publication:
+repository=J1xiaoFu/DiffusionDrive-nuScenes-based-domain-specific-selector-design
+branch=codex/iclr2027-dual-server-dispatch-publication
+commit=4c42746002fe05cae78525e1e2ab5c8496504de4
+parent=37448d7bac7721857148d49d6899d515c5dd0438
+tree=35bb05a80290b2de5df0b79523fb34a1583cf710
+subject=Publish 06G session-integrity intake
+transport=authenticated GitHub application; no server-side credential installation
+
+published_files:
+controller_receipts/dual_server_dispatch_20260817/AUDIT.md git_blob=5c7dc4f311f5866ee86401fac17fceeb0a6e325b sha256=27c7119a50c38a86b0fdb3b6d86f045e22a7a235d403c4976426c16118095b0a
+controller_receipts/dual_server_dispatch_20260817/SHA256SUMS git_blob=d8808e00cbb2f8bf93cfd14a974e232bf7b2b08f sha256=e56a3c8f8e0455addfe281fda7426275cee03ed7fbcd63bba8af1584ea7ab923
+controller_receipts/dual_server_dispatch_20260817/06g_r1_session_integrity_intake.txt git_blob=ad15e8470505387c513d89e9ab40cd54a1ce39b7 sha256=1d08dadb6dcde901b3dfd6c65c31f80460c77326aaa30423fdf040d02c315a58
+
+verification:
+remote_commit_fetch=PASS
+remote_subject=PASS
+remote_changed_path_set=PASS_EXACT_3
+remote_file_fetch=PASS_3_OF_3
+local_remote_git_blob_match=PASS_3_OF_3
+published_sha256_manifest_replay=PASS
+
+decision:
+PASS only for publication reachability and byte identity of the limited R1 session-integrity intake.
+This publication does not resolve the intake's recorded remote-object, sealed-input or helper-source
+gaps and does not authorize a CL manifest, cache construction, model/adapter preflight, T0, GPU work,
+training, evaluation or a paper-performance claim.

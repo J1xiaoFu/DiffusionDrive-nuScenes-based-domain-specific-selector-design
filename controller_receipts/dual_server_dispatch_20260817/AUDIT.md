@@ -34,6 +34,11 @@ stage manifest, T0, real-model preflight, GPU training, evaluation, or paper-per
 - 06G independently fetched that commit to `FETCH_HEAD`, read the acceptance contract completely,
   and matched its SHA256 `374d81fd57e4bd40bed396b4af26f86f1fa52f8f38e712de2b880fe45d295b7e`;
   branch, checkout, origin and official NAVSIM source stayed unchanged
+- current R1 session-integrity publication: commit
+  `4c42746002fe05cae78525e1e2ab5c8496504de4`, parent `37448d7bac7721857148d49d6899d515c5dd0438`,
+  tree `35bb05a80290b2de5df0b79523fb34a1583cf710`; all three Git blob IDs matched the local
+  controller files from `2274ec96f1a04b7b9d5f160d4cc541239c8f4927`, and the published manifest replayed
+  the audit and intake SHA256 values
 
 This is a dispatch/receipt publication snapshot. It deliberately excludes the rejected/unreleased
 `9dabf423` claim-protocol source and cannot serve as a source/transfer execution authorization.
