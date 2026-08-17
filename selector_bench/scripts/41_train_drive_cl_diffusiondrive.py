@@ -126,7 +126,7 @@ def optimizer_state_sha256(state: Mapping[str, Any]) -> str:
             digest.update(b"tensor\0")
             digest.update(str(tensor.dtype).encode())
             digest.update(b"\0")
-            digest.update(json.dumps(list(tensor.shape)).encode())
+            digest.update(json.dumps(list(tensor.shape), allow_nan=False).encode())
             digest.update(b"\0")
             digest.update(tensor.numpy().tobytes())
         elif isinstance(value, Mapping):
@@ -172,7 +172,9 @@ def current_gpu_uuid() -> str:
 def atomic_json(path: Path, payload: object, storage_counter: Any | None = None) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_suffix(path.suffix + ".tmp")
-    temporary.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
+    temporary.write_text(
+        json.dumps(payload, indent=2, sort_keys=True, allow_nan=False) + "\n"
+    )
     if storage_counter is not None:
         storage_counter.observe_temporary(temporary)
     os.replace(temporary, path)
@@ -180,7 +182,7 @@ def atomic_json(path: Path, payload: object, storage_counter: Any | None = None)
 
 def append_jsonl(path: Path, payload: object) -> None:
     with path.open("a") as stream:
-        stream.write(json.dumps(payload, sort_keys=True) + "\n")
+        stream.write(json.dumps(payload, sort_keys=True, allow_nan=False) + "\n")
         stream.flush()
 
 
@@ -859,7 +861,10 @@ def main() -> None:
     protocol["transient_storage_semantics"] = TRANSIENT_STORAGE_SEMANTICS
     atomic_json(protocol_path, protocol, storage_counter)
     protocol_sha256 = sha256_file(protocol_path)
-    print(json.dumps({"event": "protocol", **protocol}, sort_keys=True), flush=True)
+    print(
+        json.dumps({"event": "protocol", **protocol}, sort_keys=True, allow_nan=False),
+        flush=True,
+    )
 
     distill_config = DriveOPDConfig(
         lambda_perception=(
@@ -1175,7 +1180,7 @@ def main() -> None:
                 }:
                     sums[name] = sums.get(name, 0.0) + float(value)
             if batch_index % args.log_every == 0:
-                print(json.dumps(row, sort_keys=True), flush=True)
+                print(json.dumps(row, sort_keys=True, allow_nan=False), flush=True)
             append_jsonl(step_log, row)
         if stopped_early:
             break
@@ -1210,7 +1215,7 @@ def main() -> None:
             epoch_row["checkpoint"] = str(rolling.resolve())
             epoch_row["checkpoint_sha256"] = digest
         append_jsonl(epoch_log, epoch_row)
-        print(json.dumps(epoch_row, sort_keys=True), flush=True)
+        print(json.dumps(epoch_row, sort_keys=True, allow_nan=False), flush=True)
 
     endpoint: str | None = None
     endpoint_sha256: str | None = None
@@ -1290,7 +1295,10 @@ def main() -> None:
         },
     }
     atomic_json(result_path, result)
-    print(json.dumps({"event": "result", **result}, sort_keys=True), flush=True)
+    print(
+        json.dumps({"event": "result", **result}, sort_keys=True, allow_nan=False),
+        flush=True,
+    )
 
 
 if __name__ == "__main__":

@@ -16,10 +16,14 @@ import numpy as np
 from selector_bench.continual.statistics import PDM_DEFAULT_METRICS, read_pdm_rows
 from selector_bench.continual.claim_protocol import (
     CELL_SUMMARY_SCHEMA,
+    GLOBAL_FAMILY_SCHEMA,
+    frozen_file_bytes,
     load_evaluator_run_contract,
     load_json,
     load_training_run_contract,
+    require_equal,
     resolve,
+    verify_frozen_file,
 )
 from selector_bench.continual.navsim_protocol import session_id_from_log
 from selector_bench.continual.evaluation_contract import load_evaluation_cell_contract
@@ -39,6 +43,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--bootstrap-repetitions", type=int, default=10000)
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--family-repository", type=Path)
+    parser.add_argument("--family-spec", type=Path)
+    parser.add_argument("--family-freeze-commit")
     args = parser.parse_args()
     for path in (args.evaluator_receipt,):
         if not path.is_file():
@@ -69,6 +76,48 @@ def main() -> None:
     )
     training = load_training_run_contract(training_protocol_path, training_result_path)
     contract = load_evaluation_cell_contract(evaluation_receipt_path)
+    supplied_family = (
+        args.family_repository,
+        args.family_spec,
+        args.family_freeze_commit,
+    )
+    if any(value is not None for value in supplied_family) and not all(
+        value is not None for value in supplied_family
+    ):
+        raise RuntimeError("family binding requires repository, spec and full freeze commit")
+    expected_family = None
+    if all(value is not None for value in supplied_family):
+        repository = args.family_repository.resolve()
+        family_path = args.family_spec.resolve()
+        freeze_commit = str(args.family_freeze_commit)
+        family_repository_path = verify_frozen_file(
+            repository, family_path, freeze_commit
+        )
+        family = load_json(family_path, "active global family")
+        require_equal(family.get("schema"), GLOBAL_FAMILY_SCHEMA, "global family schema")
+        ledger_path = resolve(
+            repository,
+            family.get("sealed_test_access_ledger_repository_path"),
+            "family sealed-test access ledger",
+        )
+        ledger_repository_path, frozen_ledger = frozen_file_bytes(
+            repository, ledger_path, freeze_commit
+        )
+        require_equal(
+            family.get("sealed_test_access_ledger_empty_sha256"),
+            hashlib.sha256(frozen_ledger).hexdigest(),
+            "family empty sealed-test ledger SHA256",
+        )
+        expected_family = {
+            "family_id": family.get("family_id"),
+            "family_spec_repository_path": family_repository_path,
+            "family_spec_sha256": sha256(family_path),
+            "family_freeze_commit": freeze_commit,
+            "access_ledger_repository_path": ledger_repository_path,
+            "sealed_test_access_ledger_empty_sha256": hashlib.sha256(
+                frozen_ledger
+            ).hexdigest(),
+        }
     evaluator = load_evaluator_run_contract(
         args.evaluator_receipt,
         training=training,
@@ -80,6 +129,7 @@ def main() -> None:
         split=str(contract.receipt["split"]),
         token_file_path=contract.token_file_path,
         token_file_sha256=sha256(contract.token_file_path),
+        expected_family=expected_family,
     )
     receipt = contract.receipt
     manifest = contract.protocol
@@ -161,9 +211,11 @@ def main() -> None:
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
     temporary = args.output.with_suffix(args.output.suffix + ".tmp")
-    temporary.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
+    temporary.write_text(
+        json.dumps(payload, indent=2, sort_keys=True, allow_nan=False) + "\n"
+    )
     os.replace(temporary, args.output)
-    print(json.dumps(payload, sort_keys=True))
+    print(json.dumps(payload, sort_keys=True, allow_nan=False))
 
 
 if __name__ == "__main__":

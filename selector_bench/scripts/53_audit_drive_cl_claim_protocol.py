@@ -23,8 +23,12 @@ AUDITED_SOURCES = (
     "selector_bench/scripts/40_build_drive_cl_protocol.py",
     "selector_bench/scripts/41_train_drive_cl_diffusiondrive.py",
     "selector_bench/scripts/42_export_drive_cl_eval_tokens.py",
+    "selector_bench/scripts/43_audit_diffusiondrive_context_swap.py",
+    "selector_bench/scripts/44_compute_drive_cl_fisher.py",
     "selector_bench/scripts/45_summarize_drive_cl_pdm.py",
     "selector_bench/scripts/46_compare_drive_cl_pdm.py",
+    "selector_bench/scripts/47_export_drive_cl_training_manifest.py",
+    "selector_bench/scripts/48_reconcile_drive_cl_inventories.py",
     "selector_bench/scripts/49_audit_drive_opd_rollout_schedule.py",
     "selector_bench/scripts/50_apply_drive_cl_global_holm.py",
     "selector_bench/scripts/51_freeze_drive_opd_06g_transfer.py",
@@ -209,9 +213,11 @@ def main() -> None:
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
     temporary = args.output.with_suffix(args.output.suffix + ".tmp")
-    temporary.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
+    temporary.write_text(
+        json.dumps(payload, indent=2, sort_keys=True, allow_nan=False) + "\n"
+    )
     os.replace(temporary, args.output)
-    print(json.dumps(payload, sort_keys=True))
+    print(json.dumps(payload, sort_keys=True, allow_nan=False))
     if status != "PASS":
         raise SystemExit(2)
 

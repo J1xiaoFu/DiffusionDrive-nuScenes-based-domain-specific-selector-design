@@ -284,6 +284,19 @@ be forward-only, add the four reproductions to its frozen harness, and pass a ne
 review. Dataset/raw-data access, provenance/adapter work, session-atomic CL manifests, cache,
 real-model preflight, T0, model, CUDA/GPU, training, evaluation and performance claims remain stopped.
 
+### Rejected-result publication
+
+- public commit `e36eb38da827290c277a0f5ffc615456046f5524`, parent
+  `81973da8c2768e71f5f79cefc17888e19d2f6cbd`, tree
+  `2cce21835436150ad65fe03805f294c6196d010d`; one non-force update and exactly four changed paths
+- preserved local publication commit `3a4ca9ee5edacc8fe40e859595a025d5329ef44a`, parent
+  `389e07b54fd0c220d9637b24d17788cddd6a16be`, has the exact same tree; public/local tree diff is empty
+- ordinary HTTPS fetch to `FETCH_HEAD` reproduced the public commit, parent, tree, exact path set and
+  `git show --check`; receipt: `07g_p0_rc2_blind_review_publication.txt`
+
+Decision: **PUBLICATION PASS, REJECTED/NON-PROMOTING ONLY.** No isolated 06G replay is dispatched
+because gate A failed. The public receipt cannot authorize data, cache, model or execution activity.
+
 ## RC3 forward-only source/CPU authorization
 
 - authoritative basis: fresh context-free exact-RC2 `gpt-5.6-sol` `xhigh` review task
@@ -308,6 +321,72 @@ Decision: **AUTHORIZED FOR RC3 SOURCE/CPU REPAIR ONLY.** RC3 may not publish, pu
 task or dispatch 06G work. Dataset/raw-data access, provenance/adapter work, session-atomic CL manifests,
 cache, real-model preflight, T0, model, CUDA/GPU, training, evaluation, final-test unsealing and
 performance claims remain stopped.
+
+### Authorization publication
+
+- public commit `7892cbcd06b99f44dc593813459b12e5eb84f902`, sole parent
+  `e36eb38da827290c277a0f5ffc615456046f5524`, tree
+  `559f03f519b5c9e01515708b105813172632a68c`; exactly four changed paths and one non-force update
+- preserved local publication commit `0bc3e4521534a55a370293a6ff34aaca2f752ca5`, parent
+  `3a4ca9ee5edacc8fe40e859595a025d5329ef44a`, has the exact same tree
+- all four blob identities matched; ordinary HTTPS fetch reproduced the public commit, parent, tree,
+  path set and `git show --check`; public full-index diff SHA256
+  `d47417076f11cdca13ed1ebc0faa00ef3c005c4115cbf906c3d1ea27797721f4`
+- receipt: `07g_p0_rc3_forward_authorization_publication.txt`
+
+Decision: **PUBLICATION PASS FOR RC3 SOURCE/CPU AUTHORIZATION ONLY.** The publication conveys no
+data, cache, model or execution permission and does not dispatch 06G work.
+
+## RC3 exact-commit controller intake
+
+- candidate: `codex/iclr2027-drive-opd-07g-p0-rc3@79a2c529f35fb18049b4f30b46a2fe9926bf7e5a`
+- identity: sole parent is immutable RC2 `d527274d368b6d6def5809b002324b31e88ae1bd`, tree
+  `3ec47127a6d7c85326bbcf1d72ef76e2971f100d`, exactly one non-merge commit, 29 changed paths and a
+  clean source worktree with no remote-containing ref
+- independent controller replay: exact detached commit with CUDA hidden, bytecode and pytest cache
+  disabled; 67 tests plus 73 subtests passed in 266.54 seconds; output SHA256
+  `628db07ce5baf3dfe2e0eb31834d77b82d2d207a4efc697ac7628ab679971fb8`
+- adversarial replay: 19/19 named families and 87/87 mutation instances rejected with nonzero CLI
+  status before any claim artifact existed; the strict, family-bound, multi-candidate, finite and
+  filename/order-invariant positive fixture passed
+- targeted attack-output SHA256: P0-16 strict chronology
+  `1e00b1739e0759f021b04825f70624f3743014d44879cd8b952379757d332dfa`; P0-17 active-family binding
+  `64429b357291df1799c837728fb357e54375a73f6af3797f95aad7e15466bf1f`; P0-18 shared-cell
+  multiplicity `af2f664907a6404136a4e2f6863f89b9979103aba65fc9c70765ac9bce986778`; P0-19 finite seed design
+  `3753a059bea5a4b16221e139356e350303f4b44ed9c69efd608e33ab02966c0d`
+- static and artifact boundary: `git show --check` passed; both changed JSON files parsed; 22 modified
+  Python files parsed as AST; all 19 protocol JSON-emitting scripts use fail-closed
+  `allow_nan=False`; the detached tree stayed clean with no pytest cache, bytecode, model or
+  checkpoint artifacts
+- structured intake: `07g_p0_rc3_acceptance.json`
+
+Decision: **ACCEPTED FOR SOURCE PUBLICATION AND A NEW EXACT-RC3 CONTEXT-FREE REVIEW ONLY.** The four
+RC2 P0 findings and historical source/CPU P0 protections are candidate-closed, not review-closed.
+Isolated 06G source/CPU replay remains stopped until publication and review both pass. Dataset/raw-data
+access, provenance/adapter work, session-atomic CL manifests, cache, real-model preflight, T0, model,
+CUDA/GPU, training, evaluation, final-test unsealing and performance claims remain stopped.
+
+## RC3 source-transfer freeze
+
+- accepted source: `codex/iclr2027-drive-opd-07g-p0-rc3@79a2c529f35fb18049b4f30b46a2fe9926bf7e5a`,
+  parent `d527274d368b6d6def5809b002324b31e88ae1bd`, tree
+  `3ec47127a6d7c85326bbcf1d72ef76e2971f100d`; controller acceptance commit
+  `d026fd762b2472d5f3d01981dfbfd5d2da6bc28c`
+- generator source: `selector_bench/scripts/51_freeze_drive_opd_06g_transfer.py`, SHA256
+  `49ba27be6e553d1d8d4b670a2b16ec5ec0d356b1b8019462b71f86f1c43fa7f8`
+- manifest: `07g_p0_rc3_transfer_manifest.json`, 7,434 bytes, 41 source files, SHA256
+  `ff8ca94ebd3dd39abb048dabe8c8a87eaa383465b5cdb899d74cc6fbe2bcd437`
+- independently recomputed logical source bundle SHA256:
+  `68259f07dc97db312c00c71dcd18a899502588b4eb303ee12cce585e1cc894b1`, exactly matching the
+  manifest, with zero missing or mismatched source files
+- source worktree was clean before and after generation; no data, cache, model or execution artifact
+  was read or created
+- freeze receipt: `07g_p0_rc3_transfer_freeze.txt`
+
+Decision: **SOURCE BUNDLE FROZEN LOCALLY FOR PUBLICATION AND EXACT-RC3 REVIEW ONLY.** Public
+reachability is not yet established. Isolated 06G replay remains stopped until publication and fresh
+review both pass. Every dataset, adapter, cache, model, T0, GPU, training, evaluation, final-test and
+performance gate remains stopped.
 
 ## 06G R1 session-integrity intake
 

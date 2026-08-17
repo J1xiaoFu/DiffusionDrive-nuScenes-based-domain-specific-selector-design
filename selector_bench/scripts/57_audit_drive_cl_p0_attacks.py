@@ -28,6 +28,10 @@ ATTACKS = (
     ("P0-13", "noncanonical-final-test-chronology"),
     ("P0-14", "loader-delivery-budget-mismatch"),
     ("P0-15", "non-executable-seed-design"),
+    ("P0-16", "strict-raw-git-chronology"),
+    ("P0-17", "active-family-test-binding"),
+    ("P0-18", "shared-cell-common-baseline"),
+    ("P0-19", "finite-seed-design-numerics"),
 )
 REJECTION_MARKER = "DRIVE_CL_P0_REJECTION="
 
@@ -49,6 +53,10 @@ def node_for(identifier: str) -> str:
         "P0-13": "test_p0_13_noncanonical_final_test_chronology_is_rejected",
         "P0-14": "test_p0_14_loader_delivery_budget_mismatch_is_rejected",
         "P0-15": "test_p0_15_seed_design_must_be_exact_executable_replay",
+        "P0-16": "test_p0_16_strict_raw_git_chronology_is_required",
+        "P0-17": "test_p0_17_test_evidence_is_bound_to_active_family",
+        "P0-18": "test_p0_18_shared_cell_requires_two_candidates_one_baseline",
+        "P0-19": "test_p0_19_seed_design_rejects_nonfinite_and_boolean_numerics",
     }[identifier]
     return (
         "selector_bench/tests/test_drive_cl_claim_protocol.py::"
@@ -145,7 +153,7 @@ def main() -> None:
     positive = run_node(repo, python, positive_node, expect_rejections=False)
     passed = passed and positive["harness_exit_code"] == 0
     payload = {
-        "schema": "selector_bench.drive_cl_p0_attack_audit.v2",
+        "schema": "selector_bench.drive_cl_p0_attack_audit.v3",
         "status": "PASS" if passed else "FAIL",
         "attack_count": len(cases),
         "attack_cases": cases,
@@ -161,9 +169,11 @@ def main() -> None:
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
     temporary = args.output.with_suffix(args.output.suffix + ".tmp")
-    temporary.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
+    temporary.write_text(
+        json.dumps(payload, indent=2, sort_keys=True, allow_nan=False) + "\n"
+    )
     os.replace(temporary, args.output)
-    print(json.dumps(payload, sort_keys=True))
+    print(json.dumps(payload, sort_keys=True, allow_nan=False))
     if not passed:
         raise SystemExit(2)
 

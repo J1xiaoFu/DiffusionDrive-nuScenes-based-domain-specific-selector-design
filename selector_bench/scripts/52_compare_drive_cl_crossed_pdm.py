@@ -16,6 +16,7 @@ from selector_bench.continual.claim_protocol import (
     CROSSED_RECEIPT_SCHEMA,
     CROSSED_SPEC_SCHEMA,
     GLOBAL_FAMILY_SCHEMA,
+    frozen_file_bytes,
     load_evaluator_run_contract,
     load_json,
     load_training_run_contract,
@@ -23,6 +24,7 @@ from selector_bench.continual.claim_protocol import (
     require_within,
     resolve,
     sha256,
+    shared_sealed_test_access_identity,
     validate_method_arm,
     validate_family_registries_and_cells,
     validate_seed_design,
@@ -36,6 +38,7 @@ from selector_bench.continual.statistics import (
     crossed_seed_session_bootstrap,
     read_pdm_rows,
 )
+from selector_bench.continual.seed_design import finite_integer
 
 
 def token_sha256(tokens: set[str]) -> str:
@@ -99,7 +102,10 @@ def verify_confirmatory_registration(
         tuple(family.get("metric_family", [])), PDM_DEFAULT_METRICS, "family metric set"
     )
     require_equal(
-        tuple(int(value) for value in family.get("expected_seed_ids", [])),
+        tuple(
+            finite_integer(value, "family expected seed ID")
+            for value in family.get("expected_seed_ids", [])
+        ),
         expected_seeds,
         "family seed IDs",
     )
@@ -113,6 +119,19 @@ def verify_confirmatory_registration(
         repository=repository,
         freeze_commit=freeze_commit,
         expected_protocol_path=protocol_path,
+    )
+    access_ledger_path = resolve(
+        repository,
+        family.get("sealed_test_access_ledger_repository_path"),
+        "family sealed-test access ledger",
+    )
+    access_ledger_repository_path, frozen_access_ledger = frozen_file_bytes(
+        repository, access_ledger_path, freeze_commit
+    )
+    require_equal(
+        family.get("sealed_test_access_ledger_empty_sha256"),
+        hashlib.sha256(frozen_access_ledger).hexdigest(),
+        "family empty sealed-test ledger SHA256",
     )
     design = validate_seed_design(
         family,
@@ -204,6 +223,16 @@ def verify_confirmatory_registration(
         "method_registry_sha256": family_contract["method_registry_sha256"],
         "metric_registry_sha256": family_contract["metric_registry_sha256"],
         "domain_registry_sha256": family_contract["domain_registry_sha256"],
+        "sealed_test_family_identity": {
+            "family_id": family_id,
+            "family_spec_repository_path": family_repository_path,
+            "family_spec_sha256": family_hash,
+            "family_freeze_commit": freeze_commit,
+            "access_ledger_repository_path": access_ledger_repository_path,
+            "sealed_test_access_ledger_empty_sha256": hashlib.sha256(
+                frozen_access_ledger
+            ).hexdigest(),
+        },
         **design,
     }
 
@@ -218,6 +247,7 @@ def validate_method(
     protocol_content_sha256: str,
     checkpoint_stage_index: int,
     evaluation_contract: Any,
+    expected_family: dict[str, Any] | None,
 ) -> tuple[
     str,
     str,
@@ -250,7 +280,7 @@ def validate_method(
             },
             f"method {method_id} run",
         )
-        seed = int(run.get("training_seed"))
+        seed = finite_integer(run.get("training_seed"), "comparison training seed")
         if seed in by_seed:
             raise StatisticsError(f"method {method_id} has duplicate seed {seed}")
         by_seed[seed] = run
@@ -264,8 +294,10 @@ def validate_method(
         "method_registry_sha256": None,
         "metric_registry_sha256": None,
         "domain_registry_sha256": None,
+        "sealed_test_access": None,
         "runs": [],
     }
+    sealed_access_initialized = False
     unique: dict[str, set[str]] = {
         label: set()
         for label in (
@@ -416,7 +448,18 @@ def validate_method(
             split=str(evaluation_contract.receipt["split"]),
             token_file_path=evaluation_contract.token_file_path,
             token_file_sha256=sha256(evaluation_contract.token_file_path),
+            expected_family=expected_family,
         )
+        sealed_access = evaluator.receipt.get("sealed_test_access")
+        if not sealed_access_initialized:
+            evidence["sealed_test_access"] = sealed_access
+            sealed_access_initialized = True
+        else:
+            require_equal(
+                shared_sealed_test_access_identity(sealed_access),
+                shared_sealed_test_access_identity(evidence["sealed_test_access"]),
+                "sealed-test access identity across method seeds",
+            )
         for field in ("metric_registry_sha256", "domain_registry_sha256"):
             if evidence[field] is None:
                 evidence[field] = evaluator.receipt[field]
@@ -550,11 +593,18 @@ def main() -> None:
     require_equal(
         tuple(spec.get("metric_family", [])), PDM_DEFAULT_METRICS, "comparison metric family"
     )
-    expected_seeds = tuple(int(value) for value in spec.get("expected_seed_ids", []))
+    expected_seeds = tuple(
+        finite_integer(value, "comparison expected seed ID")
+        for value in spec.get("expected_seed_ids", [])
+    )
     if len(expected_seeds) < 2 or len(expected_seeds) != len(set(expected_seeds)):
         raise StatisticsError("expected_seed_ids must contain at least two unique seeds")
-    repetitions = int(spec.get("bootstrap_repetitions"))
-    bootstrap_seed = int(spec.get("bootstrap_seed"))
+    repetitions = finite_integer(
+        spec.get("bootstrap_repetitions"), "comparison bootstrap repetitions"
+    )
+    bootstrap_seed = finite_integer(
+        spec.get("bootstrap_seed"), "comparison bootstrap seed"
+    )
     if repetitions <= 0:
         raise StatisticsError("bootstrap repetitions must be positive")
 
@@ -572,7 +622,9 @@ def main() -> None:
     protocol = evaluation.protocol
     protocol_hash = sha256(protocol_path)
     protocol_content_hash = str(protocol["content_sha256"])
-    checkpoint_stage_index = int(spec.get("checkpoint_stage_index"))
+    checkpoint_stage_index = finite_integer(
+        spec.get("checkpoint_stage_index"), "comparison checkpoint stage index"
+    )
     checkpoint_stage = next(
         (
             value
@@ -584,51 +636,14 @@ def main() -> None:
     if not isinstance(checkpoint_stage, dict):
         raise StatisticsError(f"protocol has no checkpoint stage {checkpoint_stage_index}")
 
-    baseline = validate_method(
-        spec.get("baseline", {}),
-        artifact_root=artifact_root,
-        expected_seeds=expected_seeds,
-        protocol_path=protocol_path,
-        protocol_sha256=protocol_hash,
-        protocol_content_sha256=protocol_content_hash,
-        checkpoint_stage_index=checkpoint_stage_index,
-        evaluation_contract=evaluation,
+    baseline_spec = spec.get("baseline", {})
+    candidate_spec = spec.get("candidate", {})
+    baseline_declared_id, baseline_declared_arm = validate_method_arm(
+        baseline_spec.get("method_id"), baseline_spec.get("training_arm")
     )
-    candidate = validate_method(
-        spec.get("candidate", {}),
-        artifact_root=artifact_root,
-        expected_seeds=expected_seeds,
-        protocol_path=protocol_path,
-        protocol_sha256=protocol_hash,
-        protocol_content_sha256=protocol_content_hash,
-        checkpoint_stage_index=checkpoint_stage_index,
-        evaluation_contract=evaluation,
+    candidate_declared_id, candidate_declared_arm = validate_method_arm(
+        candidate_spec.get("method_id"), candidate_spec.get("training_arm")
     )
-    baseline_id, baseline_arm, baseline_rows, baseline_evidence, baseline_unique, baseline_sources = baseline
-    candidate_id, candidate_arm, candidate_rows, candidate_evidence, candidate_unique, candidate_sources = candidate
-    if baseline_id == candidate_id:
-        raise StatisticsError("baseline and candidate method IDs must differ")
-    for registry_field in (
-        "method_registry_sha256",
-        "metric_registry_sha256",
-        "domain_registry_sha256",
-    ):
-        require_equal(
-            candidate_evidence[registry_field],
-            baseline_evidence[registry_field],
-            f"baseline/candidate {registry_field}",
-        )
-    for seed in expected_seeds:
-        require_equal(
-            candidate_sources[seed], baseline_sources[seed], f"stage-start checkpoint seed {seed}"
-        )
-    for label in baseline_unique:
-        overlap = baseline_unique[label] & candidate_unique[label]
-        if overlap:
-            raise StatisticsError(
-                f"baseline and candidate reuse {label}: {sorted(overlap)}"
-            )
-
     expected_tokens = set(evaluation.tokens)
     sorted_tokens_hash = token_sha256(expected_tokens)
     family: dict[str, Any] | None = None
@@ -645,10 +660,10 @@ def main() -> None:
             evaluation_domain=evaluation.evaluation_domain,
             split=str(evaluation.receipt["split"]),
             sorted_token_sha256=sorted_tokens_hash,
-            baseline_method=baseline_id,
-            baseline_arm=baseline_arm,
-            candidate_method=candidate_id,
-            candidate_arm=candidate_arm,
+            baseline_method=baseline_declared_id,
+            baseline_arm=baseline_declared_arm,
+            candidate_method=candidate_declared_id,
+            candidate_arm=candidate_declared_arm,
             protocol_path=protocol_path,
         )
     elif any(
@@ -656,6 +671,61 @@ def main() -> None:
         for value in (args.family_repository, args.family_spec, args.family_freeze_commit)
     ):
         raise StatisticsError("screening comparison may not claim a confirmatory family")
+    expected_family = (
+        family["sealed_test_family_identity"] if family is not None else None
+    )
+
+    baseline = validate_method(
+        baseline_spec,
+        artifact_root=artifact_root,
+        expected_seeds=expected_seeds,
+        protocol_path=protocol_path,
+        protocol_sha256=protocol_hash,
+        protocol_content_sha256=protocol_content_hash,
+        checkpoint_stage_index=checkpoint_stage_index,
+        evaluation_contract=evaluation,
+        expected_family=expected_family,
+    )
+    candidate = validate_method(
+        candidate_spec,
+        artifact_root=artifact_root,
+        expected_seeds=expected_seeds,
+        protocol_path=protocol_path,
+        protocol_sha256=protocol_hash,
+        protocol_content_sha256=protocol_content_hash,
+        checkpoint_stage_index=checkpoint_stage_index,
+        evaluation_contract=evaluation,
+        expected_family=expected_family,
+    )
+    baseline_id, baseline_arm, baseline_rows, baseline_evidence, baseline_unique, baseline_sources = baseline
+    candidate_id, candidate_arm, candidate_rows, candidate_evidence, candidate_unique, candidate_sources = candidate
+    if baseline_id == candidate_id:
+        raise StatisticsError("baseline and candidate method IDs must differ")
+    for registry_field in (
+        "method_registry_sha256",
+        "metric_registry_sha256",
+        "domain_registry_sha256",
+    ):
+        require_equal(
+            candidate_evidence[registry_field],
+            baseline_evidence[registry_field],
+            f"baseline/candidate {registry_field}",
+        )
+    require_equal(
+        shared_sealed_test_access_identity(candidate_evidence["sealed_test_access"]),
+        shared_sealed_test_access_identity(baseline_evidence["sealed_test_access"]),
+        "baseline/candidate sealed-test access identity",
+    )
+    for seed in expected_seeds:
+        require_equal(
+            candidate_sources[seed], baseline_sources[seed], f"stage-start checkpoint seed {seed}"
+        )
+    for label in baseline_unique:
+        overlap = baseline_unique[label] & candidate_unique[label]
+        if overlap:
+            raise StatisticsError(
+                f"baseline and candidate reuse {label}: {sorted(overlap)}"
+            )
 
     comparison = crossed_seed_session_bootstrap(
         baseline_rows,
@@ -709,9 +779,11 @@ def main() -> None:
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
     temporary = args.output.with_suffix(args.output.suffix + ".tmp")
-    temporary.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
+    temporary.write_text(
+        json.dumps(payload, indent=2, sort_keys=True, allow_nan=False) + "\n"
+    )
     os.replace(temporary, args.output)
-    print(json.dumps(payload, sort_keys=True))
+    print(json.dumps(payload, sort_keys=True, allow_nan=False))
 
 
 if __name__ == "__main__":

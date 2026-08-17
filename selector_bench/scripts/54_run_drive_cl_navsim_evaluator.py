@@ -19,10 +19,14 @@ from selector_bench.continual.claim_protocol import (
     git,
     load_json,
     load_training_run_contract,
+    raw_git_committer_utc,
     require_equal,
+    require_strict_final_test_chronology,
     resolve,
     sha256,
+    strict_utc,
     validate_metric_registry,
+    validate_sealed_access_git_history,
     verify_frozen_file,
 )
 from selector_bench.continual.evaluation_contract import load_evaluation_cell_contract
@@ -42,7 +46,9 @@ PLACEHOLDERS = (
 def atomic_json(path: Path, payload: object) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_suffix(path.suffix + ".tmp")
-    temporary.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
+    temporary.write_text(
+        json.dumps(payload, indent=2, sort_keys=True, allow_nan=False) + "\n"
+    )
     os.replace(temporary, path)
 
 
@@ -183,33 +189,17 @@ def verify_sealed_access(
         or empty_ledger.get("events") != []
     ):
         raise StatisticsError("family commit does not contain one canonical empty ledger")
-    git(access_repository, "merge-base", "--is-ancestor", family_commit, access_commit)
-    ancestry = [
-        value
-        for value in git(
-            access_repository,
-            "rev-list",
-            "--reverse",
-            "--ancestry-path",
-            f"{family_commit}..{access_commit}",
-        )
-        .decode()
-        .splitlines()
-        if value
-    ]
-    if not ancestry or ancestry[-1] != access_commit:
-        raise StatisticsError("sealed access commit is not a linear descendant of family freeze")
-    previous = family_commit
-    for commit in ancestry:
-        parents = git(access_repository, "show", "-s", "--format=%P", commit).decode().split()
-        if parents != [previous]:
-            raise StatisticsError("sealed access authorization history may not merge or fork")
-        ledger_bytes = git(access_repository, "show", f"{commit}:{ledger_relative}")
-        if commit != access_commit and ledger_bytes != empty_bytes:
-            raise StatisticsError(
-                "canonical access ledger changed before the authorized access commit"
-            )
-        previous = commit
+    family_time, access_time, replayed_empty_bytes = validate_sealed_access_git_history(
+        access_repository,
+        family_commit=family_commit,
+        access_commit=access_commit,
+        ledger_path=ledger_path,
+        expected_empty_ledger_sha256=str(
+            family.get("sealed_test_access_ledger_empty_sha256")
+        ),
+        expected_family_id=str(family_id),
+    )
+    require_equal(replayed_empty_bytes, empty_bytes, "replayed empty access ledger")
     verify_frozen_file(access_repository, ledger_path, access_commit)
     ledger = load_json(ledger_path, "sealed-test access ledger")
     if set(ledger) != {"schema", "family_id", "events"}:
@@ -248,16 +238,16 @@ def verify_sealed_access(
     )
     require_equal(event.get("evaluation_domain"), evaluation_domain, "access event domain")
     require_equal(event.get("authorized_at_utc"), payload.get("authorized_at_utc"), "access event time")
-    require_equal(payload.get("access_event_index"), 0, "derived access event index")
+    event_index = payload.get("access_event_index")
+    if not isinstance(event_index, int) or isinstance(event_index, bool):
+        raise StatisticsError("derived access event index must be an integer")
+    require_equal(event_index, 0, "derived access event index")
     require_equal(
         payload.get("access_ledger_sha256"), sha256(ledger_path), "sealed access ledger SHA256"
     )
-    family_time = git_commit_utc(access_repository, family_commit)
-    access_time = git_commit_utc(access_repository, access_commit)
-    if not family_time <= authorized_at <= access_time <= evaluator_started_at:
-        raise StatisticsError(
-            "sealed access chronology must satisfy family <= authorization <= access <= evaluator"
-        )
+    require_strict_final_test_chronology(
+        family_time, authorized_at, access_time, evaluator_started_at
+    )
     return {
         "status": "verified",
         "access_repository": str(access_repository),
@@ -265,11 +255,17 @@ def verify_sealed_access(
         "access_receipt_sha256": sha256(access_receipt),
         "access_commit": access_commit,
         "access_repository_path": access_path,
+        "access_receipt_repository_path": access_path,
         "family_spec": str(family_path),
+        "family_spec_repository_path": payload["family_spec_repository_path"],
         "family_spec_sha256": sha256(family_path),
         "family_freeze_commit": family_commit,
         "family_id": family_id,
         "access_ledger": str(ledger_path),
+        "access_ledger_repository_path": ledger_relative,
+        "sealed_test_access_ledger_empty_sha256": family[
+            "sealed_test_access_ledger_empty_sha256"
+        ],
         "access_ledger_sha256": sha256(ledger_path),
         "access_event_index": 0,
         "access_event_id": event_id,
@@ -277,32 +273,11 @@ def verify_sealed_access(
         "family_commit_time_utc": family_time.isoformat(),
         "access_commit_time_utc": access_time.isoformat(),
         "evaluator_started_at_utc": evaluator_started_at.isoformat(),
+        "evaluation_cell_receipt_sha256": evaluation_receipt_sha256,
+        "protocol_content_sha256": protocol_content_sha256,
+        "evaluation_domain": evaluation_domain,
+        "split": "test",
     }
-
-
-def strict_utc(value: object, label: str) -> datetime:
-    if not isinstance(value, str):
-        raise StatisticsError(f"sealed access {label} time must be a UTC string")
-    try:
-        parsed = datetime.fromisoformat(value)
-    except ValueError as exc:
-        raise StatisticsError(f"sealed access {label} time is malformed") from exc
-    if parsed.tzinfo is None or parsed.utcoffset() != timezone.utc.utcoffset(parsed):
-        raise StatisticsError(f"sealed access {label} time is not UTC")
-    if parsed.isoformat() != value:
-        raise StatisticsError(f"sealed access {label} time is not canonical ISO-8601")
-    return parsed
-
-
-def git_commit_utc(repository: Path, commit: str) -> datetime:
-    value = git(repository, "show", "-s", "--format=%cI", commit).decode().strip()
-    try:
-        parsed = datetime.fromisoformat(value)
-    except ValueError as exc:
-        raise StatisticsError("Git commit time is malformed") from exc
-    if parsed.tzinfo is None:
-        raise StatisticsError("Git commit time lacks an offset")
-    return parsed.astimezone(timezone.utc)
 
 
 def render_command(spec: dict[str, Any], replacements: dict[str, str]) -> list[str]:
@@ -393,7 +368,9 @@ def main() -> None:
         required_metrics=PDM_DEFAULT_METRICS,
     )
     metric_schema_sha256 = hashlib.sha256(
-        json.dumps(list(PDM_DEFAULT_METRICS), separators=(",", ":")).encode()
+        json.dumps(
+            list(PDM_DEFAULT_METRICS), separators=(",", ":"), allow_nan=False
+        ).encode()
     ).hexdigest()
     evaluator_tree = git(
         evaluator_repository,
@@ -459,7 +436,7 @@ def main() -> None:
         "sealed_test_access": sealed_access,
     }
     atomic_json(args.output_receipt, payload)
-    print(json.dumps(payload, sort_keys=True))
+    print(json.dumps(payload, sort_keys=True, allow_nan=False))
 
 
 if __name__ == "__main__":

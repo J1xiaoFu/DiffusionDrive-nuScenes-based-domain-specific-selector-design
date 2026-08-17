@@ -1,12 +1,13 @@
 from __future__ import annotations
 
+import ast
 import hashlib
 import json
 import os
 import subprocess
 import sys
 import unittest
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any, Iterable
@@ -17,6 +18,7 @@ from selector_bench.continual.claim_protocol import (
     EVALUATOR_RUN_SCHEMA,
     GLOBAL_RESULT_SCHEMA,
     load_training_run_contract,
+    require_strict_final_test_chronology,
     validate_family_registries_and_cells,
 )
 from selector_bench.continual.statistics import PDM_DEFAULT_METRICS, StatisticsError
@@ -36,9 +38,11 @@ def token_sha256(tokens: Iterable[str]) -> str:
     return hashlib.sha256(("\n".join(sorted(tokens)) + "\n").encode()).hexdigest()
 
 
-def write_json(path: Path, payload: object) -> None:
+def write_json(path: Path, payload: object, *, allow_nan: bool = False) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
+    path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True, allow_nan=allow_nan) + "\n"
+    )
 
 
 def run_script(
@@ -79,13 +83,36 @@ def audit_rejected_cli(
     print(P0_REJECTION_MARKER + json.dumps(payload, sort_keys=True), flush=True)
 
 
-def git_commit(root: Path, message: str, *paths: Path) -> str:
+def next_fixture_commit_epoch(root: Path) -> int:
+    process = subprocess.run(
+        ["git", "-C", str(root), "rev-list", "--count", "HEAD"],
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+        check=False,
+    )
+    count = int(process.stdout.strip()) if process.returncode == 0 else 0
+    return 1_700_000_000 + count * 10
+
+
+def git_commit(
+    root: Path,
+    message: str,
+    *paths: Path,
+    commit_epoch: int | None = None,
+) -> str:
     subprocess.run(
         ["git", "-C", str(root), "add", *(str(path.relative_to(root)) for path in paths)],
         check=True,
     )
+    epoch = next_fixture_commit_epoch(root) if commit_epoch is None else commit_epoch
+    environment = os.environ.copy()
+    environment["GIT_AUTHOR_DATE"] = f"{epoch} +0000"
+    environment["GIT_COMMITTER_DATE"] = f"{epoch} +0000"
     subprocess.run(
-        ["git", "-C", str(root), "commit", "-q", "-m", message], check=True
+        ["git", "-C", str(root), "commit", "-q", "-m", message],
+        check=True,
+        env=environment,
     )
     return subprocess.check_output(
         ["git", "-C", str(root), "rev-parse", "HEAD"], text=True
@@ -246,7 +273,11 @@ class ClaimFixture:
         self.methods: dict[str, dict[str, Any]] = {}
         self.run_paths: dict[tuple[str, int], dict[str, Path]] = {}
         for method_index, (method_id, arm) in enumerate(
-            (("sequential", "sequential"), ("drive_opd_fixed", "fixed_opd"))
+            (
+                ("sequential", "sequential"),
+                ("drive_opd_fixed", "fixed_opd"),
+                ("lwf", "lwf"),
+            )
         ):
             runs = []
             for seed in seeds:
@@ -315,8 +346,8 @@ class ClaimFixture:
                     "old_presentations": 0,
                     "forward_calls": 10,
                     "backward_calls": 10,
-                    "student_queries": 20 if arm == "fixed_opd" else 0,
-                    "teacher_queries": 20 if arm == "fixed_opd" else 0,
+                    "student_queries": 20 if arm in {"fixed_opd", "lwf"} else 0,
+                    "teacher_queries": 20 if arm in {"fixed_opd", "lwf"} else 0,
                 }
                 registration_path = run_root / "run_registration.json"
                 registration_fields = (
@@ -455,14 +486,19 @@ class ClaimFixture:
                 "runs": runs,
             }
         self.spec_path = root / "comparison_spec.json"
+        self.lwf_spec_path = root / "comparison_spec_lwf.json"
         self.write_spec("screening_only")
 
     def write_spec(self, analysis_scope: str) -> None:
-        write_json(
-            self.spec_path,
-            {
+        for path, comparison_id, candidate_id in (
+            (self.spec_path, "main", "drive_opd_fixed"),
+            (self.lwf_spec_path, "lwf_vs_sequential", "lwf"),
+        ):
+            write_json(
+                path,
+                {
                 "schema": "selector_bench.drive_cl_crossed_comparison_spec.v2",
-                "comparison_id": "main",
+                "comparison_id": comparison_id,
                 "analysis_scope": analysis_scope,
                 "metric_family": list(PDM_DEFAULT_METRICS),
                 "expected_seed_ids": list(self.seeds),
@@ -473,9 +509,9 @@ class ClaimFixture:
                 "evaluation_cell_receipt": str(self.evaluation_receipt),
                 "checkpoint_stage_index": 2,
                 "baseline": self.methods["sequential"],
-                "candidate": self.methods["drive_opd_fixed"],
-            },
-        )
+                "candidate": self.methods[candidate_id],
+                },
+            )
 
     def evaluate_all(
         self,
@@ -483,7 +519,7 @@ class ClaimFixture:
         access_receipt: Path | None = None,
         access_commit: str | None = None,
     ) -> None:
-        for method_id in ("sequential", "drive_opd_fixed"):
+        for method_id in ("sequential", "drive_opd_fixed", "lwf"):
             for seed in self.seeds:
                 evaluated = self.evaluate_one(
                     method_id,
@@ -500,6 +536,20 @@ class ClaimFixture:
                     paths["evaluator"],
                     "--bootstrap-repetitions",
                     20,
+                    *(
+                        (
+                            "--family-repository",
+                            self.root,
+                            "--family-spec",
+                            self.root / "family.json",
+                            "--family-freeze-commit",
+                            json.loads(paths["evaluator"].read_text())["sealed_test_access"][
+                                "family_freeze_commit"
+                            ],
+                        )
+                        if access_receipt is not None
+                        else ()
+                    ),
                     "--output",
                     paths["summary"],
                 )
@@ -562,6 +612,7 @@ class ClaimFixture:
         self,
         *,
         claim_relative: str = "claims/main.crossed.json",
+        second_claim_relative: str | None = None,
         reverse_hypotheses: bool = False,
         access_variant: str = "valid",
         seed_design_variant: str = "valid",
@@ -569,6 +620,11 @@ class ClaimFixture:
         if self.split != "test":
             raise AssertionError("confirmatory fixture requires sealed test split")
         self.write_spec("confirmatory")
+        if second_claim_relative is None:
+            first_path = Path(claim_relative)
+            second_claim_relative = str(
+                first_path.parent / ("lwf-" + first_path.name)
+            )
         audit_source = self.root / "audit_source_receipt.json"
         write_json(
             audit_source,
@@ -654,11 +710,43 @@ class ClaimFixture:
             seed_payload["generator_module_sha256"] = "0" * 64
         elif seed_design_variant == "altered_replayed_statistic":
             seed_payload["candidate_seed_audits"][0]["critical_value"] += 0.5
+        elif seed_design_variant.startswith("nonfinite_"):
+            _, location, value_name = seed_design_variant.split("_", 2)
+            value = {
+                "nan": float("nan"),
+                "posinf": float("inf"),
+                "neginf": float("-inf"),
+            }[value_name]
+            if location == "minimum-effect":
+                seed_payload["minimum_relevant_effect"] = value
+            elif location == "target-power":
+                seed_payload["target_power"] = value
+            elif location == "critical-value":
+                seed_payload["candidate_seed_audits"][0]["critical_value"] = value
+            elif location == "metric-power":
+                seed_payload["candidate_seed_audits"][0]["metric_power"]["score"] = value
+            elif location == "heldout-fwer":
+                seed_payload["candidate_seed_audits"][0]["heldout_null_fwer"] = value
+            else:
+                raise AssertionError(f"unknown non-finite location: {location}")
+        elif seed_design_variant == "bool_designed_seed":
+            seed_payload["designed_seed_ids"][0] = False
+        elif seed_design_variant == "bool_candidate_seed":
+            seed_payload["candidate_seed_ids"][0] = False
+            seed_payload["normalized_invocation"]["candidate_seed_ids"][0] = False
+        elif seed_design_variant == "bool_family_metric_count":
+            seed_payload["family_metric_count"] = True
+        elif seed_design_variant == "bool_simulation_seed":
+            seed_payload["simulation_seed"] = False
+            seed_payload["normalized_invocation"]["simulation_seed"] = False
+        elif seed_design_variant.startswith("family-alpha_"):
+            pass
         elif seed_design_variant != "valid":
             raise AssertionError(f"unknown seed-design fixture variant: {seed_design_variant}")
         if seed_design_variant != "valid":
-            write_json(seed_design, seed_payload)
+            write_json(seed_design, seed_payload, allow_nan=True)
         claim_receipt = self.root / claim_relative
+        second_claim_receipt = self.root / second_claim_relative
         family = self.root / "family.json"
         access_ledger = self.root / "sealed_test_access_ledger.json"
         freeze_events = (
@@ -674,40 +762,76 @@ class ClaimFixture:
                 "events": freeze_events,
             },
         )
+        comparisons = (
+            (
+                "main",
+                self.spec_path,
+                claim_receipt,
+                "drive_opd_fixed",
+                "fixed_opd",
+            ),
+            (
+                "lwf_vs_sequential",
+                self.lwf_spec_path,
+                second_claim_receipt,
+                "lwf",
+                "lwf",
+            ),
+        )
         hypotheses = []
-        for metric in PDM_DEFAULT_METRICS:
-            hypotheses.append(
+        expected_comparisons = []
+        for comparison_id, spec_path, receipt_path, candidate_method, candidate_arm in comparisons:
+            expected_comparisons.append(
                 {
-                    "id": f"main::{metric}",
-                    "comparison_id": "main",
-                    "comparison_spec_repository_path": self.spec_path.relative_to(
+                    "comparison_id": comparison_id,
+                    "comparison_spec_repository_path": spec_path.relative_to(
                         self.root
                     ).as_posix(),
-                    "comparison_spec_sha256": sha256(self.spec_path),
-                    "comparison_receipt_repository_path": claim_receipt.relative_to(
+                    "comparison_spec_sha256": sha256(spec_path),
+                    "comparison_receipt_repository_path": receipt_path.relative_to(
                         self.root
                     ).as_posix(),
                     "checkpoint_stage_index": 2,
-                    "checkpoint_stage_name": "safety_patch",
                     "evaluation_stage_index": 1,
-                    "evaluation_stage_name": "old_domain",
-                    "split": "test",
                     "evaluation_domain": "navsim-fixture/v1::toy_cl::stage_1::old_domain",
-                    "metric": metric,
-                    "direction": "two_sided_candidate_minus_baseline",
+                    "split": "test",
                     "baseline_method": "sequential",
                     "baseline_training_arm": "sequential",
-                    "candidate_method": "drive_opd_fixed",
-                    "candidate_training_arm": "fixed_opd",
-                    "sorted_token_sha256": token_sha256(self.tokens),
+                    "candidate_method": candidate_method,
+                    "candidate_training_arm": candidate_arm,
                 }
             )
+            for metric in PDM_DEFAULT_METRICS:
+                hypotheses.append(
+                    {
+                        "id": f"{comparison_id}::{metric}",
+                        "comparison_id": comparison_id,
+                        "comparison_spec_repository_path": spec_path.relative_to(
+                            self.root
+                        ).as_posix(),
+                        "comparison_spec_sha256": sha256(spec_path),
+                        "comparison_receipt_repository_path": receipt_path.relative_to(
+                            self.root
+                        ).as_posix(),
+                        "checkpoint_stage_index": 2,
+                        "checkpoint_stage_name": "safety_patch",
+                        "evaluation_stage_index": 1,
+                        "evaluation_stage_name": "old_domain",
+                        "split": "test",
+                        "evaluation_domain": "navsim-fixture/v1::toy_cl::stage_1::old_domain",
+                        "metric": metric,
+                        "direction": "two_sided_candidate_minus_baseline",
+                        "baseline_method": "sequential",
+                        "baseline_training_arm": "sequential",
+                        "candidate_method": candidate_method,
+                        "candidate_training_arm": candidate_arm,
+                        "sorted_token_sha256": token_sha256(self.tokens),
+                    }
+                )
         if reverse_hypotheses:
             hypotheses.reverse()
-        write_json(
-            family,
-            {
-                "schema": "selector_bench.drive_cl_global_holm_family.v4",
+        family_payload = {
+                "schema": "selector_bench.drive_cl_global_holm_family.v5",
                 "family_id": "p003_primary",
                 "alpha": 0.05,
                 "dataset_identity": self.protocol["dataset_identity"],
@@ -726,26 +850,7 @@ class ClaimFixture:
                 ).as_posix(),
                 "sealed_test_access_ledger_empty_sha256": sha256(access_ledger),
                 "claim_receipt_root": "claims",
-                "expected_comparisons": [
-                    {
-                        "comparison_id": "main",
-                        "comparison_spec_repository_path": self.spec_path.relative_to(
-                            self.root
-                        ).as_posix(),
-                        "comparison_spec_sha256": sha256(self.spec_path),
-                        "comparison_receipt_repository_path": claim_receipt.relative_to(
-                            self.root
-                        ).as_posix(),
-                        "checkpoint_stage_index": 2,
-                        "evaluation_stage_index": 1,
-                        "evaluation_domain": "navsim-fixture/v1::toy_cl::stage_1::old_domain",
-                        "split": "test",
-                        "baseline_method": "sequential",
-                        "baseline_training_arm": "sequential",
-                        "candidate_method": "drive_opd_fixed",
-                        "candidate_training_arm": "fixed_opd",
-                    }
-                ],
+                "expected_comparisons": expected_comparisons,
                 "required_cross_cells": [
                     {
                         "checkpoint_stage_index": 2,
@@ -754,13 +859,36 @@ class ClaimFixture:
                         "split": "test",
                     }
                 ],
+                "shared_confirmatory_cells": [
+                    {
+                        "checkpoint_stage_index": 2,
+                        "evaluation_stage_index": 1,
+                        "evaluation_domain": "navsim-fixture/v1::toy_cl::stage_1::old_domain",
+                        "split": "test",
+                        "common_baseline_method": "sequential",
+                        "common_baseline_training_arm": "sequential",
+                        "minimum_distinct_candidate_count": 2,
+                        "candidates": [
+                            {"method": "drive_opd_fixed", "training_arm": "fixed_opd"},
+                            {"method": "lwf", "training_arm": "lwf"},
+                        ],
+                    }
+                ],
                 "hypotheses": hypotheses,
-            },
-        )
+            }
+        if seed_design_variant.startswith("family-alpha_"):
+            family_payload["alpha"] = {
+                "nan": float("nan"),
+                "posinf": float("inf"),
+                "neginf": float("-inf"),
+                "bool": True,
+            }[seed_design_variant.removeprefix("family-alpha_")]
+        write_json(family, family_payload, allow_nan=True)
         freeze_commit = git_commit(
             self.root,
             "freeze family",
             self.spec_path,
+            self.lwf_spec_path,
             audit_source,
             pilot_matrix,
             seed_design,
@@ -773,17 +901,27 @@ class ClaimFixture:
             self.metric_registry,
         )
         access = self.root / "sealed_access.json"
-        authorized_at = subprocess.check_output(
-            ["git", "-C", str(self.root), "show", "-s", "--format=%cI", freeze_commit],
-            text=True,
-        ).strip()
-        authorized_at = datetime.fromisoformat(authorized_at).astimezone(
-            timezone.utc
+        family_epoch = int(
+            subprocess.check_output(
+                ["git", "-C", str(self.root), "show", "-s", "--format=%ct", freeze_commit],
+                text=True,
+            ).strip()
+        )
+        authorized_at = datetime.fromtimestamp(
+            family_epoch + 1, tz=timezone.utc
         ).isoformat()
         if access_variant == "authorization_year_1900":
             authorized_at = "1900-01-01T00:00:00+00:00"
         elif access_variant == "future_authorization":
             authorized_at = "2999-01-01T00:00:00+00:00"
+        elif access_variant == "family_equals_authorization":
+            authorized_at = datetime.fromtimestamp(
+                family_epoch, tz=timezone.utc
+            ).isoformat()
+        elif access_variant == "authorization_equals_access":
+            authorized_at = datetime.fromtimestamp(
+                next_fixture_commit_epoch(self.root), tz=timezone.utc
+            ).isoformat()
         event_id = hashlib.sha256(f"sealed:{freeze_commit}".encode()).hexdigest()[:32]
         event = {
             "access_event_id": event_id,
@@ -815,6 +953,15 @@ class ClaimFixture:
                 },
             )
             git_commit(self.root, "delete unauthorized prior event", access_ledger)
+        if access_variant == "future_intermediate_then_earlier_access":
+            intermediate = self.root / "chronology_intermediate.txt"
+            intermediate.write_text("future intermediate\n")
+            git_commit(
+                self.root,
+                "future-dated intermediate",
+                intermediate,
+                commit_epoch=family_epoch + 100,
+            )
         final_events = [event, dict(event)] if access_variant == "duplicate_event" else [event]
         write_json(
             access_ledger,
@@ -855,12 +1002,18 @@ class ClaimFixture:
             access_payload = json.loads(access.read_text())
             access_payload["prior_final_test_access_count"] = 0
             write_json(access, access_payload)
+        access_epoch = None
+        if access_variant == "future_intermediate_then_earlier_access":
+            access_epoch = family_epoch + 20
+        elif access_variant == "reversed_endpoint_commit_times":
+            access_epoch = family_epoch - 10
         access_commit = git_commit(
             self.root,
             "authorize sealed test",
             access_ledger,
             access,
             *extra_commit_paths,
+            commit_epoch=access_epoch,
         )
         return family, freeze_commit, access, access_commit
 
@@ -880,20 +1033,25 @@ class DriveCLClaimProtocolTest(unittest.TestCase):
         )
         fixture.evaluate_all(access_receipt=access, access_commit=access_commit)
         claim = root / claim_relative
-        compared = run_script(
-            "52_compare_drive_cl_crossed_pdm.py",
-            "--comparison-spec",
-            fixture.spec_path,
-            "--family-repository",
-            root,
-            "--family-spec",
-            family,
-            "--family-freeze-commit",
-            freeze_commit,
-            "--output",
-            claim,
-        )
-        self.assertEqual(compared.returncode, 0, compared.stderr)
+        second_claim = claim.parent / ("lwf-" + claim.name)
+        for comparison_spec, output in (
+            (fixture.spec_path, claim),
+            (fixture.lwf_spec_path, second_claim),
+        ):
+            compared = run_script(
+                "52_compare_drive_cl_crossed_pdm.py",
+                "--comparison-spec",
+                comparison_spec,
+                "--family-repository",
+                root,
+                "--family-spec",
+                family,
+                "--family-freeze-commit",
+                freeze_commit,
+                "--output",
+                output,
+            )
+            self.assertEqual(compared.returncode, 0, compared.stderr)
         evidence_inventory = root / "evidence_inventory.json"
         inventory = run_script(
             "56_build_drive_cl_evidence_inventory.py",
@@ -915,6 +1073,7 @@ class DriveCLClaimProtocolTest(unittest.TestCase):
             "family": family,
             "freeze_commit": freeze_commit,
             "claim": claim,
+            "second_claim": second_claim,
             "evidence_inventory": evidence_inventory,
             "evidence_freeze_commit": evidence_freeze_commit,
         }
@@ -956,68 +1115,25 @@ class DriveCLClaimProtocolTest(unittest.TestCase):
             ).read_text()
         )
         self.assertEqual(
-            family["schema"], "selector_bench.drive_cl_global_holm_family.v4"
+            family["schema"], "selector_bench.drive_cl_global_holm_family.v5"
         )
         self.assertEqual(
             [item["metric"] for item in family["hypotheses"]],
-            list(PDM_DEFAULT_METRICS),
+            list(PDM_DEFAULT_METRICS) * 2,
         )
-        self.assertTrue(
-            all(
-                item["candidate_training_arm"] == "fixed_opd"
-                and "comparison_spec_sha256" in item
-                for item in family["hypotheses"]
-            )
+        self.assertEqual(
+            family["shared_confirmatory_cells"][0]["candidates"],
+            [
+                {"method": "drive_opd_fixed", "training_arm": "fixed_opd"},
+                {"method": "lwf", "training_arm": "lwf"},
+            ],
         )
 
     def test_common_evaluation_cell_supports_multiple_registered_methods(self) -> None:
         with TemporaryDirectory() as directory:
             fixture = ClaimFixture(Path(directory), tuple(range(9)), "test")
-            family_path, _, _, _ = fixture.freeze_confirmatory_family()
+            family_path, freeze_commit, _, _ = fixture.freeze_confirmatory_family()
             family = json.loads(family_path.read_text())
-            second_spec = fixture.root / "comparison_spec_lwf.json"
-            second_payload = json.loads(fixture.spec_path.read_text())
-            second_payload["comparison_id"] = "lwf_vs_sequential"
-            second_payload["candidate"]["method_id"] = "lwf"
-            second_payload["candidate"]["training_arm"] = "lwf"
-            write_json(second_spec, second_payload)
-            second_comparison = dict(family["expected_comparisons"][0])
-            second_comparison.update(
-                {
-                    "comparison_id": "lwf_vs_sequential",
-                    "comparison_spec_repository_path": second_spec.relative_to(
-                        fixture.root
-                    ).as_posix(),
-                    "comparison_spec_sha256": sha256(second_spec),
-                    "comparison_receipt_repository_path": "claims/lwf.crossed.json",
-                    "candidate_method": "lwf",
-                    "candidate_training_arm": "lwf",
-                }
-            )
-            family["expected_comparisons"].append(second_comparison)
-            for original in list(family["hypotheses"]):
-                duplicate = dict(original)
-                duplicate.update(
-                    {
-                        "id": "lwf_vs_sequential::" + str(original["metric"]),
-                        "comparison_id": "lwf_vs_sequential",
-                        "comparison_spec_repository_path": second_spec.relative_to(
-                            fixture.root
-                        ).as_posix(),
-                        "comparison_spec_sha256": sha256(second_spec),
-                        "comparison_receipt_repository_path": "claims/lwf.crossed.json",
-                        "candidate_method": "lwf",
-                        "candidate_training_arm": "lwf",
-                    }
-                )
-                family["hypotheses"].append(duplicate)
-            write_json(family_path, family)
-            freeze_commit = git_commit(
-                fixture.root,
-                "freeze common-cell multi-method family",
-                family_path,
-                second_spec,
-            )
             validated = validate_family_registries_and_cells(
                 family,
                 family_path=family_path,
@@ -1026,6 +1142,10 @@ class DriveCLClaimProtocolTest(unittest.TestCase):
             )
             self.assertEqual(len(validated["expected_comparisons"]), 2)
             self.assertEqual(len(validated["required_cross_cells"]), 1)
+            self.assertEqual(
+                len(next(iter(validated["shared_confirmatory_cells"].values()))["candidates"]),
+                2,
+            )
 
     def test_cpu_run_registration_cli_freezes_target_identity_before_training(self) -> None:
         with TemporaryDirectory() as directory:
@@ -1633,6 +1753,526 @@ class DriveCLClaimProtocolTest(unittest.TestCase):
                 self.assertNotEqual(failed.returncode, 0)
                 self.assertFalse(claim_output.exists())
 
+    def test_p0_16_strict_raw_git_chronology_is_required(self) -> None:
+        variants = (
+            "family_equals_authorization",
+            "authorization_equals_access",
+            "future_intermediate_then_earlier_access",
+            "reversed_endpoint_commit_times",
+        )
+        for variant in variants:
+            with self.subTest(variant=variant), TemporaryDirectory() as directory:
+                fixture = ClaimFixture(Path(directory), tuple(range(9)), "test")
+                _, _, access, access_commit = fixture.freeze_confirmatory_family(
+                    access_variant=variant
+                )
+                claim_output = fixture.run_paths[("sequential", 0)]["evaluator"]
+                failed = fixture.evaluate_one(
+                    "sequential",
+                    0,
+                    access_receipt=access,
+                    access_commit=access_commit,
+                )
+                audit_rejected_cli("P0-16", variant, failed, claim_output)
+                self.assertNotEqual(failed.returncode, 0)
+                self.assertFalse(claim_output.exists())
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            claim_output = root / "forbidden.json"
+            code = (
+                "from datetime import datetime, timezone, timedelta; "
+                "from selector_bench.continual.claim_protocol import "
+                "require_strict_final_test_chronology; "
+                "a=datetime(2026,1,1,tzinfo=timezone.utc); "
+                "b=a+timedelta(seconds=1); c=b+timedelta(seconds=1); "
+                "require_strict_final_test_chronology(a,b,c,c)"
+            )
+            environment = os.environ.copy()
+            environment["PYTHONPATH"] = str(REPOSITORY_ROOT / "selector_bench")
+            failed = subprocess.run(
+                [sys.executable, "-c", code],
+                cwd=REPOSITORY_ROOT,
+                env=environment,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=False,
+            )
+            audit_rejected_cli(
+                "P0-16", "access_equals_evaluator", failed, claim_output
+            )
+            self.assertNotEqual(failed.returncode, 0)
+            self.assertFalse(claim_output.exists())
+
+        with TemporaryDirectory() as directory:
+            fixture = ClaimFixture(Path(directory), tuple(range(9)), "test")
+            family_a, _, access_a, access_commit_a = fixture.freeze_confirmatory_family()
+            fixture.evaluate_all(access_receipt=access_a, access_commit=access_commit_a)
+            family_bad = fixture.root / "family_bad_history.json"
+            ledger_bad = fixture.root / "sealed_test_access_ledger_bad_history.json"
+            family_payload = json.loads(family_a.read_text())
+            family_payload["family_id"] = "p003_bad_history"
+            family_payload["claim_receipt_root"] = "claims_bad_history"
+            for comparison in family_payload["expected_comparisons"]:
+                comparison["comparison_receipt_repository_path"] = (
+                    "claims_bad_history/"
+                    + Path(comparison["comparison_receipt_repository_path"]).name
+                )
+            for hypothesis in family_payload["hypotheses"]:
+                hypothesis["comparison_receipt_repository_path"] = (
+                    "claims_bad_history/"
+                    + Path(hypothesis["comparison_receipt_repository_path"]).name
+                )
+            write_json(
+                ledger_bad,
+                {
+                    "schema": "selector_bench.drive_cl_sealed_test_access_ledger.v1",
+                    "family_id": "p003_bad_history",
+                    "events": [],
+                },
+            )
+            family_payload["sealed_test_access_ledger_repository_path"] = (
+                ledger_bad.relative_to(fixture.root).as_posix()
+            )
+            family_payload["sealed_test_access_ledger_empty_sha256"] = sha256(ledger_bad)
+            write_json(family_bad, family_payload)
+            freeze_bad = git_commit(
+                fixture.root, "freeze bad-history family", family_bad, ledger_bad
+            )
+            family_epoch = int(
+                subprocess.check_output(
+                    ["git", "-C", str(fixture.root), "show", "-s", "--format=%ct", freeze_bad],
+                    text=True,
+                ).strip()
+            )
+            authorized_at = datetime.fromtimestamp(
+                family_epoch + 1, tz=timezone.utc
+            ).isoformat()
+            event_id = hashlib.sha256(f"bad:{freeze_bad}".encode()).hexdigest()[:32]
+            event = {
+                "access_event_id": event_id,
+                "authorized_at_utc": authorized_at,
+                "family_id": "p003_bad_history",
+                "family_spec_sha256": sha256(family_bad),
+                "evaluation_cell_receipt_sha256": sha256(fixture.evaluation_receipt),
+                "protocol_content_sha256": fixture.protocol["content_sha256"],
+                "evaluation_domain": "navsim-fixture/v1::toy_cl::stage_1::old_domain",
+            }
+            prior = dict(event)
+            prior["access_event_id"] = "e" * 32
+            write_json(
+                ledger_bad,
+                {
+                    "schema": "selector_bench.drive_cl_sealed_test_access_ledger.v1",
+                    "family_id": "p003_bad_history",
+                    "events": [prior],
+                },
+            )
+            git_commit(
+                fixture.root,
+                "bad intermediate ledger event",
+                ledger_bad,
+                commit_epoch=family_epoch + 20,
+            )
+            write_json(
+                ledger_bad,
+                {
+                    "schema": "selector_bench.drive_cl_sealed_test_access_ledger.v1",
+                    "family_id": "p003_bad_history",
+                    "events": [],
+                },
+            )
+            git_commit(
+                fixture.root,
+                "delete bad intermediate event",
+                ledger_bad,
+                commit_epoch=family_epoch + 30,
+            )
+            write_json(
+                ledger_bad,
+                {
+                    "schema": "selector_bench.drive_cl_sealed_test_access_ledger.v1",
+                    "family_id": "p003_bad_history",
+                    "events": [event],
+                },
+            )
+            access_bad = fixture.root / "sealed_access_bad_history.json"
+            write_json(
+                access_bad,
+                {
+                    "schema": "selector_bench.drive_cl_sealed_test_access.v2",
+                    "status": "authorized",
+                    "family_id": "p003_bad_history",
+                    "family_spec_repository_path": family_bad.relative_to(
+                        fixture.root
+                    ).as_posix(),
+                    "family_spec_sha256": sha256(family_bad),
+                    "family_freeze_commit": freeze_bad,
+                    "access_ledger_repository_path": ledger_bad.relative_to(
+                        fixture.root
+                    ).as_posix(),
+                    "access_ledger_sha256": sha256(ledger_bad),
+                    "access_event_id": event_id,
+                    "access_event_index": 0,
+                    "authorized_at_utc": authorized_at,
+                    "evaluation_cell_receipt_sha256": sha256(
+                        fixture.evaluation_receipt
+                    ),
+                    "protocol_content_sha256": fixture.protocol["content_sha256"],
+                    "evaluation_domain": "navsim-fixture/v1::toy_cl::stage_1::old_domain",
+                },
+            )
+            access_commit_bad = git_commit(
+                fixture.root,
+                "authorize retargeted bad history",
+                ledger_bad,
+                access_bad,
+                commit_epoch=family_epoch + 40,
+            )
+            family_time = datetime.fromtimestamp(family_epoch, tz=timezone.utc).isoformat()
+            access_time = datetime.fromtimestamp(
+                family_epoch + 40, tz=timezone.utc
+            ).isoformat()
+            for paths in fixture.run_paths.values():
+                evaluator = json.loads(paths["evaluator"].read_text())
+                original_access = evaluator["sealed_test_access"]
+                evaluator["sealed_test_access"] = {
+                    **original_access,
+                    "access_repository": str(fixture.root),
+                    "access_repository_path": access_bad.relative_to(
+                        fixture.root
+                    ).as_posix(),
+                    "access_receipt": str(access_bad),
+                    "access_receipt_sha256": sha256(access_bad),
+                    "access_commit": access_commit_bad,
+                    "access_receipt_repository_path": access_bad.relative_to(
+                        fixture.root
+                    ).as_posix(),
+                    "family_spec": str(family_bad),
+                    "family_spec_repository_path": family_bad.relative_to(
+                        fixture.root
+                    ).as_posix(),
+                    "family_spec_sha256": sha256(family_bad),
+                    "family_freeze_commit": freeze_bad,
+                    "family_id": "p003_bad_history",
+                    "access_ledger": str(ledger_bad),
+                    "access_ledger_repository_path": ledger_bad.relative_to(
+                        fixture.root
+                    ).as_posix(),
+                    "sealed_test_access_ledger_empty_sha256": family_payload[
+                        "sealed_test_access_ledger_empty_sha256"
+                    ],
+                    "access_ledger_sha256": sha256(ledger_bad),
+                    "access_event_index": 0,
+                    "access_event_id": event_id,
+                    "authorized_at_utc": authorized_at,
+                    "family_commit_time_utc": family_time,
+                    "access_commit_time_utc": access_time,
+                }
+                write_json(paths["evaluator"], evaluator)
+                summary = json.loads(paths["summary"].read_text())
+                summary["evaluator_run_receipt_sha256"] = sha256(paths["evaluator"])
+                write_json(paths["summary"], summary)
+            claim_output = fixture.root / "claims_bad_history" / "main.crossed.json"
+            failed = run_script(
+                "52_compare_drive_cl_crossed_pdm.py",
+                "--comparison-spec",
+                fixture.spec_path,
+                "--family-repository",
+                fixture.root,
+                "--family-spec",
+                family_bad,
+                "--family-freeze-commit",
+                freeze_bad,
+                "--output",
+                claim_output,
+            )
+            audit_rejected_cli(
+                "P0-16", "claim-stage-add-delete-add-history", failed, claim_output
+            )
+            self.assertNotEqual(failed.returncode, 0)
+            self.assertFalse(claim_output.exists())
+
+    def test_p0_17_test_evidence_is_bound_to_active_family(self) -> None:
+        with TemporaryDirectory() as directory:
+            fixture = ClaimFixture(Path(directory), tuple(range(9)), "test")
+            family, freeze_commit, access, access_commit = fixture.freeze_confirmatory_family()
+            fixture.evaluate_all(access_receipt=access, access_commit=access_commit)
+            evaluator_path = fixture.run_paths[("sequential", 0)]["evaluator"]
+            original = evaluator_path.read_bytes()
+            mutations: dict[str, tuple[str, object]] = {
+                "family-id": ("family_id", "transplanted-family"),
+                "family-spec-path": ("family_spec_repository_path", "other-family.json"),
+                "family-spec-sha": ("family_spec_sha256", "0" * 64),
+                "family-freeze-commit": ("family_freeze_commit", "0" * 40),
+                "ledger-path": ("access_ledger_repository_path", "other-ledger.json"),
+                "empty-ledger-sha": (
+                    "sealed_test_access_ledger_empty_sha256",
+                    "0" * 64,
+                ),
+                "access-commit": ("access_commit", "0" * 40),
+                "access-receipt-sha": ("access_receipt_sha256", "0" * 64),
+                "access-ledger-sha": ("access_ledger_sha256", "0" * 64),
+                "access-event-id": ("access_event_id", "f" * 32),
+                "access-event-index-bool": ("access_event_index", False),
+                "evaluation-cell-sha": (
+                    "evaluation_cell_receipt_sha256",
+                    "0" * 64,
+                ),
+                "protocol-sha": ("protocol_content_sha256", "0" * 64),
+                "evaluation-domain": ("evaluation_domain", "transplanted/domain"),
+                "split": ("split", "audit"),
+                "evaluator-time": (
+                    "evaluator_started_at_utc",
+                    "1900-01-01T00:00:00+00:00",
+                ),
+                "noncanonical-offset-time": (
+                    "evaluator_started_at_utc",
+                    "2026-08-18T00:00:00+08:00",
+                ),
+            }
+            for variant, (field, value) in mutations.items():
+                with self.subTest(variant=variant):
+                    payload = json.loads(original)
+                    payload["sealed_test_access"][field] = value
+                    write_json(evaluator_path, payload)
+                    claim_output = fixture.root / "claims" / f"attack-{variant}.json"
+                    failed = run_script(
+                        "52_compare_drive_cl_crossed_pdm.py",
+                        "--comparison-spec",
+                        fixture.spec_path,
+                        "--family-repository",
+                        fixture.root,
+                        "--family-spec",
+                        family,
+                        "--family-freeze-commit",
+                        freeze_commit,
+                        "--output",
+                        claim_output,
+                    )
+                    audit_rejected_cli("P0-17", variant, failed, claim_output)
+                    self.assertNotEqual(failed.returncode, 0)
+                    self.assertFalse(claim_output.exists())
+                    evaluator_path.write_bytes(original)
+
+            family_b = fixture.root / "family_b.json"
+            ledger_b = fixture.root / "sealed_test_access_ledger_b.json"
+            write_json(
+                ledger_b,
+                {
+                    "schema": "selector_bench.drive_cl_sealed_test_access_ledger.v1",
+                    "family_id": "p003_transplant_target",
+                    "events": [],
+                },
+            )
+            family_payload = json.loads(family.read_text())
+            family_payload["family_id"] = "p003_transplant_target"
+            family_payload["sealed_test_access_ledger_repository_path"] = ledger_b.relative_to(
+                fixture.root
+            ).as_posix()
+            family_payload["sealed_test_access_ledger_empty_sha256"] = sha256(ledger_b)
+            family_payload["claim_receipt_root"] = "claims_b"
+            for comparison in family_payload["expected_comparisons"]:
+                comparison["comparison_receipt_repository_path"] = (
+                    "claims_b/" + Path(comparison["comparison_receipt_repository_path"]).name
+                )
+            for hypothesis in family_payload["hypotheses"]:
+                hypothesis["comparison_receipt_repository_path"] = (
+                    "claims_b/" + Path(hypothesis["comparison_receipt_repository_path"]).name
+                )
+            write_json(family_b, family_payload)
+            freeze_b = git_commit(
+                fixture.root, "freeze transplant target family", family_b, ledger_b
+            )
+            claim_output = fixture.root / "claims_b" / "main.crossed.json"
+            failed = run_script(
+                "52_compare_drive_cl_crossed_pdm.py",
+                "--comparison-spec",
+                fixture.spec_path,
+                "--family-repository",
+                fixture.root,
+                "--family-spec",
+                family_b,
+                "--family-freeze-commit",
+                freeze_b,
+                "--output",
+                claim_output,
+            )
+            audit_rejected_cli("P0-17", "cross-family-transplant", failed, claim_output)
+            self.assertNotEqual(failed.returncode, 0)
+            self.assertFalse(claim_output.exists())
+
+    def test_p0_18_shared_cell_requires_two_candidates_one_baseline(self) -> None:
+        variants = (
+            "single-candidate",
+            "duplicate-candidate",
+            "different-baselines",
+            "undeclared-candidate",
+        )
+        for variant in variants:
+            with self.subTest(variant=variant), TemporaryDirectory() as directory:
+                fixture = ClaimFixture(Path(directory), tuple(range(9)), "test")
+                family, _, _, _ = fixture.freeze_confirmatory_family()
+                family_payload = json.loads(family.read_text())
+                ledger = fixture.root / "sealed_test_access_ledger.json"
+                write_json(
+                    ledger,
+                    {
+                        "schema": "selector_bench.drive_cl_sealed_test_access_ledger.v1",
+                        "family_id": "p003_primary",
+                        "events": [],
+                    },
+                )
+                family_payload["sealed_test_access_ledger_empty_sha256"] = sha256(ledger)
+                shared = family_payload["shared_confirmatory_cells"][0]
+                if variant == "single-candidate":
+                    family_payload["expected_comparisons"] = family_payload[
+                        "expected_comparisons"
+                    ][:1]
+                    family_payload["hypotheses"] = [
+                        item
+                        for item in family_payload["hypotheses"]
+                        if item["comparison_id"] == "main"
+                    ]
+                    shared["minimum_distinct_candidate_count"] = 1
+                    shared["candidates"] = shared["candidates"][:1]
+                elif variant == "duplicate-candidate":
+                    shared["candidates"][1] = dict(shared["candidates"][0])
+                elif variant == "different-baselines":
+                    family_payload["expected_comparisons"][1][
+                        "baseline_method"
+                    ] = "planner_only"
+                    family_payload["expected_comparisons"][1][
+                        "baseline_training_arm"
+                    ] = "planner_only"
+                    for item in family_payload["hypotheses"]:
+                        if item["comparison_id"] == "lwf_vs_sequential":
+                            item["baseline_method"] = "planner_only"
+                            item["baseline_training_arm"] = "planner_only"
+                else:
+                    shared["candidates"][1] = {
+                        "method": "planner_only",
+                        "training_arm": "planner_only",
+                    }
+                write_json(family, family_payload)
+                mutant_commit = git_commit(
+                    fixture.root, f"freeze {variant} family", family, ledger
+                )
+                claim_output = fixture.root / "claims" / "main.crossed.json"
+                failed = run_script(
+                    "52_compare_drive_cl_crossed_pdm.py",
+                    "--comparison-spec",
+                    fixture.spec_path,
+                    "--family-repository",
+                    fixture.root,
+                    "--family-spec",
+                    family,
+                    "--family-freeze-commit",
+                    mutant_commit,
+                    "--output",
+                    claim_output,
+                )
+                audit_rejected_cli("P0-18", variant, failed, claim_output)
+                self.assertNotEqual(failed.returncode, 0)
+                self.assertFalse(claim_output.exists())
+
+    def test_p0_19_seed_design_rejects_nonfinite_and_boolean_numerics(self) -> None:
+        receipt_variants = [
+            f"nonfinite_{location}_{value}"
+            for location in (
+                "minimum-effect",
+                "target-power",
+                "critical-value",
+                "metric-power",
+                "heldout-fwer",
+            )
+            for value in ("nan", "posinf", "neginf")
+        ] + [
+            f"family-alpha_{value}"
+            for value in ("nan", "posinf", "neginf", "bool")
+        ] + [
+            "bool_designed_seed",
+            "bool_candidate_seed",
+            "bool_family_metric_count",
+            "bool_simulation_seed",
+        ]
+        for variant in receipt_variants:
+            with self.subTest(variant=variant), TemporaryDirectory() as directory:
+                fixture = ClaimFixture(Path(directory), tuple(range(9)), "test")
+                family, freeze_commit, _, _ = fixture.freeze_confirmatory_family(
+                    seed_design_variant=variant
+                )
+                claim_output = fixture.root / "failed.json"
+                failed = run_script(
+                    "52_compare_drive_cl_crossed_pdm.py",
+                    "--comparison-spec",
+                    fixture.spec_path,
+                    "--family-repository",
+                    fixture.root,
+                    "--family-spec",
+                    family,
+                    "--family-freeze-commit",
+                    freeze_commit,
+                    "--output",
+                    claim_output,
+                )
+                audit_rejected_cli("P0-19", variant, failed, claim_output)
+                self.assertNotEqual(failed.returncode, 0)
+                self.assertFalse(claim_output.exists())
+
+        for value_name, value in (
+            ("nan", float("nan")),
+            ("posinf", float("inf")),
+            ("neginf", float("-inf")),
+            ("bool", True),
+        ):
+            with self.subTest(variant=f"pilot-{value_name}"), TemporaryDirectory() as directory:
+                root = Path(directory)
+                pilot = root / "pilot.json"
+                matrix = [[0.00, 0.01], [0.02, 0.03]]
+                payload = {
+                    "schema": "selector_bench.drive_cl_audit_pilot_matrix.v1",
+                    "split": "audit",
+                    "metrics": list(PDM_DEFAULT_METRICS),
+                    "seed_ids": [0, 1],
+                    "session_ids": ["session-a", "session-b"],
+                    "source_receipts": ["audit.json"],
+                    "source_receipt_sha256": ["0" * 64],
+                    "candidate_minus_baseline": {
+                        metric: [list(row) for row in matrix]
+                        for metric in PDM_DEFAULT_METRICS
+                    },
+                }
+                payload["candidate_minus_baseline"]["score"][0][0] = value
+                write_json(pilot, payload, allow_nan=True)
+                claim_output = root / "seed_design.json"
+                failed = run_script(
+                    "55_design_drive_cl_confirmatory_seeds.py",
+                    "--pilot-matrix",
+                    pilot,
+                    "--candidate-seed-ids",
+                    "0,1,2,3,4,5,6,7,8",
+                    "--minimum-relevant-effect",
+                    0.1,
+                    "--target-power",
+                    0.8,
+                    "--family-alpha",
+                    0.05,
+                    "--simulation-repetitions",
+                    10000,
+                    "--simulation-seed",
+                    0,
+                    "--repository",
+                    REPOSITORY_ROOT,
+                    "--output",
+                    claim_output,
+                )
+                audit_rejected_cli(
+                    "P0-19", f"pilot-{value_name}", failed, claim_output
+                )
+                self.assertNotEqual(failed.returncode, 0)
+                self.assertFalse(claim_output.exists())
+
     def test_positive_family_is_filename_and_hypothesis_order_invariant(self) -> None:
         with TemporaryDirectory() as first_directory, TemporaryDirectory() as second_directory:
             first = self._confirmatory_chain(
@@ -1652,8 +2292,59 @@ class DriveCLClaimProtocolTest(unittest.TestCase):
             first_result = json.loads(first_output.read_text())
             second_result = json.loads(second_output.read_text())
             self.assertEqual(first_result["schema"], GLOBAL_RESULT_SCHEMA)
-            self.assertEqual(first_result["hypothesis_count"], 7)
+            self.assertEqual(first_result["hypothesis_count"], 14)
+            self.assertEqual(first_result["comparison_receipt_count"], 2)
             self.assertEqual(first_result["results"], second_result["results"])
+            for chain in (first, second):
+                for paths in chain["fixture"].run_paths.values():
+                    access = json.loads(paths["evaluator"].read_text())[
+                        "sealed_test_access"
+                    ]
+                    instants = [
+                        datetime.fromisoformat(access[field])
+                        for field in (
+                            "family_commit_time_utc",
+                            "authorized_at_utc",
+                            "access_commit_time_utc",
+                            "evaluator_started_at_utc",
+                        )
+                    ]
+                    self.assertEqual(len(set(instants)), 4)
+                    require_strict_final_test_chronology(*instants)
+
+    def test_claim_path_json_emissions_disable_nan(self) -> None:
+        paths = [
+            REPOSITORY_ROOT
+            / "selector_bench"
+            / "selector_bench"
+            / "continual"
+            / name
+            for name in ("claim_protocol.py", "seed_design.py")
+        ]
+        paths.extend(sorted(SCRIPT_ROOT.glob("[4-5][0-9]_*.py")))
+        emission_count = 0
+        missing: list[str] = []
+        for path in paths:
+            tree = ast.parse(path.read_text(), filename=str(path))
+            for node in ast.walk(tree):
+                if not (
+                    isinstance(node, ast.Call)
+                    and isinstance(node.func, ast.Attribute)
+                    and isinstance(node.func.value, ast.Name)
+                    and node.func.value.id == "json"
+                    and node.func.attr in {"dump", "dumps"}
+                ):
+                    continue
+                emission_count += 1
+                keywords = {keyword.arg: keyword.value for keyword in node.keywords}
+                allow_nan = keywords.get("allow_nan")
+                if not (
+                    isinstance(allow_nan, ast.Constant)
+                    and allow_nan.value is False
+                ):
+                    missing.append(f"{path.relative_to(REPOSITORY_ROOT)}:{node.lineno}")
+        self.assertGreater(emission_count, 0)
+        self.assertEqual(missing, [])
 
 
 if __name__ == "__main__":

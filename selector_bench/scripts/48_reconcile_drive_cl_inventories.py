@@ -310,6 +310,7 @@ def main() -> None:
                         "sampled_tokens": len(sampled_tokens),
                     },
                     sort_keys=True,
+                    allow_nan=False,
                 ),
                 flush=True,
             )
@@ -643,9 +644,11 @@ def main() -> None:
     }
     output = args.output_dir / "reconciliation.json"
     temporary = output.with_suffix(".json.tmp")
-    temporary.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
+    temporary.write_text(
+        json.dumps(payload, indent=2, sort_keys=True, allow_nan=False) + "\n"
+    )
     os.replace(temporary, output)
-    print(json.dumps(payload, sort_keys=True), flush=True)
+    print(json.dumps(payload, sort_keys=True, allow_nan=False), flush=True)
     if status != "PASS":
         raise SystemExit(2)
 

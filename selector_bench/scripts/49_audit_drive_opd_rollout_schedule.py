@@ -231,9 +231,11 @@ def main() -> None:
     }
     output = args.output_dir / "rollout_schedule_audit.json"
     temporary = output.with_suffix(".json.tmp")
-    temporary.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
+    temporary.write_text(
+        json.dumps(payload, indent=2, sort_keys=True, allow_nan=False) + "\n"
+    )
     os.replace(temporary, output)
-    print(json.dumps(payload, sort_keys=True))
+    print(json.dumps(payload, sort_keys=True, allow_nan=False))
     if payload["status"] != "PASS":
         raise SystemExit(2)
 

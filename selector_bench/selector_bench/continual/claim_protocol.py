@@ -5,8 +5,10 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import re
 import subprocess
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -14,6 +16,10 @@ from selector_bench.continual.seed_design import (
     INVOCATION_SCHEMA,
     SEED_DESIGN_SCHEMA,
     build_seed_design_payload,
+    finite_integer,
+    finite_real,
+    require_finite_tree,
+    validate_seed_design_numeric_semantics,
 )
 from selector_bench.continual.run_budget import TRANSIENT_STORAGE_SEMANTICS
 from selector_bench.continual.statistics import PDM_DEFAULT_METRICS, StatisticsError
@@ -26,7 +32,7 @@ EVALUATOR_RUN_SCHEMA = "selector_bench.drive_cl_evaluator_run.v2"
 CELL_SUMMARY_SCHEMA = "selector_bench.drive_cl_pdm_cell_summary.v5"
 CROSSED_SPEC_SCHEMA = "selector_bench.drive_cl_crossed_comparison_spec.v2"
 CROSSED_RECEIPT_SCHEMA = "selector_bench.drive_cl_crossed_pdm_comparison.v4"
-GLOBAL_FAMILY_SCHEMA = "selector_bench.drive_cl_global_holm_family.v4"
+GLOBAL_FAMILY_SCHEMA = "selector_bench.drive_cl_global_holm_family.v5"
 GLOBAL_RESULT_SCHEMA = "selector_bench.drive_cl_global_holm_result.v4"
 SEALED_ACCESS_SCHEMA = "selector_bench.drive_cl_sealed_test_access.v2"
 SEALED_LEDGER_SCHEMA = "selector_bench.drive_cl_sealed_test_access_ledger.v1"
@@ -34,6 +40,171 @@ EVIDENCE_INVENTORY_SCHEMA = "selector_bench.drive_cl_evidence_inventory.v1"
 METHOD_REGISTRY_SCHEMA = "selector_bench.drive_cl_method_registry.v1"
 METRIC_REGISTRY_SCHEMA = "selector_bench.drive_cl_metric_registry.v1"
 CLAIM_RECEIPT_SUFFIX = ".crossed.json"
+
+
+SEALED_FAMILY_IDENTITY_FIELDS = (
+    "family_id",
+    "family_spec_repository_path",
+    "family_spec_sha256",
+    "family_freeze_commit",
+    "access_ledger_repository_path",
+    "sealed_test_access_ledger_empty_sha256",
+)
+
+
+def shared_sealed_test_access_identity(sealed_access: object) -> dict[str, Any] | None:
+    """Project one evaluator receipt onto its shared authorization-event identity."""
+
+    if sealed_access is None:
+        return None
+    if not isinstance(sealed_access, Mapping):
+        raise StatisticsError("sealed-test access identity must be an object")
+    return {
+        key: value
+        for key, value in sealed_access.items()
+        if key != "evaluator_started_at_utc"
+    }
+
+
+def raw_git_committer_utc(repository: Path, commit: str) -> datetime:
+    """Derive one normalized UTC committer instant from the raw Git object."""
+
+    raw = git(repository, "cat-file", "commit", commit)
+    lines = [line for line in raw.splitlines() if line.startswith(b"committer ")]
+    if len(lines) != 1:
+        raise StatisticsError("Git commit object lacks one canonical committer header")
+    match = re.fullmatch(rb"committer .+ ([0-9]+) ([+-][0-9]{4})", lines[0])
+    if match is None:
+        raise StatisticsError("Git committer header has malformed time fields")
+    epoch_text, offset = match.groups()
+    hours = int(offset[1:3])
+    minutes = int(offset[3:5])
+    if hours > 14 or minutes > 59 or (hours == 14 and minutes != 0):
+        raise StatisticsError("Git committer header has an invalid UTC offset")
+    try:
+        instant = datetime.fromtimestamp(int(epoch_text), tz=timezone.utc)
+    except (OverflowError, OSError, ValueError) as exc:
+        raise StatisticsError("Git committer epoch is outside the UTC domain") from exc
+    return instant
+
+
+def require_strict_final_test_chronology(
+    family_commit_time: datetime,
+    authorized_at: datetime,
+    access_commit_time: datetime,
+    evaluator_started_at: datetime,
+) -> None:
+    """Enforce the four strictly ordered authoritative final-test instants."""
+
+    instants = (
+        family_commit_time,
+        authorized_at,
+        access_commit_time,
+        evaluator_started_at,
+    )
+    if any(
+        not isinstance(value, datetime)
+        or value.tzinfo is None
+        or value.utcoffset() != timezone.utc.utcoffset(value)
+        for value in instants
+    ):
+        raise StatisticsError("sealed access chronology requires normalized UTC instants")
+    if not all(left < right for left, right in zip(instants, instants[1:])):
+        raise StatisticsError(
+            "sealed access chronology must satisfy family < authorization < access < evaluator"
+        )
+
+
+def strict_utc(value: object, label: str) -> datetime:
+    """Parse one exact canonical ISO-8601 UTC string."""
+
+    if not isinstance(value, str):
+        raise StatisticsError(f"{label} must be a UTC string")
+    try:
+        parsed = datetime.fromisoformat(value)
+    except ValueError as exc:
+        raise StatisticsError(f"{label} time is malformed") from exc
+    if parsed.tzinfo is None or parsed.utcoffset() != timezone.utc.utcoffset(parsed):
+        raise StatisticsError(f"{label} time is not UTC")
+    if parsed.isoformat() != value:
+        raise StatisticsError(f"{label} time is not canonical ISO-8601")
+    return parsed
+
+
+def validate_sealed_access_git_history(
+    repository: Path,
+    *,
+    family_commit: str,
+    access_commit: str,
+    ledger_path: Path,
+    expected_empty_ledger_sha256: str,
+    expected_family_id: str,
+) -> tuple[datetime, datetime, bytes]:
+    """Replay the complete linear authorization ancestry from raw Git objects."""
+
+    repository = repository.resolve()
+    ledger_path = ledger_path.resolve()
+    try:
+        ledger_relative = ledger_path.relative_to(repository).as_posix()
+    except ValueError as exc:
+        raise StatisticsError("sealed access ledger must be inside its repository") from exc
+    git(repository, "merge-base", "--is-ancestor", family_commit, access_commit)
+    empty_bytes = git(repository, "show", f"{family_commit}:{ledger_relative}")
+    require_equal(
+        hashlib.sha256(empty_bytes).hexdigest(),
+        expected_empty_ledger_sha256,
+        "family empty access-ledger SHA256",
+    )
+    try:
+        empty_ledger = json.loads(empty_bytes)
+    except json.JSONDecodeError as exc:
+        raise StatisticsError("family commit contains an invalid empty access ledger") from exc
+    if (
+        not isinstance(empty_ledger, dict)
+        or set(empty_ledger) != {"schema", "family_id", "events"}
+        or empty_ledger.get("schema") != SEALED_LEDGER_SCHEMA
+        or empty_ledger.get("family_id") != expected_family_id
+        or empty_ledger.get("events") != []
+    ):
+        raise StatisticsError("family commit does not contain one canonical empty ledger")
+    ancestry = [
+        value
+        for value in git(
+            repository,
+            "rev-list",
+            "--reverse",
+            "--ancestry-path",
+            f"{family_commit}..{access_commit}",
+        )
+        .decode()
+        .splitlines()
+        if value
+    ]
+    if not ancestry or ancestry[-1] != access_commit:
+        raise StatisticsError("sealed access commit is not a linear family descendant")
+    previous = family_commit
+    previous_time = raw_git_committer_utc(repository, family_commit)
+    for commit in ancestry:
+        parents = git(repository, "show", "-s", "--format=%P", commit).decode().split()
+        if parents != [previous]:
+            raise StatisticsError("sealed access authorization history may not merge or fork")
+        commit_time = raw_git_committer_utc(repository, commit)
+        if commit_time <= previous_time:
+            raise StatisticsError(
+                "sealed access authorization commits must have strictly increasing times"
+            )
+        ledger_bytes = git(repository, "show", f"{commit}:{ledger_relative}")
+        if commit != access_commit and ledger_bytes != empty_bytes:
+            raise StatisticsError(
+                "canonical access ledger changed before the authorized access commit"
+            )
+        previous = commit
+        previous_time = commit_time
+    return (
+        raw_git_committer_utc(repository, family_commit),
+        raw_git_committer_utc(repository, access_commit),
+        empty_bytes,
+    )
 
 
 # Paper-facing method names are intentionally registered against one executable
@@ -107,14 +278,14 @@ def git(repository: Path, *arguments: str, allow_failure: bool = False) -> bytes
     return process.stdout
 
 
-def verify_frozen_file(
+def frozen_file_bytes(
     repository: Path,
     path: Path,
     freeze_commit: str,
     *,
     require_ancestor_of_head: bool = True,
-) -> str:
-    """Verify that ``path`` is exactly one blob at a full immutable commit."""
+) -> tuple[str, bytes]:
+    """Read one path from a full immutable commit without trusting worktree bytes."""
 
     repository = repository.resolve()
     path = path.resolve()
@@ -130,11 +301,29 @@ def verify_frozen_file(
     if len(resolved_commit) != 40 or resolved_commit != freeze_commit:
         raise StatisticsError("freeze commit must be a full 40-character commit SHA")
     frozen = git(repository, "show", f"{resolved_commit}:{relative.as_posix()}")
-    if frozen != path.read_bytes():
-        raise StatisticsError("registered file differs from the immutable freeze commit")
     if require_ancestor_of_head:
         git(repository, "merge-base", "--is-ancestor", resolved_commit, "HEAD")
-    return relative.as_posix()
+    return relative.as_posix(), frozen
+
+
+def verify_frozen_file(
+    repository: Path,
+    path: Path,
+    freeze_commit: str,
+    *,
+    require_ancestor_of_head: bool = True,
+) -> str:
+    """Verify that current ``path`` exactly equals its immutable frozen blob."""
+
+    relative, frozen = frozen_file_bytes(
+        repository,
+        path,
+        freeze_commit,
+        require_ancestor_of_head=require_ancestor_of_head,
+    )
+    if frozen != path.resolve().read_bytes():
+        raise StatisticsError("registered file differs from the immutable freeze commit")
+    return relative
 
 
 def canonical_evaluation_domain(protocol: Mapping[str, Any], stage: Mapping[str, Any]) -> str:
@@ -241,6 +430,8 @@ def validate_seed_design(
     )
     verify_frozen_file(repository, design_path, freeze_commit)
     design = load_json(design_path, "seed-design receipt")
+    require_finite_tree(design, "seed-design receipt")
+    validate_seed_design_numeric_semantics(design, "seed-design receipt")
     require_equal(design.get("schema"), SEED_DESIGN_SCHEMA, "seed-design schema")
     require_equal(design.get("status"), "passed", "seed-design status")
     require_equal(
@@ -252,13 +443,14 @@ def validate_seed_design(
         sha256(design_path),
         "family seed-design receipt SHA256",
     )
-    family_alpha = float(family.get("alpha"))
+    family_alpha = finite_real(family.get("alpha"), "family alpha")
     pilot_path = resolve(family_root, design.get("pilot_matrix"), "seed-design pilot matrix")
     verify_frozen_file(repository, pilot_path, freeze_commit)
     require_equal(
         design.get("pilot_matrix_sha256"), sha256(pilot_path), "seed-design pilot matrix SHA256"
     )
     pilot = load_json(pilot_path, "seed-design pilot matrix")
+    require_finite_tree(pilot, "seed-design pilot matrix")
     require_equal(
         pilot.get("schema"),
         "selector_bench.drive_cl_audit_pilot_matrix.v1",
@@ -287,6 +479,27 @@ def validate_seed_design(
         tuple(invocation.get("candidate_seed_ids", [])),
         tuple(design.get("candidate_seed_ids", [])),
         "seed invocation candidate IDs",
+    )
+    candidate_seed_ids = tuple(
+        finite_integer(value, "seed invocation candidate ID")
+        for value in invocation.get("candidate_seed_ids", [])
+    )
+    minimum_relevant_effect = finite_real(
+        invocation.get("minimum_relevant_effect"),
+        "seed invocation minimum relevant effect",
+    )
+    target_power_input = finite_real(
+        invocation.get("target_power"), "seed invocation target power"
+    )
+    invocation_alpha = finite_real(
+        invocation.get("family_alpha"), "seed invocation family alpha"
+    )
+    simulation_repetitions = finite_integer(
+        invocation.get("simulation_repetitions"),
+        "seed invocation simulation repetitions",
+    )
+    simulation_seed = finite_integer(
+        invocation.get("simulation_seed"), "seed invocation simulation seed"
     )
     require_equal(invocation.get("family_alpha"), family_alpha, "seed invocation family alpha")
     module_path = resolve(
@@ -319,12 +532,12 @@ def validate_seed_design(
         replay = build_seed_design_payload(
             pilot_path,
             pilot_reference=str(design.get("pilot_matrix")),
-            candidate_seed_ids=tuple(int(value) for value in invocation["candidate_seed_ids"]),
-            minimum_relevant_effect=float(invocation["minimum_relevant_effect"]),
-            target_power=float(invocation["target_power"]),
-            family_alpha=float(invocation["family_alpha"]),
-            simulation_repetitions=int(invocation["simulation_repetitions"]),
-            simulation_seed=int(invocation["simulation_seed"]),
+            candidate_seed_ids=candidate_seed_ids,
+            minimum_relevant_effect=minimum_relevant_effect,
+            target_power=target_power_input,
+            family_alpha=invocation_alpha,
+            simulation_repetitions=simulation_repetitions,
+            simulation_seed=simulation_seed,
             generator_module_repository_path=str(
                 design.get("generator_module_repository_path")
             ),
@@ -343,20 +556,32 @@ def validate_seed_design(
         raise StatisticsError(
             "seed-design receipt is not the exact executable replay: " + ", ".join(mismatches)
         )
-    target_power = float(replay["target_power"])
-    achieved_power = float(replay["estimated_power"])
-    minimum_effect = float(replay["minimum_relevant_effect"])
-    repetitions = int(replay["power_simulation_repetitions"])
-    tail_resolution_minimum = int(
-        replay["minimum_seed_count_for_two_sided_family_tail_resolution"]
+    require_finite_tree(replay, "seed-design replay")
+    target_power = finite_real(replay["target_power"], "replayed target power")
+    achieved_power = finite_real(replay["estimated_power"], "replayed estimated power")
+    minimum_effect = finite_real(
+        replay["minimum_relevant_effect"], "replayed minimum effect"
+    )
+    repetitions = finite_integer(
+        replay["power_simulation_repetitions"], "replayed simulation repetitions"
+    )
+    tail_resolution_minimum = finite_integer(
+        replay["minimum_seed_count_for_two_sided_family_tail_resolution"],
+        "replayed minimum seed count",
     )
     if target_power < 0.8 or achieved_power < target_power or minimum_effect <= 0.0:
         raise StatisticsError("seed design does not meet its preregistered power/effect target")
     selected = next(
-        row
-        for row in replay["candidate_seed_audits"]
-        if int(row["seed_count"]) == len(expected_seeds)
+        (
+            row
+            for row in replay["candidate_seed_audits"]
+            if finite_integer(row["seed_count"], "replayed audit seed count")
+            == len(expected_seeds)
+        ),
+        None,
     )
+    if not isinstance(selected, dict):
+        raise StatisticsError("seed design lacks the selected finite audit row")
     sources = design.get("audit_source_receipt_sha256")
     if not isinstance(sources, list) or not sources or any(
         not isinstance(value, str) or len(value) != 64 for value in sources
@@ -372,17 +597,23 @@ def validate_seed_design(
         source_path = resolve(pilot_path.parent, source_value, "seed-design audit source receipt")
         verify_frozen_file(repository, source_path, freeze_commit)
         require_equal(expected_hash, sha256(source_path), "seed-design audit source SHA256")
-    return {
+    result = {
         "seed_design_receipt": str(design_path),
         "seed_design_receipt_sha256": sha256(design_path),
         "target_power": target_power,
         "estimated_power": achieved_power,
         "minimum_relevant_effect": minimum_effect,
         "power_simulation_repetitions": repetitions,
-        "heldout_null_fwer": float(selected["heldout_null_fwer"]),
-        "null_fwer_tolerance": float(selected["null_fwer_tolerance"]),
+        "heldout_null_fwer": finite_real(
+            selected["heldout_null_fwer"], "selected heldout null FWER"
+        ),
+        "null_fwer_tolerance": finite_real(
+            selected["null_fwer_tolerance"], "selected null FWER tolerance"
+        ),
         "minimum_seed_count_for_two_sided_family_tail_resolution": tail_resolution_minimum,
     }
+    require_finite_tree(result, "validated seed-design result")
+    return result
 
 
 def validate_family_registries_and_cells(
@@ -437,6 +668,8 @@ def validate_family_registries_and_cells(
     comparison_by_id: dict[str, dict[str, Any]] = {}
     registered_cells: set[tuple[object, ...]] = set()
     registered_semantic_comparisons: set[tuple[object, ...]] = set()
+    registered_spec_identities: set[tuple[str, str]] = set()
+    registered_receipt_paths: set[str] = set()
     for item in expected_comparisons:
         if not isinstance(item, dict) or set(item) != comparison_keys:
             raise StatisticsError("family expected-comparison fields are malformed")
@@ -452,12 +685,19 @@ def validate_family_registries_and_cells(
         spec_path = resolve(repository, item.get("comparison_spec_repository_path"), "family comparison spec")
         verify_frozen_file(repository, spec_path, freeze_commit)
         require_equal(item.get("comparison_spec_sha256"), sha256(spec_path), "family comparison spec SHA256")
+        spec_identity = (str(spec_path), str(item.get("comparison_spec_sha256")))
+        if spec_identity in registered_spec_identities:
+            raise StatisticsError("family reuses one comparison specification identity")
+        registered_spec_identities.add(spec_identity)
         receipt_path = resolve(
             repository,
             item.get("comparison_receipt_repository_path"),
             "family comparison receipt",
         )
         require_within(receipt_path, repository, "family comparison receipt")
+        if str(receipt_path) in registered_receipt_paths:
+            raise StatisticsError("family reuses one comparison receipt identity")
+        registered_receipt_paths.add(str(receipt_path))
         checkpoint_stage = next(
             (
                 stage
@@ -528,6 +768,100 @@ def validate_family_registries_and_cells(
         raise StatisticsError("family is missing a required checkpoint-stage/evaluation-domain cell")
     if not any(checkpoint != evaluation for checkpoint, evaluation, _, _ in required_coordinates):
         raise StatisticsError("family must preregister at least one off-diagonal continual-learning cell")
+
+    shared_cells = family.get("shared_confirmatory_cells")
+    shared_cell_keys = cell_keys | {
+        "common_baseline_method",
+        "common_baseline_training_arm",
+        "minimum_distinct_candidate_count",
+        "candidates",
+    }
+    candidate_keys = {"method", "training_arm"}
+    if not isinstance(shared_cells, list) or not shared_cells:
+        raise StatisticsError("family must explicitly register shared confirmatory cells")
+    shared_contracts: dict[tuple[object, ...], dict[str, Any]] = {}
+    for shared in shared_cells:
+        if not isinstance(shared, dict) or set(shared) != shared_cell_keys:
+            raise StatisticsError("family shared-confirmatory-cell fields are malformed")
+        coordinate = tuple(
+            shared[field]
+            for field in (
+                "checkpoint_stage_index",
+                "evaluation_stage_index",
+                "evaluation_domain",
+                "split",
+            )
+        )
+        if coordinate in shared_contracts:
+            raise StatisticsError("family duplicates one shared confirmatory cell")
+        baseline = validate_method_arm(
+            shared.get("common_baseline_method"),
+            shared.get("common_baseline_training_arm"),
+            registry=methods,
+        )
+        minimum_candidates = finite_integer(
+            shared.get("minimum_distinct_candidate_count"),
+            "minimum distinct candidate count",
+        )
+        candidates = shared.get("candidates")
+        if (
+            minimum_candidates < 2
+            or not isinstance(candidates, list)
+            or len(candidates) < minimum_candidates
+        ):
+            raise StatisticsError(
+                "shared confirmatory cells require at least two declared candidates"
+            )
+        candidate_identities: set[tuple[str, str]] = set()
+        for candidate in candidates:
+            if not isinstance(candidate, dict) or set(candidate) != candidate_keys:
+                raise StatisticsError("shared-cell candidate identity is malformed")
+            identity = validate_method_arm(
+                candidate.get("method"), candidate.get("training_arm"), registry=methods
+            )
+            if identity == baseline or identity in candidate_identities:
+                raise StatisticsError(
+                    "shared-cell candidates must be distinct from baseline and one another"
+                )
+            candidate_identities.add(identity)
+        shared_contracts[coordinate] = {
+            "baseline": baseline,
+            "candidates": candidate_identities,
+            "minimum": minimum_candidates,
+        }
+    if set(shared_contracts) != required_coordinates or registered_cells != required_coordinates:
+        raise StatisticsError(
+            "declared shared cells, required cells and comparison cells must match exactly"
+        )
+    for coordinate, contract in shared_contracts.items():
+        cell_comparisons = [
+            item
+            for item in expected_comparisons
+            if (
+                item["checkpoint_stage_index"],
+                item["evaluation_stage_index"],
+                item["evaluation_domain"],
+                item["split"],
+            )
+            == coordinate
+        ]
+        baselines = {
+            (item["baseline_method"], item["baseline_training_arm"])
+            for item in cell_comparisons
+        }
+        candidates = {
+            (item["candidate_method"], item["candidate_training_arm"])
+            for item in cell_comparisons
+        }
+        if (
+            baselines != {contract["baseline"]}
+            or candidates != contract["candidates"]
+            or len(cell_comparisons) != len(candidates)
+            or len(candidates) < contract["minimum"]
+        ):
+            raise StatisticsError(
+                "shared cell must contain its exact distinct candidates against one baseline"
+            )
     hypotheses = family.get("hypotheses")
     if not isinstance(hypotheses, list) or not hypotheses:
         raise StatisticsError("family must preregister claim hypotheses")
@@ -556,6 +890,7 @@ def validate_family_registries_and_cells(
         "dataset_identity": protocol.get("dataset_identity"),
         "expected_comparisons": comparison_by_id,
         "required_cross_cells": required_coordinates,
+        "shared_confirmatory_cells": shared_contracts,
     }
 
 
@@ -659,6 +994,247 @@ def require_equal(actual: object, expected: object, label: str) -> None:
         raise StatisticsError(
             f"{label} mismatch: expected={expected!r} actual={actual!r}"
         )
+
+
+def validate_sealed_test_access_binding(
+    sealed_access: object,
+    *,
+    expected_family: Mapping[str, Any] | None,
+    evaluation_cell_receipt_sha256: str,
+    protocol_content_sha256: str,
+    evaluation_domain: str,
+    split: str,
+) -> dict[str, Any] | None:
+    """Bind test evidence to the active frozen family and one shared access event."""
+
+    if split != "test":
+        if sealed_access is not None:
+            raise StatisticsError("non-test evidence may not claim sealed-test access")
+        return None
+    if expected_family is None:
+        raise StatisticsError("test evidence lacks the active frozen family identity")
+    expected_keys = set(SEALED_FAMILY_IDENTITY_FIELDS)
+    if not isinstance(expected_family, Mapping) or set(expected_family) != expected_keys:
+        raise StatisticsError("active frozen family identity is malformed")
+    verified_keys = {
+        "status",
+        "access_repository",
+        "access_repository_path",
+        "access_receipt",
+        "access_receipt_sha256",
+        "access_commit",
+        "access_receipt_repository_path",
+        "family_spec",
+        "family_spec_repository_path",
+        "family_spec_sha256",
+        "family_freeze_commit",
+        "family_id",
+        "access_ledger",
+        "access_ledger_repository_path",
+        "sealed_test_access_ledger_empty_sha256",
+        "access_ledger_sha256",
+        "access_event_index",
+        "access_event_id",
+        "authorized_at_utc",
+        "family_commit_time_utc",
+        "access_commit_time_utc",
+        "evaluator_started_at_utc",
+        "evaluation_cell_receipt_sha256",
+        "protocol_content_sha256",
+        "evaluation_domain",
+        "split",
+    }
+    if not isinstance(sealed_access, dict) or set(sealed_access) != verified_keys:
+        raise StatisticsError("sealed-test access verification payload is not canonical")
+    require_equal(sealed_access.get("status"), "verified", "sealed access status")
+    for field in SEALED_FAMILY_IDENTITY_FIELDS:
+        require_equal(
+            sealed_access.get(field), expected_family.get(field), f"sealed access {field}"
+        )
+    per_cell = {
+        "evaluation_cell_receipt_sha256": evaluation_cell_receipt_sha256,
+        "protocol_content_sha256": protocol_content_sha256,
+        "evaluation_domain": evaluation_domain,
+        "split": split,
+    }
+    for field, expected in per_cell.items():
+        require_equal(sealed_access.get(field), expected, f"sealed access {field}")
+    for field in (
+        "access_receipt_sha256",
+        "access_ledger_sha256",
+    ):
+        if not _is_sha256(sealed_access.get(field)):
+            raise StatisticsError(f"sealed access {field} must be a SHA256")
+    if not _is_git_sha(sealed_access.get("access_commit")):
+        raise StatisticsError("sealed access commit must be a full Git SHA")
+    event_id = sealed_access.get("access_event_id")
+    if not isinstance(event_id, str) or len(event_id) != 32:
+        raise StatisticsError("sealed access event ID is malformed")
+    event_index = sealed_access.get("access_event_index")
+    if not isinstance(event_index, int) or isinstance(event_index, bool):
+        raise StatisticsError("sealed access event index must be an integer")
+    require_equal(event_index, 0, "sealed access event index")
+    for field in (
+        "access_repository",
+        "access_repository_path",
+        "access_receipt",
+        "access_receipt_repository_path",
+        "family_spec",
+        "access_ledger",
+    ):
+        if not isinstance(sealed_access.get(field), str) or not sealed_access[field]:
+            raise StatisticsError(f"sealed access {field} must be non-empty")
+    access_repository = Path(str(sealed_access["access_repository"])).resolve()
+    if not (access_repository / ".git").exists():
+        raise StatisticsError("sealed access repository is not a Git worktree")
+    access_receipt = resolve(
+        access_repository,
+        sealed_access["access_receipt_repository_path"],
+        "sealed access source receipt",
+    )
+    require_equal(
+        str(access_receipt), sealed_access["access_receipt"], "sealed access receipt path"
+    )
+    require_equal(
+        sealed_access["access_repository_path"],
+        sealed_access["access_receipt_repository_path"],
+        "sealed access repository-relative receipt path",
+    )
+    verified_receipt_path = verify_frozen_file(
+        access_repository, access_receipt, str(sealed_access["access_commit"])
+    )
+    require_equal(
+        verified_receipt_path,
+        sealed_access["access_receipt_repository_path"],
+        "sealed access frozen receipt path",
+    )
+    require_equal(
+        sealed_access["access_receipt_sha256"],
+        sha256(access_receipt),
+        "sealed access source receipt SHA256",
+    )
+    source = load_json(access_receipt, "sealed access source receipt")
+    source_keys = {
+        "schema",
+        "status",
+        "family_id",
+        "family_spec_repository_path",
+        "family_spec_sha256",
+        "family_freeze_commit",
+        "access_ledger_repository_path",
+        "access_ledger_sha256",
+        "access_event_id",
+        "access_event_index",
+        "authorized_at_utc",
+        "evaluation_cell_receipt_sha256",
+        "protocol_content_sha256",
+        "evaluation_domain",
+    }
+    if set(source) != source_keys:
+        raise StatisticsError("sealed access source receipt fields are not canonical")
+    require_equal(source.get("schema"), SEALED_ACCESS_SCHEMA, "sealed access source schema")
+    source_event_index = source.get("access_event_index")
+    if not isinstance(source_event_index, int) or isinstance(source_event_index, bool):
+        raise StatisticsError("sealed access source event index must be an integer")
+    require_equal(source_event_index, event_index, "sealed access source event index")
+    source_bindings = {
+        "status": "authorized",
+        "family_id": sealed_access["family_id"],
+        "family_spec_repository_path": sealed_access[
+            "family_spec_repository_path"
+        ],
+        "family_spec_sha256": sealed_access["family_spec_sha256"],
+        "family_freeze_commit": sealed_access["family_freeze_commit"],
+        "access_ledger_repository_path": sealed_access[
+            "access_ledger_repository_path"
+        ],
+        "access_ledger_sha256": sealed_access["access_ledger_sha256"],
+        "access_event_id": sealed_access["access_event_id"],
+        "access_event_index": event_index,
+        "authorized_at_utc": sealed_access["authorized_at_utc"],
+        "evaluation_cell_receipt_sha256": evaluation_cell_receipt_sha256,
+        "protocol_content_sha256": protocol_content_sha256,
+        "evaluation_domain": evaluation_domain,
+    }
+    for field, expected in source_bindings.items():
+        require_equal(source.get(field), expected, f"sealed access source {field}")
+    ledger_path = resolve(
+        access_repository,
+        sealed_access["access_ledger_repository_path"],
+        "sealed access ledger",
+    )
+    require_equal(str(ledger_path), sealed_access["access_ledger"], "sealed ledger path")
+    verify_frozen_file(
+        access_repository, ledger_path, str(sealed_access["access_commit"])
+    )
+    require_equal(
+        sealed_access["access_ledger_sha256"],
+        sha256(ledger_path),
+        "sealed access ledger SHA256",
+    )
+    ledger = load_json(ledger_path, "sealed access ledger")
+    events = ledger.get("events")
+    if (
+        ledger.get("schema") != SEALED_LEDGER_SCHEMA
+        or ledger.get("family_id") != sealed_access["family_id"]
+        or not isinstance(events, list)
+        or len(events) != 1
+        or not isinstance(events[0], dict)
+    ):
+        raise StatisticsError("sealed access ledger is not one canonical first event")
+    event = events[0]
+    event_keys = {
+        "access_event_id",
+        "authorized_at_utc",
+        "family_id",
+        "family_spec_sha256",
+        "evaluation_cell_receipt_sha256",
+        "protocol_content_sha256",
+        "evaluation_domain",
+    }
+    if set(event) != event_keys:
+        raise StatisticsError("sealed access event fields are not canonical")
+    for field in event_keys:
+        require_equal(event.get(field), source.get(field), f"sealed access event {field}")
+    family_path = resolve(
+        access_repository,
+        sealed_access["family_spec_repository_path"],
+        "sealed access family specification",
+    )
+    require_equal(str(family_path), sealed_access["family_spec"], "sealed family path")
+    verify_frozen_file(
+        access_repository, family_path, str(sealed_access["family_freeze_commit"])
+    )
+    family_time, access_time, _ = validate_sealed_access_git_history(
+        access_repository,
+        family_commit=str(sealed_access["family_freeze_commit"]),
+        access_commit=str(sealed_access["access_commit"]),
+        ledger_path=ledger_path,
+        expected_empty_ledger_sha256=str(
+            sealed_access["sealed_test_access_ledger_empty_sha256"]
+        ),
+        expected_family_id=str(sealed_access["family_id"]),
+    )
+    authorized_at = strict_utc(
+        sealed_access["authorized_at_utc"], "sealed access authorization"
+    )
+    evaluator_started_at = strict_utc(
+        sealed_access["evaluator_started_at_utc"], "sealed access evaluator start"
+    )
+    require_equal(
+        sealed_access["family_commit_time_utc"],
+        family_time.isoformat(),
+        "sealed access family commit time",
+    )
+    require_equal(
+        sealed_access["access_commit_time_utc"],
+        access_time.isoformat(),
+        "sealed access commit time",
+    )
+    require_strict_final_test_chronology(
+        family_time, authorized_at, access_time, evaluator_started_at
+    )
+    return sealed_access
 
 
 def _is_sha256(value: object) -> bool:
@@ -1022,6 +1598,7 @@ def load_evaluator_run_contract(
     split: str,
     token_file_path: Path,
     token_file_sha256: str,
+    expected_family: Mapping[str, Any] | None = None,
 ) -> EvaluatorRunContract:
     receipt_path = Path(receipt_path).resolve()
     receipt = load_json(receipt_path, "evaluator-run receipt")
@@ -1087,7 +1664,9 @@ def load_evaluator_run_contract(
         "evaluator domain registry SHA256",
     )
     metric_schema_sha256 = hashlib.sha256(
-        json.dumps(list(PDM_DEFAULT_METRICS), separators=(",", ":")).encode()
+        json.dumps(
+            list(PDM_DEFAULT_METRICS), separators=(",", ":"), allow_nan=False
+        ).encode()
     ).hexdigest()
     require_equal(
         receipt.get("metric_schema_sha256"), metric_schema_sha256, "evaluator metric schema"
@@ -1145,11 +1724,14 @@ def load_evaluator_run_contract(
                 f"evaluator argv must bind the exact {label} path exactly once"
             )
     sealed_access = receipt.get("sealed_test_access")
-    if split == "test":
-        if not isinstance(sealed_access, dict) or sealed_access.get("status") != "verified":
-            raise StatisticsError("sealed test evaluation lacks a verified access receipt")
-    elif sealed_access is not None:
-        raise StatisticsError("audit evaluation may not claim sealed-test access")
+    validate_sealed_test_access_binding(
+        sealed_access,
+        expected_family=expected_family,
+        evaluation_cell_receipt_sha256=evaluation_cell_receipt_sha256,
+        protocol_content_sha256=str(training.protocol["protocol_content_sha256"]),
+        evaluation_domain=evaluation_domain,
+        split=split,
+    )
     token_count = sum(1 for line in token_file_path.read_text().splitlines() if line)
     require_equal(receipt.get("token_count"), token_count, "evaluator token count")
     require_equal(receipt.get("csv_row_count"), token_count, "evaluator CSV row count")

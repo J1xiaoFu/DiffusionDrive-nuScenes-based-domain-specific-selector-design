@@ -71,9 +71,10 @@ def main() -> None:
         ),
     }
     atomic_text(
-        args.output_dir / "receipt.json", json.dumps(receipt, indent=2, sort_keys=True) + "\n"
+        args.output_dir / "receipt.json",
+        json.dumps(receipt, indent=2, sort_keys=True, allow_nan=False) + "\n",
     )
-    print(json.dumps(receipt, sort_keys=True))
+    print(json.dumps(receipt, sort_keys=True, allow_nan=False))
 
 
 if __name__ == "__main__":

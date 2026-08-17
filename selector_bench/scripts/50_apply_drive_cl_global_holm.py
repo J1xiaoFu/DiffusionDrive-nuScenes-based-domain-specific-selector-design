@@ -25,8 +25,11 @@ from selector_bench.continual.claim_protocol import (
     require_within,
     resolve,
     sha256,
+    shared_sealed_test_access_identity,
     validate_method_arm,
     validate_family_registries_and_cells,
+    validate_sealed_test_access_binding,
+    frozen_file_bytes,
     validate_seed_design,
     verify_frozen_file,
 )
@@ -35,6 +38,7 @@ from selector_bench.continual.statistics import (
     StatisticsError,
     complete_holm_family,
 )
+from selector_bench.continual.seed_design import finite_integer, finite_real
 
 
 def parse_args() -> argparse.Namespace:
@@ -96,17 +100,45 @@ def comparison_evidence_fingerprint(receipt: dict[str, Any]) -> str:
             if isinstance(run, dict)
         ]
     return hashlib.sha256(
-        json.dumps(evidence, sort_keys=True, separators=(",", ":")).encode()
+        json.dumps(
+            evidence, sort_keys=True, separators=(",", ":"), allow_nan=False
+        ).encode()
     ).hexdigest()
 
 
-def verify_run_evidence(receipt: dict[str, Any], receipt_path: Path) -> None:
+def verify_run_evidence(
+    receipt: dict[str, Any],
+    receipt_path: Path,
+    *,
+    expected_family: dict[str, Any],
+) -> None:
     identities: dict[str, set[str]] = defaultdict(set)
+    shared_access_identity: dict[str, Any] | None = None
     for side in ("baseline", "candidate"):
         method = receipt.get(side)
         if not isinstance(method, dict):
             raise StatisticsError(f"{receipt_path} lacks {side} method evidence")
         validate_method_arm(method.get("method_id"), method.get("training_arm"))
+        method_access = method.get("sealed_test_access")
+        validate_sealed_test_access_binding(
+            method_access,
+            expected_family=expected_family,
+            evaluation_cell_receipt_sha256=str(
+                receipt.get("evaluation_cell_receipt_sha256")
+            ),
+            protocol_content_sha256=str(receipt.get("protocol_content_sha256")),
+            evaluation_domain=str(receipt.get("evaluation_domain")),
+            split=str(receipt.get("split")),
+        )
+        projected_access = shared_sealed_test_access_identity(method_access)
+        if shared_access_identity is None:
+            shared_access_identity = projected_access
+        else:
+            require_equal(
+                projected_access,
+                shared_access_identity,
+                "baseline/candidate sealed-test access identity",
+            )
         runs = method.get("runs")
         if not isinstance(runs, list) or not runs:
             raise StatisticsError(f"{receipt_path} has no {side} runs")
@@ -141,6 +173,15 @@ def verify_run_evidence(receipt: dict[str, Any], receipt_path: Path) -> None:
                             f"{receipt_path} reuses {label} across method/seed runs"
                         )
                     identities[label].add(identity)
+                if prefix == "evaluator_receipt":
+                    evaluator = load_json(path, "comparison evaluator receipt")
+                    require_equal(
+                        shared_sealed_test_access_identity(
+                            evaluator.get("sealed_test_access")
+                        ),
+                        shared_sealed_test_access_identity(method_access),
+                        "comparison/evaluator sealed-test access identity",
+                    )
 
 
 def discover_claim_receipts(claim_root: Path) -> set[Path]:
@@ -178,10 +219,13 @@ def main() -> None:
     require_equal(
         tuple(family.get("metric_family", [])), PDM_DEFAULT_METRICS, "global metric family"
     )
-    expected_seeds = tuple(int(value) for value in family.get("expected_seed_ids", []))
+    expected_seeds = tuple(
+        finite_integer(value, "family expected seed ID")
+        for value in family.get("expected_seed_ids", [])
+    )
     if len(expected_seeds) < 2 or len(expected_seeds) != len(set(expected_seeds)):
         raise StatisticsError("global family needs at least two unique preregistered seeds")
-    alpha = float(family.get("alpha"))
+    alpha = finite_real(family.get("alpha"), "family-wise alpha")
     if not 0.0 < alpha < 1.0:
         raise StatisticsError("family-wise alpha must lie strictly between zero and one")
     family_hash = sha256(family_path)
@@ -191,6 +235,29 @@ def main() -> None:
         repository=repository,
         freeze_commit=args.freeze_commit,
     )
+    access_ledger_path = resolve(
+        repository,
+        family.get("sealed_test_access_ledger_repository_path"),
+        "family sealed-test access ledger",
+    )
+    access_ledger_repository_path, frozen_access_ledger = frozen_file_bytes(
+        repository, access_ledger_path, args.freeze_commit
+    )
+    require_equal(
+        family.get("sealed_test_access_ledger_empty_sha256"),
+        hashlib.sha256(frozen_access_ledger).hexdigest(),
+        "family empty sealed-test ledger SHA256",
+    )
+    expected_family = {
+        "family_id": family_id,
+        "family_spec_repository_path": frozen_relative_path,
+        "family_spec_sha256": family_hash,
+        "family_freeze_commit": args.freeze_commit,
+        "access_ledger_repository_path": access_ledger_repository_path,
+        "sealed_test_access_ledger_empty_sha256": hashlib.sha256(
+            frozen_access_ledger
+        ).hexdigest(),
+    }
     evidence_path = args.evidence_inventory.resolve()
     verify_frozen_file(
         repository, evidence_path, args.evidence_freeze_commit
@@ -350,7 +417,6 @@ def main() -> None:
                     f"byte-identical comparison receipts: {duplicate_receipt} and {receipt_path}"
                 )
             receipt_hashes[receipt_hash] = receipt_path
-            verify_run_evidence(receipt, receipt_path)
             evidence_hash = comparison_evidence_fingerprint(receipt)
             duplicate_evidence = evidence_fingerprints.get(evidence_hash)
             if duplicate_evidence is not None:
@@ -389,6 +455,17 @@ def main() -> None:
         require_equal(registration.get("family_id"), family_id, "registered family ID")
         require_equal(registration.get("family_spec_sha256"), family_hash, "registered family SHA256")
         require_equal(registration.get("family_freeze_commit"), args.freeze_commit, "registered family commit")
+        require_equal(
+            registration.get("sealed_test_family_identity"),
+            expected_family,
+            "registered sealed-test family identity",
+        )
+        if receipt_path not in declared_receipts:
+            verify_run_evidence(
+                receipt,
+                receipt_path,
+                expected_family=expected_family,
+            )
 
         spec_path = resolve(
             repository,
@@ -485,6 +562,7 @@ def main() -> None:
                     {side: actual_record[side] for side in ("baseline", "candidate")},
                     sort_keys=True,
                     separators=(",", ":"),
+                    allow_nan=False,
                 ).encode()
             ).hexdigest(),
             f"evidence inventory raw fingerprint {comparison_id}",
@@ -518,9 +596,11 @@ def main() -> None:
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
     temporary = args.output.with_suffix(args.output.suffix + ".tmp")
-    temporary.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
+    temporary.write_text(
+        json.dumps(payload, indent=2, sort_keys=True, allow_nan=False) + "\n"
+    )
     os.replace(temporary, args.output)
-    print(json.dumps(payload, sort_keys=True))
+    print(json.dumps(payload, sort_keys=True, allow_nan=False))
 
 
 if __name__ == "__main__":

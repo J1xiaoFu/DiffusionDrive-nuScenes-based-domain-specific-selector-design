@@ -221,9 +221,17 @@ def main() -> None:
     }
     args.output_dir.mkdir(parents=True, exist_ok=True)
     temporary = args.output_dir / "result.json.tmp"
-    temporary.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
+    temporary.write_text(
+        json.dumps(result, indent=2, sort_keys=True, allow_nan=False) + "\n"
+    )
     os.replace(temporary, args.output_dir / "result.json")
-    print(json.dumps({key: value for key, value in result.items() if key != "rows"}, sort_keys=True))
+    print(
+        json.dumps(
+            {key: value for key, value in result.items() if key != "rows"},
+            sort_keys=True,
+            allow_nan=False,
+        )
+    )
 
 
 if __name__ == "__main__":

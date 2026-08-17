@@ -7,7 +7,13 @@ import argparse
 import json
 import os
 from pathlib import Path
-from selector_bench.continual.seed_design import build_seed_design_payload, sha256
+from selector_bench.continual.seed_design import (
+    build_seed_design_payload,
+    finite_integer,
+    finite_real,
+    sha256,
+)
+from selector_bench.continual.statistics import StatisticsError
 
 
 def parse_seed_ids(value: str) -> tuple[int, ...]:
@@ -36,12 +42,26 @@ def parse_args() -> argparse.Namespace:
     args = parser.parse_args()
     if args.pilot_matrix.is_symlink() or not args.pilot_matrix.is_file():
         parser.error(f"missing or symlinked pilot matrix: {args.pilot_matrix}")
-    if args.minimum_relevant_effect <= 0.0:
-        parser.error("minimum relevant effect must be positive")
-    if not 0.0 < args.target_power < 1.0 or not 0.0 < args.family_alpha < 1.0:
-        parser.error("power and alpha must lie strictly between zero and one")
-    if args.simulation_repetitions < 10000:
-        parser.error("confirmatory power/calibration requires at least 10000 simulations")
+    try:
+        args.minimum_relevant_effect = finite_real(
+            args.minimum_relevant_effect, "minimum relevant effect"
+        )
+        args.target_power = finite_real(args.target_power, "target power")
+        args.family_alpha = finite_real(args.family_alpha, "family alpha")
+        args.simulation_repetitions = finite_integer(
+            args.simulation_repetitions, "simulation repetitions"
+        )
+        args.simulation_seed = finite_integer(args.simulation_seed, "simulation seed")
+        if args.minimum_relevant_effect <= 0.0:
+            raise StatisticsError("minimum relevant effect must be positive")
+        if not 0.0 < args.target_power < 1.0 or not 0.0 < args.family_alpha < 1.0:
+            raise StatisticsError("power and alpha must lie strictly between zero and one")
+        if args.simulation_repetitions < 10000:
+            raise StatisticsError(
+                "confirmatory power/calibration requires at least 10000 simulations"
+            )
+    except StatisticsError as exc:
+        parser.error(str(exc))
     if not (args.repository / ".git").exists():
         parser.error("seed design repository is not a Git worktree")
     return args
@@ -95,9 +115,11 @@ def main() -> None:
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     temporary = args.output.with_suffix(args.output.suffix + ".tmp")
-    temporary.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
+    temporary.write_text(
+        json.dumps(payload, indent=2, sort_keys=True, allow_nan=False) + "\n"
+    )
     os.replace(temporary, args.output)
-    print(json.dumps(payload, sort_keys=True))
+    print(json.dumps(payload, sort_keys=True, allow_nan=False))
     if payload["status"] != "passed":
         raise SystemExit(2)
 

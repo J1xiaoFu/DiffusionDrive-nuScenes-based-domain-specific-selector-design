@@ -145,6 +145,7 @@ def main() -> None:
                     "loss": float(loss.detach().item()),
                 },
                 sort_keys=True,
+                allow_nan=False,
             ),
             flush=True,
         )
@@ -177,6 +178,7 @@ def main() -> None:
                 "parameters": len(state.fisher),
             },
             sort_keys=True,
+            allow_nan=False,
         ),
         flush=True,
     )

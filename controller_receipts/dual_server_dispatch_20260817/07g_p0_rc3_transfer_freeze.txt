@@ -1,0 +1,35 @@
+DRIVE-OPD 07G RC3 SOURCE-ONLY TRANSFER FREEZE
+
+Recorded date: 2026-08-18
+Decision: SOURCE_BUNDLE_FROZEN_LOCALLY_FOR_PUBLICATION_AND_EXACT_RC3_REVIEW_ONLY
+
+Accepted candidate
+- branch: codex/iclr2027-drive-opd-07g-p0-rc3
+- commit: 79a2c529f35fb18049b4f30b46a2fe9926bf7e5a
+- parent: d527274d368b6d6def5809b002324b31e88ae1bd
+- tree: 3ec47127a6d7c85326bbcf1d72ef76e2971f100d
+- controller acceptance commit: d026fd762b2472d5f3d01981dfbfd5d2da6bc28c
+- source worktree clean before and after freeze: yes
+
+Deterministic source bundle
+- generator: selector_bench/scripts/51_freeze_drive_opd_06g_transfer.py
+- generator SHA256: 49ba27be6e553d1d8d4b670a2b16ec5ec0d356b1b8019462b71f86f1c43fa7f8
+- manifest: 07g_p0_rc3_transfer_manifest.json
+- manifest bytes: 7434
+- manifest SHA256: ff8ca94ebd3dd39abb048dabe8c8a87eaa383465b5cdb899d74cc6fbe2bcd437
+- source file count: 41
+- canonical serialization: sort source_files by path; serialize each as path + NUL + sha256;
+  join rows with LF and append a trailing LF; SHA256 the UTF-8 bytes
+- declared logical bundle SHA256: 68259f07dc97db312c00c71dcd18a899502588b4eb303ee12cce585e1cc894b1
+- independently recomputed logical bundle SHA256: 68259f07dc97db312c00c71dcd18a899502588b4eb303ee12cce585e1cc894b1
+- missing source files: 0
+- mismatched source hashes: 0
+
+Boundary
+- This freeze authorizes publication of the exact 41 source blobs and controller receipt bytes, then
+  a fresh context-free exact-RC3 source/CPU review.
+- It does not dispatch 06G replay and does not authorize dataset/raw-data access, provenance or
+  adapter execution, a session-atomic CL manifest, cache work, real-model preflight, T0, model or
+  checkpoint access, CUDA/GPU work, training, evaluation, final-test unsealing or a performance claim.
+- The manifest data gate remains BLOCKED_UNTIL_06G_REPLAY_RECEIPT_PASSES; no such RC3 destination
+  receipt exists at this freeze.

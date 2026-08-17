@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import math
+from numbers import Integral, Real
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
@@ -22,6 +23,129 @@ SEED_DESIGN_SCHEMA = "selector_bench.drive_cl_seed_design.v2"
 INVOCATION_SCHEMA = "selector_bench.drive_cl_seed_design_invocation.v1"
 
 
+def finite_real(value: object, label: str) -> float:
+    """Return one finite real number without accepting bool/string coercions."""
+
+    if isinstance(value, bool) or not isinstance(value, Real):
+        raise StatisticsError(f"{label} must be a finite real number")
+    result = float(value)
+    if not math.isfinite(result):
+        raise StatisticsError(f"{label} must be a finite real number")
+    return result
+
+
+def finite_integer(value: object, label: str) -> int:
+    """Return one integer while rejecting booleans and lossy numeric coercion."""
+
+    if isinstance(value, bool) or not isinstance(value, Integral):
+        raise StatisticsError(f"{label} must be an integer")
+    return int(value)
+
+
+def require_finite_array(value: object, label: str) -> np.ndarray:
+    """Parse a numeric array and reject booleans, strings and non-finite cells."""
+
+    raw = np.asarray(value, dtype=object)
+    for cell in raw.flat:
+        finite_real(cell, f"{label} cell")
+    matrix = np.asarray(value, dtype=np.float64)
+    if not np.all(np.isfinite(matrix)):
+        raise StatisticsError(f"{label} contains non-finite values")
+    return matrix
+
+
+def require_finite_tree(value: object, label: str) -> None:
+    """Reject non-finite numeric leaves in a replay/input/output payload."""
+
+    if isinstance(value, Mapping):
+        for key, item in value.items():
+            require_finite_tree(item, f"{label}.{key}")
+        return
+    if isinstance(value, (list, tuple)):
+        for index, item in enumerate(value):
+            require_finite_tree(item, f"{label}[{index}]")
+        return
+    if isinstance(value, bool):
+        return
+    if isinstance(value, Real):
+        finite_real(value, label)
+
+
+def validate_seed_design_numeric_semantics(
+    payload: Mapping[str, Any], label: str
+) -> None:
+    """Reject bool/non-finite values in every semantic numeric design field."""
+
+    for field in (
+        "minimum_relevant_effect",
+        "target_power",
+        "estimated_power",
+        "family_alpha",
+    ):
+        finite_real(payload.get(field), f"{label}.{field}")
+    for field in (
+        "family_metric_count",
+        "minimum_seed_count_for_two_sided_family_tail_resolution",
+        "power_simulation_repetitions",
+        "simulation_seed",
+    ):
+        finite_integer(payload.get(field), f"{label}.{field}")
+    for field in ("designed_seed_ids", "candidate_seed_ids"):
+        values = payload.get(field)
+        if not isinstance(values, list):
+            raise StatisticsError(f"{label}.{field} must be a list")
+        for index, value in enumerate(values):
+            finite_integer(value, f"{label}.{field}[{index}]")
+    invocation = payload.get("normalized_invocation")
+    if not isinstance(invocation, Mapping):
+        raise StatisticsError(f"{label}.normalized_invocation must be an object")
+    for field in ("minimum_relevant_effect", "target_power", "family_alpha"):
+        finite_real(invocation.get(field), f"{label}.normalized_invocation.{field}")
+    for field in ("simulation_repetitions", "simulation_seed"):
+        finite_integer(invocation.get(field), f"{label}.normalized_invocation.{field}")
+    invocation_seeds = invocation.get("candidate_seed_ids")
+    if not isinstance(invocation_seeds, list):
+        raise StatisticsError(
+            f"{label}.normalized_invocation.candidate_seed_ids must be a list"
+        )
+    for index, value in enumerate(invocation_seeds):
+        finite_integer(
+            value, f"{label}.normalized_invocation.candidate_seed_ids[{index}]"
+        )
+    audits = payload.get("candidate_seed_audits")
+    if not isinstance(audits, list):
+        raise StatisticsError(f"{label}.candidate_seed_audits must be a list")
+    for index, audit in enumerate(audits):
+        if not isinstance(audit, Mapping):
+            raise StatisticsError(f"{label}.candidate_seed_audits[{index}] is malformed")
+        for field in (
+            "seed_count",
+            "session_count",
+            "calibration_simulations",
+            "evaluation_simulations",
+        ):
+            finite_integer(audit.get(field), f"{label}.candidate_seed_audits[{index}].{field}")
+        for field in (
+            "critical_value",
+            "heldout_null_fwer",
+            "null_fwer_tolerance",
+            "minimum_metric_power",
+        ):
+            finite_real(audit.get(field), f"{label}.candidate_seed_audits[{index}].{field}")
+        metric_power = audit.get("metric_power")
+        if not isinstance(metric_power, Mapping) or set(metric_power) != set(
+            PDM_DEFAULT_METRICS
+        ):
+            raise StatisticsError(
+                f"{label}.candidate_seed_audits[{index}].metric_power is malformed"
+            )
+        for metric, value in metric_power.items():
+            finite_real(
+                value,
+                f"{label}.candidate_seed_audits[{index}].metric_power.{metric}",
+            )
+
+
 def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -29,7 +153,7 @@ def sha256(path: Path) -> str:
 def crossed_standard_error_batch(matrix: np.ndarray) -> np.ndarray:
     """Return crossed seed/session standard errors for ``[R, S, N]`` arrays."""
 
-    if matrix.ndim != 3:
+    if matrix.ndim != 3 or not np.all(np.isfinite(matrix)):
         raise StatisticsError("crossed seed design requires [repetition, seed, session]")
     _, seed_count, session_count = matrix.shape
     if seed_count < 2 or session_count < 2:
@@ -54,7 +178,7 @@ def crossed_standard_error_batch(matrix: np.ndarray) -> np.ndarray:
         0.0,
         np.var(column_means, axis=1, ddof=1) - residual_variance / seed_count,
     )
-    return np.sqrt(
+    result = np.sqrt(
         np.maximum(
             seed_component / seed_count
             + session_component / session_count
@@ -62,6 +186,9 @@ def crossed_standard_error_batch(matrix: np.ndarray) -> np.ndarray:
             0.0,
         )
     )
+    if not np.all(np.isfinite(result)):
+        raise StatisticsError("crossed seed standard errors are non-finite")
+    return result
 
 
 def statistic_batch(matrix: np.ndarray) -> np.ndarray:
@@ -71,7 +198,11 @@ def statistic_batch(matrix: np.ndarray) -> np.ndarray:
     result = np.empty_like(point)
     regular = standard_error > epsilon
     np.divide(np.abs(point), standard_error, out=result, where=regular)
-    result[~regular] = np.where(np.abs(point[~regular]) <= epsilon, 0.0, np.inf)
+    if np.any(~regular & (np.abs(point) > epsilon)):
+        raise StatisticsError("crossed seed statistic is non-finite for degenerate data")
+    result[~regular] = 0.0
+    if not np.all(np.isfinite(result)):
+        raise StatisticsError("crossed seed statistic is non-finite")
     return result
 
 
@@ -99,14 +230,18 @@ def load_pilot(path: Path) -> tuple[dict[str, np.ndarray], dict[str, Any]]:
         or len(session_ids) != len(set(session_ids))
     ):
         raise StatisticsError("pilot matrix needs at least two unique seeds and sessions")
+    for index, value in enumerate(pilot_seed_ids):
+        finite_integer(value, f"pilot seed_ids[{index}]")
+    if any(not isinstance(value, str) or not value for value in session_ids):
+        raise StatisticsError("pilot session IDs must be non-empty strings")
     differences = payload.get("candidate_minus_baseline")
     if not isinstance(differences, dict):
         raise StatisticsError("pilot matrix lacks candidate-minus-baseline values")
     shape = (len(pilot_seed_ids), len(session_ids))
     matrices: dict[str, np.ndarray] = {}
     for metric in PDM_DEFAULT_METRICS:
-        matrix = np.asarray(differences.get(metric), dtype=np.float64)
-        if matrix.shape != shape or not np.all(np.isfinite(matrix)):
+        matrix = require_finite_array(differences.get(metric), f"pilot matrix for {metric}")
+        if matrix.shape != shape:
             raise StatisticsError(f"pilot matrix for {metric} has invalid shape/values")
         matrices[metric] = matrix
     sources = payload.get("source_receipt_sha256")
@@ -128,6 +263,12 @@ def simulate_design(
 ) -> dict[str, Any]:
     """Vectorized deterministic null calibration and alternative power replay."""
 
+    seed_count = finite_integer(seed_count, "seed count")
+    repetitions = finite_integer(repetitions, "simulation repetitions")
+    effect = finite_real(effect, "minimum relevant effect")
+    alpha = finite_real(alpha, "family alpha")
+    if seed_count < 2 or repetitions < 2 or not 0.0 < alpha < 1.0:
+        raise StatisticsError("seed simulation inputs are outside their finite domain")
     metric_names = tuple(PDM_DEFAULT_METRICS)
     centered = {
         metric: matrix - float(matrix.mean()) for metric, matrix in matrices.items()
@@ -147,6 +288,10 @@ def simulate_design(
         ]
         null_statistics[:, metric_index] = statistic_batch(sampled)
         alternative_statistics[:, metric_index] = statistic_batch(sampled + effect)
+    if not np.all(np.isfinite(null_statistics)) or not np.all(
+        np.isfinite(alternative_statistics)
+    ):
+        raise StatisticsError("seed simulation produced non-finite statistics")
     calibration_count = repetitions // 2
     evaluation_count = repetitions - calibration_count
     family_null = np.max(null_statistics[:calibration_count], axis=1)
@@ -165,7 +310,7 @@ def simulate_design(
     monte_carlo_tolerance = 3.0 * math.sqrt(
         max(alpha * (1.0 - alpha) / max(evaluation_count, 1), 0.0)
     )
-    return {
+    result = {
         "seed_count": seed_count,
         "session_count": session_count,
         "critical_value": critical_value,
@@ -176,6 +321,8 @@ def simulate_design(
         "calibration_simulations": calibration_count,
         "evaluation_simulations": evaluation_count,
     }
+    require_finite_tree(result, "seed simulation output")
+    return result
 
 
 def normalized_invocation(
@@ -188,16 +335,26 @@ def normalized_invocation(
     simulation_repetitions: int,
     simulation_seed: int,
 ) -> dict[str, Any]:
-    return {
+    candidate_ids = [
+        finite_integer(value, "candidate seed ID") for value in candidate_seed_ids
+    ]
+    effect = finite_real(minimum_relevant_effect, "minimum relevant effect")
+    power = finite_real(target_power, "target power")
+    alpha = finite_real(family_alpha, "family alpha")
+    repetitions = finite_integer(simulation_repetitions, "simulation repetitions")
+    seed = finite_integer(simulation_seed, "simulation seed")
+    payload = {
         "schema": INVOCATION_SCHEMA,
         "pilot_matrix_sha256": pilot_matrix_sha256,
-        "candidate_seed_ids": [int(value) for value in candidate_seed_ids],
-        "minimum_relevant_effect": float(minimum_relevant_effect),
-        "target_power": float(target_power),
-        "family_alpha": float(family_alpha),
-        "simulation_repetitions": int(simulation_repetitions),
-        "simulation_seed": int(simulation_seed),
+        "candidate_seed_ids": candidate_ids,
+        "minimum_relevant_effect": effect,
+        "target_power": power,
+        "family_alpha": alpha,
+        "simulation_repetitions": repetitions,
+        "simulation_seed": seed,
     }
+    require_finite_tree(payload, "normalized seed-design invocation")
+    return payload
 
 
 def build_seed_design_payload(
@@ -215,9 +372,20 @@ def build_seed_design_payload(
     generator_entrypoint_repository_path: str,
     generator_entrypoint_sha256: str,
 ) -> dict[str, Any]:
+    simulation_repetitions = finite_integer(
+        simulation_repetitions, "simulation repetitions"
+    )
+    simulation_seed = finite_integer(simulation_seed, "simulation seed")
+    minimum_relevant_effect = finite_real(
+        minimum_relevant_effect, "minimum relevant effect"
+    )
+    target_power = finite_real(target_power, "target power")
+    family_alpha = finite_real(family_alpha, "family alpha")
     if simulation_repetitions < 10_000:
         raise StatisticsError("confirmatory power/calibration requires 10000 simulations")
-    candidate_ids = tuple(int(value) for value in candidate_seed_ids)
+    candidate_ids = tuple(
+        finite_integer(value, "candidate seed ID") for value in candidate_seed_ids
+    )
     if len(candidate_ids) < 2 or len(candidate_ids) != len(set(candidate_ids)):
         raise StatisticsError("candidate seed IDs need at least two unique values")
     if minimum_relevant_effect <= 0.0:
@@ -263,7 +431,7 @@ def build_seed_design_payload(
         if selected is not None
         else []
     )
-    return {
+    payload = {
         "schema": SEED_DESIGN_SCHEMA,
         "status": status,
         "design_split": "audit",
@@ -297,3 +465,6 @@ def build_seed_design_payload(
         "generator_entrypoint_repository_path": generator_entrypoint_repository_path,
         "generator_entrypoint_sha256": generator_entrypoint_sha256,
     }
+    require_finite_tree(payload, "seed-design payload")
+    validate_seed_design_numeric_semantics(payload, "seed-design payload")
+    return payload
