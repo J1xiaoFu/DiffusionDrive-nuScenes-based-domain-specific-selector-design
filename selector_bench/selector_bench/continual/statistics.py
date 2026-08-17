@@ -161,6 +161,34 @@ def holm_adjusted_pvalues(
     return result
 
 
+def holm_rejection_matrix(pvalues: np.ndarray, *, alpha: float) -> np.ndarray:
+    """Apply the Holm step-down rejection rule to each complete p-value row."""
+
+    matrix = np.asarray(pvalues, dtype=np.float64)
+    if (
+        matrix.ndim != 2
+        or matrix.shape[1] < 1
+        or not np.all(np.isfinite(matrix))
+        or np.any(matrix < 0.0)
+        or np.any(matrix > 1.0)
+    ):
+        raise StatisticsError("Holm p-value matrix must be finite, two-dimensional and in [0, 1]")
+    if isinstance(alpha, bool) or not isinstance(alpha, (int, float)):
+        raise StatisticsError("family-wise alpha must be a finite real number")
+    family_alpha = float(alpha)
+    if not math.isfinite(family_alpha) or not 0.0 < family_alpha < 1.0:
+        raise StatisticsError("family-wise alpha must lie strictly between zero and one")
+    order = np.argsort(matrix, axis=1, kind="stable")
+    ordered = np.take_along_axis(matrix, order, axis=1)
+    thresholds = family_alpha / (
+        matrix.shape[1] - np.arange(matrix.shape[1], dtype=np.float64)
+    )
+    ordered_rejections = np.logical_and.accumulate(ordered <= thresholds, axis=1)
+    result = np.zeros_like(ordered_rejections, dtype=bool)
+    np.put_along_axis(result, order, ordered_rejections, axis=1)
+    return result
+
+
 def complete_holm_family(
     pvalues: Mapping[str, float],
     *,
@@ -179,13 +207,18 @@ def complete_holm_family(
     if not 0.0 < float(alpha) < 1.0:
         raise StatisticsError("family-wise alpha must lie strictly between zero and one")
     adjusted = holm_adjusted_pvalues(pvalues)
+    raw_matrix = np.asarray(
+        [[float(pvalues[hypothesis_id]) for hypothesis_id in expected]],
+        dtype=np.float64,
+    )
+    rejected = holm_rejection_matrix(raw_matrix, alpha=alpha)[0]
     return {
         hypothesis_id: {
             "raw_pvalue": float(pvalues[hypothesis_id]),
             "holm_adjusted_pvalue": float(adjusted[hypothesis_id]),
-            "reject_global_null": bool(adjusted[hypothesis_id] <= alpha),
+            "reject_global_null": bool(rejected[index]),
         }
-        for hypothesis_id in expected
+        for index, hypothesis_id in enumerate(expected)
     }
 
 
@@ -406,6 +439,317 @@ def _crossed_studentized_statistic(matrix: np.ndarray) -> float:
     return point / standard_error
 
 
+def _crossed_studentized_statistic_batch(matrix: np.ndarray) -> np.ndarray:
+    """Vectorized counterpart of ``_crossed_studentized_statistic``."""
+
+    if matrix.ndim != 3 or matrix.shape[1] < 2 or matrix.shape[2] < 2:
+        raise StatisticsError("crossed statistic batch requires [draw, seed, session]")
+    if not np.all(np.isfinite(matrix)):
+        raise StatisticsError("crossed statistic batch contains non-finite values")
+    _, seed_count, session_count = matrix.shape
+    grand = matrix.mean(axis=(1, 2))
+    row_means = matrix.mean(axis=2)
+    column_means = matrix.mean(axis=1)
+    residual = (
+        matrix
+        - row_means[:, :, None]
+        - column_means[:, None, :]
+        + grand[:, None, None]
+    )
+    residual_variance = np.square(residual).sum(axis=(1, 2)) / (
+        (seed_count - 1) * (session_count - 1)
+    )
+    seed_component = np.maximum(
+        0.0,
+        np.var(row_means, axis=1, ddof=1) - residual_variance / session_count,
+    )
+    session_component = np.maximum(
+        0.0,
+        np.var(column_means, axis=1, ddof=1) - residual_variance / seed_count,
+    )
+    standard_error = np.sqrt(
+        np.maximum(
+            seed_component / seed_count
+            + session_component / session_count
+            + residual_variance / (seed_count * session_count),
+            0.0,
+        )
+    )
+    epsilon = np.finfo(np.float64).eps
+    result = np.empty_like(grand)
+    regular = standard_error > epsilon
+    np.divide(np.abs(grand), standard_error, out=result, where=regular)
+    degenerate_nonzero = ~regular & (np.abs(grand) > epsilon)
+    result[degenerate_nonzero] = math.inf
+    result[~regular & ~degenerate_nonzero] = 0.0
+    return result
+
+
+def _resample_count_weights(indices: np.ndarray, category_count: int) -> np.ndarray:
+    """Convert frozen resampling indices to normalized multinomial weights."""
+
+    draws = np.asarray(indices)
+    if (
+        draws.ndim != 2
+        or draws.shape[1] != category_count
+        or np.any(draws < 0)
+        or np.any(draws >= category_count)
+    ):
+        raise StatisticsError("crossed bootstrap resampling indices are malformed")
+    counts = np.zeros((draws.shape[0], category_count), dtype=np.float64)
+    rows = np.repeat(np.arange(draws.shape[0]), category_count)
+    np.add.at(counts, (rows, draws.reshape(-1)), 1.0)
+    return counts / float(category_count)
+
+
+def _crossed_statistics_from_weighted_resamples(
+    matrices: np.ndarray,
+    seed_weights: np.ndarray,
+    session_weights: np.ndarray,
+) -> np.ndarray:
+    """Studentized statistics without materializing [draw, R, seed, session]."""
+
+    values = np.asarray(matrices, dtype=np.float64)
+    if (
+        values.ndim != 3
+        or seed_weights.ndim != 2
+        or session_weights.ndim != 2
+        or seed_weights.shape[0] != session_weights.shape[0]
+        or seed_weights.shape[1] != values.shape[1]
+        or session_weights.shape[1] != values.shape[2]
+        or not np.all(np.isfinite(values))
+        or not np.all(np.isfinite(seed_weights))
+        or not np.all(np.isfinite(session_weights))
+    ):
+        raise StatisticsError("crossed bootstrap weighted-resample inputs are malformed")
+    draw_count, seed_count, session_count = values.shape
+    repetitions = seed_weights.shape[0]
+    row_means = np.einsum(
+        "rt,dst->drs", session_weights, values, optimize=True
+    )
+    column_means = np.einsum(
+        "rs,dst->drt", seed_weights, values, optimize=True
+    )
+    grand = np.einsum("rs,drs->dr", seed_weights, row_means, optimize=True)
+    row_sum_squares = seed_count * np.einsum(
+        "rs,drs->dr",
+        seed_weights,
+        np.square(row_means - grand[:, :, None]),
+        optimize=True,
+    )
+    column_sum_squares = session_count * np.einsum(
+        "rt,drt->dr",
+        session_weights,
+        np.square(column_means - grand[:, :, None]),
+        optimize=True,
+    )
+    row_second_moments = np.einsum(
+        "rt,dst->drs", session_weights, np.square(values), optimize=True
+    )
+    total_second_moment = np.einsum(
+        "rs,drs->dr", seed_weights, row_second_moments, optimize=True
+    )
+    total_sum_squares = seed_count * session_count * np.maximum(
+        total_second_moment - np.square(grand), 0.0
+    )
+    residual_sum_squares = np.maximum(
+        total_sum_squares
+        - session_count * row_sum_squares
+        - seed_count * column_sum_squares,
+        0.0,
+    )
+    residual_variance = residual_sum_squares / (
+        (seed_count - 1) * (session_count - 1)
+    )
+    row_variance = row_sum_squares / (seed_count - 1)
+    column_variance = column_sum_squares / (session_count - 1)
+    seed_component = np.maximum(
+        0.0, row_variance - residual_variance / session_count
+    )
+    session_component = np.maximum(
+        0.0, column_variance - residual_variance / seed_count
+    )
+    standard_error = np.sqrt(
+        np.maximum(
+            seed_component / seed_count
+            + session_component / session_count
+            + residual_variance / (seed_count * session_count),
+            0.0,
+        )
+    )
+    epsilon = np.finfo(np.float64).eps
+    result = np.empty((draw_count, repetitions), dtype=np.float64)
+    regular = standard_error > epsilon
+    np.divide(np.abs(grand), standard_error, out=result, where=regular)
+    degenerate_nonzero = ~regular & (np.abs(grand) > epsilon)
+    result[degenerate_nonzero] = math.inf
+    result[~regular & ~degenerate_nonzero] = 0.0
+    return result
+
+
+def crossed_matrix_bootstrap_shift_pvalues_batch(
+    matrices: np.ndarray,
+    *,
+    constant_shifts: Sequence[float],
+    repetitions: int,
+    seed: int,
+    matrix_batch_size: int = 16,
+) -> dict[str, np.ndarray]:
+    """Run production conditional p-values for constant-shift alternatives.
+
+    Each input matrix is centered separately, exactly as in the paper comparison
+    path. Constant shifts leave that conditional null invariant, so one null
+    resample supplies null/positive/negative power draws without changing the
+    per-observation production test.
+    """
+
+    values = np.asarray(matrices, dtype=np.float64)
+    if (
+        values.ndim != 3
+        or values.shape[0] < 1
+        or values.shape[1] < 2
+        or values.shape[2] < 2
+        or not np.all(np.isfinite(values))
+    ):
+        raise StatisticsError(
+            "crossed matrix batch inference requires finite [draw, seed, session]"
+        )
+    raw_shifts = tuple(constant_shifts)
+    if not raw_shifts:
+        raise StatisticsError("crossed bootstrap requires a non-empty shift family")
+    for value in raw_shifts:
+        if (
+            isinstance(value, bool)
+            or not isinstance(value, (float, int, np.floating, np.integer))
+            or not math.isfinite(float(value))
+        ):
+            raise StatisticsError("crossed bootstrap shifts must be finite reals")
+    shifts = np.asarray(raw_shifts, dtype=np.float64)
+    if isinstance(repetitions, bool) or not isinstance(repetitions, (int, np.integer)):
+        raise StatisticsError("crossed bootstrap repetitions must be an integer")
+    if isinstance(seed, bool) or not isinstance(seed, (int, np.integer)):
+        raise StatisticsError("crossed bootstrap seed must be an integer")
+    if isinstance(matrix_batch_size, bool) or not isinstance(
+        matrix_batch_size, (int, np.integer)
+    ):
+        raise StatisticsError("crossed bootstrap matrix batch size must be an integer")
+    repetitions = int(repetitions)
+    matrix_batch_size = int(matrix_batch_size)
+    if repetitions <= 0 or matrix_batch_size <= 0:
+        raise StatisticsError(
+            "crossed bootstrap repetitions and matrix batch size must be positive"
+        )
+    generator = np.random.default_rng(int(seed))
+    seed_indices = generator.integers(
+        0, values.shape[1], size=(repetitions, values.shape[1])
+    )
+    session_indices = generator.integers(
+        0, values.shape[2], size=(repetitions, values.shape[2])
+    )
+    seed_weights = _resample_count_weights(seed_indices, values.shape[1])
+    session_weights = _resample_count_weights(session_indices, values.shape[2])
+    pvalues = np.empty((values.shape[0], len(shifts)), dtype=np.float64)
+    observed_statistics = np.empty_like(pvalues)
+    for start in range(0, values.shape[0], matrix_batch_size):
+        stop = min(start + matrix_batch_size, values.shape[0])
+        observed = values[start:stop]
+        centered = observed - observed.mean(axis=(1, 2), keepdims=True)
+        null_statistics = _crossed_statistics_from_weighted_resamples(
+            centered, seed_weights, session_weights
+        )
+        shifted = observed[:, None, :, :] + shifts[None, :, None, None]
+        observed_batch = _crossed_studentized_statistic_batch(
+            shifted.reshape(
+                (stop - start) * len(shifts),
+                values.shape[1],
+                values.shape[2],
+            )
+        ).reshape(stop - start, len(shifts))
+        for shift_index in range(len(shifts)):
+            exceedances = np.sum(
+                null_statistics >= observed_batch[:, shift_index, None],
+                axis=1,
+                dtype=np.int64,
+            )
+            pvalues[start:stop, shift_index] = (
+                1.0 + exceedances.astype(np.float64)
+            ) / (repetitions + 1.0)
+        observed_statistics[start:stop] = observed_batch
+    result = {
+        "pvalues": pvalues,
+        "observed_statistics": observed_statistics,
+    }
+    return result
+
+
+def crossed_matrix_bootstrap_pvalues_batch(
+    matrices: np.ndarray,
+    *,
+    repetitions: int,
+    seed: int,
+    matrix_batch_size: int = 16,
+) -> dict[str, np.ndarray]:
+    """Run the exact production conditional crossed bootstrap in a batch."""
+
+    shifted = crossed_matrix_bootstrap_shift_pvalues_batch(
+        matrices,
+        constant_shifts=(0.0,),
+        repetitions=repetitions,
+        seed=seed,
+        matrix_batch_size=matrix_batch_size,
+    )
+    return {
+        "pvalues": shifted["pvalues"][:, 0],
+        "observed_statistics": shifted["observed_statistics"][:, 0],
+    }
+
+
+def crossed_matrix_bootstrap_inference(
+    matrix: np.ndarray, *, repetitions: int, seed: int
+) -> dict[str, object]:
+    """Exact shared matrix kernel for production crossed-bootstrap p-values."""
+
+    values = np.asarray(matrix, dtype=np.float64)
+    if (
+        values.ndim != 2
+        or values.shape[0] < 2
+        or values.shape[1] < 2
+        or not np.all(np.isfinite(values))
+    ):
+        raise StatisticsError("crossed matrix inference requires a finite 2D matrix")
+    if isinstance(repetitions, bool) or not isinstance(repetitions, (int, np.integer)):
+        raise StatisticsError("crossed bootstrap repetitions must be an integer")
+    if isinstance(seed, bool) or not isinstance(seed, (int, np.integer)):
+        raise StatisticsError("crossed bootstrap seed must be an integer")
+    repetitions = int(repetitions)
+    if repetitions <= 0:
+        raise StatisticsError("crossed bootstrap repetitions must be positive")
+    generator = np.random.default_rng(int(seed))
+    seed_indices = generator.integers(
+        0, values.shape[0], size=(repetitions, values.shape[0])
+    )
+    session_indices = generator.integers(
+        0, values.shape[1], size=(repetitions, values.shape[1])
+    )
+    sampled = values[seed_indices[:, :, None], session_indices[:, None, :]]
+    bootstrap = sampled.mean(axis=(1, 2))
+    conditional = crossed_matrix_bootstrap_pvalues_batch(
+        values[None, :, :], repetitions=repetitions, seed=seed
+    )
+    centered = values - float(values.mean())
+    null_sampled = centered[
+        seed_indices[:, :, None], session_indices[:, None, :]
+    ]
+    null_statistics = _crossed_studentized_statistic_batch(null_sampled)
+    observed_statistic = float(conditional["observed_statistics"][0])
+    return {
+        "bootstrap_means": bootstrap,
+        "null_statistics": null_statistics,
+        "observed_statistic": float(observed_statistic),
+        "null_centered_studentized_pvalue": float(conditional["pvalues"][0]),
+    }
+
+
 def crossed_seed_session_bootstrap(
     seed_rows_a: Mapping[int, Mapping[str, Mapping[str, float]]],
     seed_rows_b: Mapping[int, Mapping[str, Mapping[str, float]]],
@@ -487,30 +831,17 @@ def crossed_seed_session_bootstrap(
             dtype=np.float64,
         )
         point = float(matrix.mean())
-        bootstrap = np.empty(repetitions, dtype=np.float64)
-        null_statistics = np.empty(repetitions, dtype=np.float64)
-        centered = matrix - point
-        observed_statistic = abs(_crossed_studentized_statistic(matrix))
-        metric_generator = np.random.default_rng(seed + metric_index)
-        for repetition in range(repetitions):
-            seed_indices = metric_generator.integers(0, len(seed_ids), size=len(seed_ids))
-            session_indices = metric_generator.integers(
-                0, len(session_names), size=len(session_names)
-            )
-            sampled = matrix[np.ix_(seed_indices, session_indices)]
-            bootstrap[repetition] = float(sampled.mean())
-            null_sampled = centered[np.ix_(seed_indices, session_indices)]
-            null_statistics[repetition] = abs(
-                _crossed_studentized_statistic(null_sampled)
-            )
-        exceedances = int(np.sum(null_statistics >= observed_statistic))
+        inference = crossed_matrix_bootstrap_inference(
+            matrix, repetitions=repetitions, seed=seed + metric_index
+        )
+        bootstrap = np.asarray(inference["bootstrap_means"], dtype=np.float64)
         result[metric] = {
             "difference_b_minus_a": point,
             "ci95_low": _percentile(bootstrap, 2.5),
             "ci95_high": _percentile(bootstrap, 97.5),
             "probability_b_greater_a": float(np.mean(bootstrap > 0.0)),
             "null_centered_studentized_pvalue": float(
-                (1.0 + exceedances) / (repetitions + 1.0)
+                inference["null_centered_studentized_pvalue"]
             ),
             "training_seed_count": float(len(seed_ids)),
             "session_cluster_count": float(len(session_names)),

@@ -28,6 +28,7 @@ from selector_bench.continual.claim_protocol import (
     validate_method_arm,
     validate_family_registries_and_cells,
     validate_seed_design,
+    validate_training_resources,
     verify_frozen_file,
 )
 from selector_bench.continual.evaluation_contract import load_evaluation_cell_contract
@@ -38,7 +39,11 @@ from selector_bench.continual.statistics import (
     crossed_seed_session_bootstrap,
     read_pdm_rows,
 )
-from selector_bench.continual.seed_design import finite_integer
+from selector_bench.continual.seed_design import (
+    RAW_PVALUE_METHOD,
+    RESAMPLING_CONVENTION,
+    finite_integer,
+)
 
 
 def token_sha256(tokens: set[str]) -> str:
@@ -135,7 +140,7 @@ def verify_confirmatory_registration(
     )
     design = validate_seed_design(
         family,
-        family_root=family_path.parent,
+        family_path=family_path,
         repository=repository,
         freeze_commit=freeze_commit,
         expected_seeds=expected_seeds,
@@ -553,6 +558,9 @@ def validate_method(
                     "optimizer_state_receipt_sha256"
                 ],
                 "optimizer_state_sha256": training.result["optimizer_state_sha256"],
+                "resources": validate_training_resources(
+                    training.result.get("resources")
+                ),
                 "run_registration_commit": training.protocol[
                     "run_registration_commit"
                 ],
@@ -674,6 +682,32 @@ def main() -> None:
     expected_family = (
         family["sealed_test_family_identity"] if family is not None else None
     )
+    if family is not None:
+        inference_contracts = family.get("comparison_inference_contracts")
+        if not isinstance(inference_contracts, list):
+            raise StatisticsError("confirmatory family lacks comparison inference contracts")
+        inference_contract = next(
+            (
+                item
+                for item in inference_contracts
+                if isinstance(item, dict)
+                and item.get("comparison_id") == comparison_id
+            ),
+            None,
+        )
+        if not isinstance(inference_contract, dict):
+            raise StatisticsError("comparison lacks its seed-design inference contract")
+        for field, expected in (
+            ("bootstrap_repetitions", repetitions),
+            ("bootstrap_seed", bootstrap_seed),
+            ("raw_pvalue_method", RAW_PVALUE_METHOD),
+            ("resampling_convention", RESAMPLING_CONVENTION),
+        ):
+            require_equal(
+                inference_contract.get(field),
+                expected,
+                f"comparison seed-design {field}",
+            )
 
     baseline = validate_method(
         baseline_spec,
@@ -745,6 +779,15 @@ def main() -> None:
             if analysis_scope == "confirmatory"
             else "screening_only_no_superiority_claim"
         ),
+        "evidence_scope": (
+            "screening_only_no_paper_claim"
+            if family is None
+            else (
+                "paper_confirmatory"
+                if family["paper_claim_eligible"]
+                else "synthetic_cpu_fixture_only_no_paper_claim"
+            )
+        ),
         "comparison_spec": str(args.comparison_spec.resolve()),
         "comparison_spec_sha256": sha256(args.comparison_spec),
         "protocol_manifest": str(protocol_path),
@@ -769,7 +812,11 @@ def main() -> None:
         ),
         "required_metrics": list(PDM_DEFAULT_METRICS),
         "expected_seed_ids": list(expected_seeds),
-        "raw_pvalue_method": "null_centered_studentized_crossed_seed_session_bootstrap",
+        "raw_pvalue_method": RAW_PVALUE_METHOD,
+        "resampling_convention": RESAMPLING_CONVENTION,
+        "metric_seed_convention": (
+            "bootstrap_seed_plus_index_in_frozen_PDM_DEFAULT_METRICS"
+        ),
         "bootstrap_repetitions": repetitions,
         "bootstrap_seed": bootstrap_seed,
         "baseline": baseline_evidence,

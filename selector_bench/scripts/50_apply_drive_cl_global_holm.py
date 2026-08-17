@@ -31,6 +31,7 @@ from selector_bench.continual.claim_protocol import (
     validate_sealed_test_access_binding,
     frozen_file_bytes,
     validate_seed_design,
+    validate_training_resources,
     verify_frozen_file,
 )
 from selector_bench.continual.statistics import (
@@ -182,6 +183,16 @@ def verify_run_evidence(
                         shared_sealed_test_access_identity(method_access),
                         "comparison/evaluator sealed-test access identity",
                     )
+                if prefix == "training_result":
+                    training_result = load_json(path, "comparison training result")
+                    actual_resources = validate_training_resources(
+                        training_result.get("resources")
+                    )
+                    require_equal(
+                        run.get("resources"),
+                        actual_resources,
+                        "comparison/training-result resources",
+                    )
 
 
 def discover_claim_receipts(claim_root: Path) -> set[Path]:
@@ -289,11 +300,26 @@ def main() -> None:
         require_equal(evidence_inventory.get(field), expected, f"evidence inventory {field}")
     seed_design = validate_seed_design(
         family,
-        family_root=family_path.parent,
+        family_path=family_path,
         repository=repository,
         freeze_commit=args.freeze_commit,
         expected_seeds=expected_seeds,
     )
+    expected_evidence_scope = (
+        "paper_confirmatory"
+        if seed_design["paper_claim_eligible"]
+        else "synthetic_cpu_fixture_only_no_paper_claim"
+    )
+    inference_contracts = seed_design.get("comparison_inference_contracts")
+    if not isinstance(inference_contracts, list):
+        raise StatisticsError("seed design lacks comparison inference contracts")
+    inference_by_comparison = {
+        item.get("comparison_id"): item
+        for item in inference_contracts
+        if isinstance(item, dict)
+    }
+    if len(inference_by_comparison) != len(inference_contracts):
+        raise StatisticsError("seed design has malformed comparison inference contracts")
     claim_root = resolve(
         family_path.parent, family.get("claim_receipt_root"), "claim receipt root"
     )
@@ -432,6 +458,7 @@ def main() -> None:
             "comparison_id": item["comparison_id"],
             "analysis_scope": "confirmatory",
             "claim_eligibility": "confirmatory_pending_global_holm",
+            "evidence_scope": expected_evidence_scope,
             "checkpoint_stage_index": item["checkpoint_stage_index"],
             "checkpoint_stage_name": item["checkpoint_stage_name"],
             "evaluation_stage_index": item["evaluation_stage_index"],
@@ -446,6 +473,24 @@ def main() -> None:
             "metric_registry_sha256": family_contract["metric_registry_sha256"],
             "domain_registry_sha256": family_contract["domain_registry_sha256"],
         }
+        inference_contract = inference_by_comparison.get(item["comparison_id"])
+        if not isinstance(inference_contract, dict):
+            raise StatisticsError("comparison lacks a seed-design inference contract")
+        semantic_checks.update(
+            {
+                "raw_pvalue_method": inference_contract["raw_pvalue_method"],
+                "resampling_convention": inference_contract[
+                    "resampling_convention"
+                ],
+                "metric_seed_convention": inference_contract[
+                    "metric_seed_convention"
+                ],
+                "bootstrap_repetitions": inference_contract[
+                    "bootstrap_repetitions"
+                ],
+                "bootstrap_seed": inference_contract["bootstrap_seed"],
+            }
+        )
         for field, expected in semantic_checks.items():
             require_equal(receipt.get(field), expected, f"receipt {field}")
         require_equal(receipt["baseline"].get("method_id"), item["baseline_method"], "baseline method")
@@ -587,6 +632,12 @@ def main() -> None:
         "metric_family": list(PDM_DEFAULT_METRICS),
         "expected_seed_ids": list(expected_seeds),
         "seed_design": seed_design,
+        "evidence_scope": expected_evidence_scope,
+        "claim_eligibility": (
+            "paper_confirmatory_global_holm"
+            if seed_design["paper_claim_eligible"]
+            else "synthetic_cpu_fixture_only_no_paper_claim"
+        ),
         "dataset_identity": family_contract["dataset_identity"],
         "method_registry_sha256": family_contract["method_registry_sha256"],
         "metric_registry_sha256": family_contract["metric_registry_sha256"],

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Design confirmatory seed count from audit-only crossed pilot matrices."""
+"""Validate confirmatory seeds against one complete frozen Holm family."""
 
 from __future__ import annotations
 
@@ -8,6 +8,8 @@ import json
 import os
 from pathlib import Path
 from selector_bench.continual.seed_design import (
+    PRODUCTION_POWER_SIMULATION_MINIMUM,
+    SYNTHETIC_FIXTURE_SIMULATION_MINIMUM,
     build_seed_design_payload,
     finite_integer,
     finite_real,
@@ -16,49 +18,46 @@ from selector_bench.continual.seed_design import (
 from selector_bench.continual.statistics import StatisticsError
 
 
-def parse_seed_ids(value: str) -> tuple[int, ...]:
-    try:
-        result = tuple(int(item) for item in value.split(",") if item)
-    except ValueError as exc:
-        raise argparse.ArgumentTypeError("seed IDs must be comma-separated integers") from exc
-    if len(result) < 2 or len(result) != len(set(result)):
-        raise argparse.ArgumentTypeError("seed IDs must contain at least two unique integers")
-    return result
-
-
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
+    parser.add_argument("--family-spec", type=Path, required=True)
     parser.add_argument("--pilot-matrix", type=Path, required=True)
-    parser.add_argument("--candidate-seed-ids", type=parse_seed_ids, required=True)
-    parser.add_argument("--minimum-relevant-effect", type=float, required=True)
     parser.add_argument("--target-power", type=float, default=0.8)
-    parser.add_argument("--family-alpha", type=float, default=0.05)
     parser.add_argument("--simulation-repetitions", type=int, default=10000)
     parser.add_argument("--simulation-seed", type=int, default=0)
+    parser.add_argument(
+        "--synthetic-cpu-fixture",
+        action="store_true",
+        help="Permit the explicit navsim-fixture low-repetition CPU test contract.",
+    )
     parser.add_argument("--repository", type=Path, required=True)
     parser.add_argument("--generator-module-source", type=Path)
     parser.add_argument("--generator-entrypoint-source", type=Path)
+    parser.add_argument("--inference-module-source", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
-    if args.pilot_matrix.is_symlink() or not args.pilot_matrix.is_file():
-        parser.error(f"missing or symlinked pilot matrix: {args.pilot_matrix}")
+    for label, path in (
+        ("family specification", args.family_spec),
+        ("pilot matrix", args.pilot_matrix),
+    ):
+        if path.is_symlink() or not path.is_file():
+            parser.error(f"missing or symlinked {label}: {path}")
     try:
-        args.minimum_relevant_effect = finite_real(
-            args.minimum_relevant_effect, "minimum relevant effect"
-        )
         args.target_power = finite_real(args.target_power, "target power")
-        args.family_alpha = finite_real(args.family_alpha, "family alpha")
         args.simulation_repetitions = finite_integer(
             args.simulation_repetitions, "simulation repetitions"
         )
         args.simulation_seed = finite_integer(args.simulation_seed, "simulation seed")
-        if args.minimum_relevant_effect <= 0.0:
-            raise StatisticsError("minimum relevant effect must be positive")
-        if not 0.0 < args.target_power < 1.0 or not 0.0 < args.family_alpha < 1.0:
-            raise StatisticsError("power and alpha must lie strictly between zero and one")
-        if args.simulation_repetitions < 10000:
+        if not 0.0 < args.target_power < 1.0:
+            raise StatisticsError("target power must lie strictly between zero and one")
+        minimum_repetitions = (
+            SYNTHETIC_FIXTURE_SIMULATION_MINIMUM
+            if args.synthetic_cpu_fixture
+            else PRODUCTION_POWER_SIMULATION_MINIMUM
+        )
+        if args.simulation_repetitions < minimum_repetitions:
             raise StatisticsError(
-                "confirmatory power/calibration requires at least 10000 simulations"
+                "power/FWER outer simulations are below the selected scope minimum"
             )
     except StatisticsError as exc:
         parser.error(str(exc))
@@ -85,6 +84,13 @@ def main() -> None:
         / "seed_design.py"
     ).resolve()
     entrypoint_source = (args.generator_entrypoint_source or Path(__file__)).resolve()
+    inference_source = (
+        args.inference_module_source
+        or Path(__file__).resolve().parents[1]
+        / "selector_bench"
+        / "continual"
+        / "statistics.py"
+    ).resolve()
     imported_module = (
         Path(__file__).resolve().parents[1]
         / "selector_bench"
@@ -95,13 +101,28 @@ def main() -> None:
         raise SystemExit("generator module source does not match the imported implementation")
     if sha256(entrypoint_source) != sha256(Path(__file__)):
         raise SystemExit("generator entrypoint source does not match the executing CLI")
+    imported_inference = (
+        Path(__file__).resolve().parents[1]
+        / "selector_bench"
+        / "continual"
+        / "statistics.py"
+    )
+    if sha256(inference_source) != sha256(imported_inference):
+        raise SystemExit("inference module source does not match the imported implementation")
     payload = build_seed_design_payload(
+        args.family_spec.resolve(),
         args.pilot_matrix.resolve(),
+        repository=repository,
+        family_spec_repository_path=repository_path(
+            repository, args.family_spec.resolve(), "family specification"
+        ),
         pilot_reference=os.path.relpath(args.pilot_matrix.resolve(), args.output.resolve().parent),
-        candidate_seed_ids=args.candidate_seed_ids,
-        minimum_relevant_effect=args.minimum_relevant_effect,
+        simulation_scope=(
+            "synthetic_cpu_fixture"
+            if args.synthetic_cpu_fixture
+            else "confirmatory"
+        ),
         target_power=args.target_power,
-        family_alpha=args.family_alpha,
         simulation_repetitions=args.simulation_repetitions,
         simulation_seed=args.simulation_seed,
         generator_module_repository_path=repository_path(
@@ -112,6 +133,10 @@ def main() -> None:
             repository, entrypoint_source, "generator entrypoint"
         ),
         generator_entrypoint_sha256=sha256(entrypoint_source),
+        inference_module_repository_path=repository_path(
+            repository, inference_source, "inference module"
+        ),
+        inference_module_sha256=sha256(inference_source),
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     temporary = args.output.with_suffix(args.output.suffix + ".tmp")

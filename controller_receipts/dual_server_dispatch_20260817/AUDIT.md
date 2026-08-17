@@ -388,6 +388,146 @@ reachability is not yet established. Isolated 06G replay remains stopped until p
 review both pass. Every dataset, adapter, cache, model, T0, GPU, training, evaluation, final-test and
 performance gate remains stopped.
 
+### Exact source publication
+
+- public commit `b1e1991afe7b9b14fd83f7510394c0ffb77ad700`, sole parent
+  `7892cbcd06b99f44dc593813459b12e5eb84f902`, tree
+  `1090673c5e8f148f2ec1b127044fa306b51b19cd`; exactly 28 changed paths and one non-force update
+- preserved local publication commit `1c532e43fcb4b3c071c9fb55433cc0769dbf9032`, sole parent
+  `0bc3e4521534a55a370293a6ff34aaca2f752ca5`, has the exact same tree
+- ordinary anonymous HTTPS replay reproduced commit, parent, tree, path set and `git show --check`;
+  the 7,434-byte manifest SHA256 is
+  `ff8ca94ebd3dd39abb048dabe8c8a87eaa383465b5cdb899d74cc6fbe2bcd437`
+- all 41 source blob SHA256 values matched with no missing files; independently recomputed logical
+  bundle `68259f07dc97db312c00c71dcd18a899502588b4eb303ee12cce585e1cc894b1`
+  exactly matched the manifest
+- the publication tree differs by design from the whole RC3 worktree tree because the publication
+  branch has a different parent/controller-receipt layout; exactness is bound at source blobs, bundle
+  and source commit identity
+- receipt: `07g_p0_rc3_publication.txt`
+
+Decision: **PUBLICATION PASS FOR EXACT RC3 SOURCE AND RECEIPTS ONLY.** A fresh context-free exact-RC3
+source/CPU blind review is now authorized. Isolated 06G replay and every data, adapter, cache, model,
+T0, GPU, training, evaluation, final-test and performance gate remain stopped.
+
+## RC3 fresh context-free xhigh blind review
+
+- authoritative review task: `01a010f6-4606-7a51-a482-be5a01fb6d1e`; actual session metadata was
+  independently checked as `gpt-5.6-sol` with `xhigh` reasoning effort; the earlier task
+  `01a010ef-c27d-76d0-a3da-fb367e6ddf99` ran at medium effort, self-invalidated, returned no verdict
+  and is not used as evidence
+- exact reviewed source: `codex/iclr2027-drive-opd-07g-p0-rc3@79a2c529f35fb18049b4f30b46a2fe9926bf7e5a`,
+  sole parent `d527274d368b6d6def5809b002324b31e88ae1bd`, tree
+  `3ec47127a6d7c85326bbcf1d72ef76e2971f100d`; reviewer worktree clean before and after with no
+  pytest cache or Python bytecode
+- public transfer independently reproduced: public commit `b1e1991afe7b9b14fd83f7510394c0ffb77ad700`,
+  sole parent `7892cbcd06b99f44dc593813459b12e5eb84f902`, tree
+  `1090673c5e8f148f2ec1b127044fa306b51b19cd`; all 41 local and public source hashes matched transfer
+  manifest SHA256 `ff8ca94ebd3dd39abb048dabe8c8a87eaa383465b5cdb899d74cc6fbe2bcd437`
+  and bundle `68259f07dc97db312c00c71dcd18a899502588b4eb303ee12cce585e1cc894b1`
+- safe CPU reproduction: all six suites passed, totaling 67 tests plus 73 subtests; the standalone
+  harness passed its shipped 19/19 families and rejected 87/87 mutations nonzero before any claim
+  output; the higher-level audit also exited zero
+- verdict: **3/10 REJECT / FAIL**, confidence **5/5**; the green source suite and attack harness do
+  not close two newly reproduced P0s
+- P0-1: seed design calibrates one anonymous seven-metric comparison while the frozen confirmatory
+  family contains two comparisons and 14 hypotheses; the implementation chooses nine seeds although
+  the stated full-family sign-resolution rule requires ten, and the seed calculation is not aligned
+  with downstream bootstrap p-values; reproduction stdout SHA256
+  `b28bc3fde2cfeef0848d5133ed6e110df20ea21316ac224ecc4941f1fd3b306f`
+- P0-2: coercive resource validation accepted Boolean, fractional, string and non-finite values,
+  including `transient_bytes=true`, `transient_bytes=1.5`, `wall_seconds=NaN`,
+  `wall_seconds="nan"` and `persistent_bytes=true`; malformed evidence reached a final 14-hypothesis
+  Holm output; direct bypass SHA256 `d3e3633854f9a9758ea6baeef4e699264e8ba2f76fcb5a2a89ec077e87b0713e`,
+  end-to-end stdout SHA256 `ed39777ac687dc5da674bf39c84623e54b26eac3513089b21d0eee92a5cd46c8`,
+  emitted global-result SHA256 `4ba3e605804fa11b9696c793aef9caf7d1bccb01fdf23f19bdfc695ccf08c15d`
+- complete report: `07g_p0_rc3_blind_review.md`; structured intake:
+  `07g_p0_rc3_blind_review_intake.json`
+
+Decision: **RC3 REJECTED WITH TWO OPEN P0 FINDINGS.** Gate A is NO. Gate B is YES only for immutable,
+explicitly rejected and non-promoting source bytes/CPU fixtures. Gate C is NO, so no 06G source replay
+is dispatched. Gate D is NO. Dataset/raw-data access, provenance/adapter work, session-atomic CL
+manifests, cache, real-model preflight, T0, model, CUDA/GPU, training, evaluation, final-test unsealing
+and performance claims remain stopped pending a new forward-only candidate and fresh exact review.
+
+## RC4 forward-only source/CPU authorization
+
+- immutable rejected base: exact RC3 `79a2c529f35fb18049b4f30b46a2fe9926bf7e5a`, parent
+  `d527274d368b6d6def5809b002324b31e88ae1bd`, tree
+  `3ec47127a6d7c85326bbcf1d72ef76e2971f100d`
+- authorized destination: new branch `codex/iclr2027-drive-opd-07g-p0-rc4`, suggested isolated
+  worktree `/home/khwang/domain-selector-p0-rc4`, with exactly one non-merge commit whose sole parent
+  is exact RC3; all existing refs remain immutable
+- P0-A: bind seed design to the full ordered two-comparison/fourteen-hypothesis family and complete
+  pilot structure; replay the downstream familywise procedure or a checked exact surrogate; derive
+  resolution from the bootstrap p-value floor and Holm threshold instead of the rejected anonymous
+  seven-metric `2^(1-n)` proxy
+- P0-B: require exact positive integer byte fields, finite positive real wall time and non-empty typed
+  host/device identities without Boolean/string/fractional/non-finite coercion at every producer,
+  load, inventory, comparison and global-Holm boundary
+- verification: preserve all nineteen RC3 attack families, add complete end-to-end adversarial cases
+  for both P0s, retain ALER audit equivalence coverage, and run only static/synthetic/CUDA-hidden CPU
+  checks before one exact identity/hash receipt
+- authorization files: `07g_p0_rc4_forward_authorization.md` and
+  `07g_p0_rc4_forward_authorization.json`
+
+Decision: **AUTHORIZED FOR RC4 SOURCE/CPU REPAIR ONLY.** RC4 publication, transfer freeze, review and
+06G dispatch are not authorized here. Before any 06G source replay, both a newly created exact-RC4
+`gpt-5.6-sol`/`xhigh` review with no open P0 and controller-frozen dataset-specific session-atomic
+manifests for NAVSIM and nuScenes must pass. Cache, real-model preflight, T0, CUDA/GPU, training,
+evaluation, final-test unsealing and performance claims remain stopped behind later explicit gates.
+
+## RC4 source/CPU candidate acceptance
+
+- exact candidate: `codex/iclr2027-drive-opd-07g-p0-rc4@653e797a2381cdf017466ef95aefcc41961f6715`,
+  sole parent exact RC3 `79a2c529f35fb18049b4f30b46a2fe9926bf7e5a`, tree
+  `53943615137849d3338cc037914b302d6e3db363`; exactly one non-merge forward commit and 22 changed
+  paths; research worktree clean and no remote-containing ref
+- exact committed-source detached replay: six suites passed 76 tests plus 132 subtests in 311.85
+  seconds; output SHA256 `9dbeb7dac11464e54739a41a0e753119dd595c760494b33a55bf5b2b6d9fa7d3`
+- expanded schema-v3 attack harness: 21/21 families passed; 146/146 mutated invocations exited
+  nonzero and produced no claim artifact; positive complete-family fixture exited zero; receipt
+  SHA256 `c869a4e02a6563fbbfeb0842384d5d0ae296eb185a21332106ae45ab5e0f40fa`
+- controller verification independently reproduced the exact commit/parent/tree, one-commit ancestry,
+  22-path inventory SHA256 `4ec72aa5e835643746a6f2619d93cdce59cb4e84336ec4f75131393454834b32`,
+  path/content inventory SHA256 `c083471c5514be3b027a5f6a6feef66acf85cbc34d1f6a5e43dc1381619744ba`,
+  and binary-safe full-index diff SHA256
+  `6d1b82b0e0871ac4506987bf56e74ad5505141f17f12c2b6cea47e57f2d53193`
+- static boundary: `git show --check` passed, 11 changed Python files parsed, three changed JSON files
+  parsed with non-finite constants rejected, and no bytecode, pytest cache, data, model or checkpoint
+  artifacts were found
+- RC3 P0-20 is closed only as a candidate: seed design is bound to the ordered two-comparison,
+  fourteen-hypothesis family and replays the production conditional crossed-bootstrap plus Holm
+  procedure; RC3 P0-21 is closed only as a candidate through strict non-coercive finite resource
+  validation at all claim boundaries
+- complete intake: `07g_p0_rc4_acceptance.json`
+
+Decision: **ACCEPTED FOR SOURCE PUBLICATION AND A FRESH EXACT-RC4 REVIEW ONLY.** This is not a P0
+promotion. Before any 06G source replay, a newly created context-free `gpt-5.6-sol`/`xhigh` review
+must return zero open P0 and the controller must separately freeze session-atomic dataset manifests
+for both NAVSIM and nuScenes, followed by an explicit source-replay gate. Cache, real-model preflight,
+T0, CUDA/GPU, training, evaluation, final-test unsealing and performance claims remain stopped.
+
+### RC4 deterministic source-transfer freeze
+
+- the clean accepted RC4 worktree produced a 7,434-byte manifest containing exactly 41 required
+  source/config/test files; manifest SHA256
+  `7ee2fc57e8f3ea9420b0a18fafa7f8c7e9deae34fa45799c3367a1f3f97ad4e9`
+- every declared source hash matched the exact `653e797a2381cdf017466ef95aefcc41961f6715`
+  bytes with no missing or mismatched files; the independently recomputed canonical logical bundle
+  SHA256 `e9aa55e56dabe55064f8a06523bf08aea468a7315020190926668b35cc18913b`
+  matched the manifest
+- generator `selector_bench/scripts/51_freeze_drive_opd_06g_transfer.py` SHA256
+  `49ba27be6e553d1d8d4b670a2b16ec5ec0d356b1b8019462b71f86f1c43fa7f8`; source worktree clean
+  before and after generation
+- freeze receipt: `07g_p0_rc4_transfer_freeze.txt`; manifest:
+  `07g_p0_rc4_transfer_manifest.json`
+
+Decision: **SOURCE BUNDLE FROZEN FOR PUBLICATION AND EXACT-RC4 REVIEW ONLY.** No 06G replay is
+dispatched. A zero-P0 exact-RC4 xhigh review, separately frozen session-atomic NAVSIM and nuScenes
+manifests, and a later explicit controller gate are all mandatory before source replay. All later
+execution gates remain stopped.
+
 ## 06G R1 session-integrity intake
 
 - remote audit commit: `af9213b216b0260b184d3d3ae109a4ed1bed70b8`, parent

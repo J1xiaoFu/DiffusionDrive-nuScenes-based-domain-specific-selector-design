@@ -20,6 +20,7 @@ from selector_bench.continual.claim_protocol import (
     load_training_run_contract,
     require_strict_final_test_chronology,
     validate_family_registries_and_cells,
+    validate_training_resources,
 )
 from selector_bench.continual.statistics import PDM_DEFAULT_METRICS, StatisticsError
 from selector_bench.continual.run_budget import TRANSIENT_STORAGE_SEMANTICS
@@ -502,7 +503,9 @@ class ClaimFixture:
                 "analysis_scope": analysis_scope,
                 "metric_family": list(PDM_DEFAULT_METRICS),
                 "expected_seed_ids": list(self.seeds),
-                "bootstrap_repetitions": 100,
+                "bootstrap_repetitions": (
+                    1000 if analysis_scope == "confirmatory" else 100
+                ),
                 "bootstrap_seed": 7,
                 "artifact_root": str(self.artifact_root),
                 "protocol_manifest": str(self.protocol_path),
@@ -635,116 +638,11 @@ class ClaimFixture:
             },
         )
         pilot_matrix = self.root / "pilot_matrix.json"
-        write_json(
-            pilot_matrix,
-            {
-                "schema": "selector_bench.drive_cl_audit_pilot_matrix.v1",
-                "split": "audit",
-                "metrics": list(PDM_DEFAULT_METRICS),
-                "seed_ids": [0, 1, 2, 3],
-                "session_ids": [f"pilot-{index}" for index in range(8)],
-                "source_receipts": [str(audit_source)],
-                "source_receipt_sha256": [sha256(audit_source)],
-                "candidate_minus_baseline": {
-                    metric: [
-                        [
-                            (seed_index - 1.5) * 0.01
-                            + (session_index - 3.5) * 0.002
-                            for session_index in range(8)
-                        ]
-                        for seed_index in range(4)
-                    ]
-                    for metric in PDM_DEFAULT_METRICS
-                },
-            },
-        )
         seed_design = self.root / "seed_design.json"
         program_root = self.root / "seed_design_program"
         generator_module = program_root / "seed_design.py"
         generator_entrypoint = program_root / "55_design_drive_cl_confirmatory_seeds.py"
-        generator_module.parent.mkdir(parents=True, exist_ok=True)
-        generator_module.write_bytes(
-            (
-                REPOSITORY_ROOT
-                / "selector_bench/selector_bench/continual/seed_design.py"
-            ).read_bytes()
-        )
-        generator_entrypoint.write_bytes(
-            (SCRIPT_ROOT / "55_design_drive_cl_confirmatory_seeds.py").read_bytes()
-        )
-        designed = run_script(
-            "55_design_drive_cl_confirmatory_seeds.py",
-            "--pilot-matrix",
-            pilot_matrix,
-            "--candidate-seed-ids",
-            ",".join(str(seed) for seed in self.seeds),
-            "--minimum-relevant-effect",
-            0.1,
-            "--target-power",
-            0.8,
-            "--family-alpha",
-            0.05,
-            "--simulation-repetitions",
-            10000,
-            "--simulation-seed",
-            0,
-            "--repository",
-            self.root,
-            "--generator-module-source",
-            generator_module,
-            "--generator-entrypoint-source",
-            generator_entrypoint,
-            "--output",
-            seed_design,
-        )
-        if designed.returncode != 0:
-            raise AssertionError(designed.stderr or designed.stdout)
-        seed_payload = json.loads(seed_design.read_text())
-        if seed_design_variant == "handwritten_output":
-            seed_payload["estimated_power"] = 0.812345
-        elif seed_design_variant == "altered_seed_or_repetitions":
-            seed_payload["normalized_invocation"]["simulation_seed"] = 17
-        elif seed_design_variant == "altered_effect_or_pilot":
-            seed_payload["normalized_invocation"]["minimum_relevant_effect"] = 0.2
-        elif seed_design_variant == "altered_program_identity":
-            seed_payload["generator_module_sha256"] = "0" * 64
-        elif seed_design_variant == "altered_replayed_statistic":
-            seed_payload["candidate_seed_audits"][0]["critical_value"] += 0.5
-        elif seed_design_variant.startswith("nonfinite_"):
-            _, location, value_name = seed_design_variant.split("_", 2)
-            value = {
-                "nan": float("nan"),
-                "posinf": float("inf"),
-                "neginf": float("-inf"),
-            }[value_name]
-            if location == "minimum-effect":
-                seed_payload["minimum_relevant_effect"] = value
-            elif location == "target-power":
-                seed_payload["target_power"] = value
-            elif location == "critical-value":
-                seed_payload["candidate_seed_audits"][0]["critical_value"] = value
-            elif location == "metric-power":
-                seed_payload["candidate_seed_audits"][0]["metric_power"]["score"] = value
-            elif location == "heldout-fwer":
-                seed_payload["candidate_seed_audits"][0]["heldout_null_fwer"] = value
-            else:
-                raise AssertionError(f"unknown non-finite location: {location}")
-        elif seed_design_variant == "bool_designed_seed":
-            seed_payload["designed_seed_ids"][0] = False
-        elif seed_design_variant == "bool_candidate_seed":
-            seed_payload["candidate_seed_ids"][0] = False
-            seed_payload["normalized_invocation"]["candidate_seed_ids"][0] = False
-        elif seed_design_variant == "bool_family_metric_count":
-            seed_payload["family_metric_count"] = True
-        elif seed_design_variant == "bool_simulation_seed":
-            seed_payload["simulation_seed"] = False
-            seed_payload["normalized_invocation"]["simulation_seed"] = False
-        elif seed_design_variant.startswith("family-alpha_"):
-            pass
-        elif seed_design_variant != "valid":
-            raise AssertionError(f"unknown seed-design fixture variant: {seed_design_variant}")
-        if seed_design_variant != "valid":
-            write_json(seed_design, seed_payload, allow_nan=True)
+        inference_module = program_root / "statistics.py"
         claim_receipt = self.root / claim_relative
         second_claim_receipt = self.root / second_claim_relative
         family = self.root / "family.json"
@@ -831,7 +729,7 @@ class ClaimFixture:
         if reverse_hypotheses:
             hypotheses.reverse()
         family_payload = {
-                "schema": "selector_bench.drive_cl_global_holm_family.v5",
+                "schema": "selector_bench.drive_cl_global_holm_family.v6",
                 "family_id": "p003_primary",
                 "alpha": 0.05,
                 "dataset_identity": self.protocol["dataset_identity"],
@@ -844,7 +742,6 @@ class ClaimFixture:
                 "metric_family": list(PDM_DEFAULT_METRICS),
                 "expected_seed_ids": list(self.seeds),
                 "seed_design_receipt": str(seed_design),
-                "seed_design_receipt_sha256": sha256(seed_design),
                 "sealed_test_access_ledger_repository_path": access_ledger.relative_to(
                     self.root
                 ).as_posix(),
@@ -883,7 +780,251 @@ class ClaimFixture:
                 "neginf": float("-inf"),
                 "bool": True,
             }[seed_design_variant.removeprefix("family-alpha_")]
-        write_json(family, family_payload, allow_nan=True)
+        # The valid family bytes precede and are bound by the joint pilot and seed
+        # receipt; the family itself references only the receipt path to avoid a
+        # self-referential file hash.
+        valid_family_payload = dict(family_payload)
+        valid_family_payload["alpha"] = 0.05
+        write_json(family, valid_family_payload)
+        family_digest = sha256(family)
+        write_json(
+            pilot_matrix,
+            {
+                "schema": "selector_bench.drive_cl_joint_audit_pilot_matrix.v2",
+                "split": "audit",
+                "family_id": "p003_primary",
+                "family_spec_sha256": family_digest,
+                "ordered_hypothesis_ids": [item["id"] for item in hypotheses],
+                "seed_ids": [0, 1, 2, 3],
+                "session_ids": [f"pilot-{index}" for index in range(8)],
+                "source_receipts": [str(audit_source)],
+                "source_receipt_sha256": [sha256(audit_source)],
+                "hypotheses": [
+                    {
+                        "id": item["id"],
+                        "comparison_id": item["comparison_id"],
+                        "metric": item["metric"],
+                        "baseline_method": item["baseline_method"],
+                        "baseline_training_arm": item["baseline_training_arm"],
+                        "candidate_method": item["candidate_method"],
+                        "candidate_training_arm": item["candidate_training_arm"],
+                        "minimum_relevant_effect": 0.1,
+                        "candidate_minus_baseline": [
+                            [
+                                (seed_index - 1.5) * 0.01
+                                + (session_index - 3.5) * 0.002
+                                + hypothesis_index * 0.0001
+                                for session_index in range(8)
+                            ]
+                            for seed_index in range(4)
+                        ],
+                    }
+                    for hypothesis_index, item in enumerate(hypotheses)
+                ],
+            },
+        )
+        generator_module.parent.mkdir(parents=True, exist_ok=True)
+        generator_module.write_bytes(
+            (
+                REPOSITORY_ROOT
+                / "selector_bench/selector_bench/continual/seed_design.py"
+            ).read_bytes()
+        )
+        generator_entrypoint.write_bytes(
+            (SCRIPT_ROOT / "55_design_drive_cl_confirmatory_seeds.py").read_bytes()
+        )
+        inference_module.write_bytes(
+            (
+                REPOSITORY_ROOT
+                / "selector_bench/selector_bench/continual/statistics.py"
+            ).read_bytes()
+        )
+        designed = run_script(
+            "55_design_drive_cl_confirmatory_seeds.py",
+            "--family-spec",
+            family,
+            "--pilot-matrix",
+            pilot_matrix,
+            "--target-power",
+            0.8,
+            "--simulation-repetitions",
+            4,
+            "--simulation-seed",
+            0,
+            "--synthetic-cpu-fixture",
+            "--repository",
+            self.root,
+            "--generator-module-source",
+            generator_module,
+            "--generator-entrypoint-source",
+            generator_entrypoint,
+            "--inference-module-source",
+            inference_module,
+            "--output",
+            seed_design,
+        )
+        if designed.returncode != 0:
+            raise AssertionError(designed.stderr or designed.stdout)
+        seed_payload = json.loads(seed_design.read_text())
+        if seed_design_variant == "handwritten_output":
+            seed_payload["estimated_power"] = 0.812345
+        elif seed_design_variant == "altered_seed_or_repetitions":
+            seed_payload["normalized_invocation"]["simulation_seed"] = 17
+        elif seed_design_variant == "altered_effect_or_pilot":
+            hypothesis_id = seed_payload["ordered_hypothesis_ids"][0]
+            seed_payload["minimum_relevant_effects"][hypothesis_id] = 0.2
+        elif seed_design_variant == "altered_program_identity":
+            seed_payload["generator_module_sha256"] = "0" * 64
+        elif seed_design_variant == "altered_replayed_statistic":
+            hypothesis_id = seed_payload["ordered_hypothesis_ids"][0]
+            seed_payload["family_seed_audit"][
+                "production_kernel_reference_pvalues"
+            ][hypothesis_id]["pilot_observed_pvalue"] += 0.05
+        elif seed_design_variant == "p020_family_path":
+            seed_payload["family_spec_repository_path"] = "other-family.json"
+        elif seed_design_variant == "p020_family_hash":
+            seed_payload["family_spec_sha256"] = "0" * 64
+        elif seed_design_variant == "p020_hypothesis_order":
+            seed_payload["ordered_hypothesis_ids"] = list(
+                reversed(seed_payload["ordered_hypothesis_ids"])
+            )
+        elif seed_design_variant == "p020_pilot_path":
+            seed_payload["pilot_matrix"] = "other-pilot.json"
+        elif seed_design_variant == "p020_pilot_hash":
+            seed_payload["pilot_matrix_sha256"] = "0" * 64
+        elif seed_design_variant == "p020_method_identity":
+            seed_payload["ordered_hypothesis_contracts"][0][
+                "candidate_method"
+            ] = "lwf"
+        elif seed_design_variant == "p020_baseline_identity":
+            seed_payload["ordered_comparison_contracts"][0][
+                "baseline_method"
+            ] = "planner_only"
+        elif seed_design_variant == "p020_metric_identity":
+            seed_payload["ordered_hypothesis_contracts"][0]["metric"] = "unknown"
+        elif seed_design_variant == "p020_procedure":
+            seed_payload["family_seed_audit"][
+                "multiple_testing_method"
+            ] = "per_metric_holm"
+        elif seed_design_variant == "p020_unconditional_surrogate":
+            seed_payload["family_seed_audit"][
+                "pvalue_method"
+            ] = "heldout_empirical_null_plus_one"
+            seed_payload["family_seed_audit"]["power_calibration_contract"] = (
+                "unconditional_pilot_null_surrogate"
+            )
+        elif seed_design_variant == "p020_floor":
+            seed_payload["family_seed_audit"]["bootstrap_pvalue_floor"] *= 2.0
+        elif seed_design_variant == "p020_sign_tail":
+            seed_payload["family_seed_audit"][
+                "rejected_sign_tail_rule"
+            ] = "two_to_the_one_minus_n_is_the_pvalue_floor"
+        elif seed_design_variant == "p020_seed":
+            seed_payload["normalized_invocation"]["simulation_seed"] += 1
+        elif seed_design_variant == "p020_repetition":
+            seed_payload["power_simulation_repetitions"] += 1
+        elif seed_design_variant == "p020_memo_key":
+            seed_payload["replay_memo_key"] = "0" * 64
+        elif seed_design_variant == "p020_simulation_scope":
+            seed_payload["simulation_scope"] = "confirmatory"
+            seed_payload["normalized_invocation"][
+                "simulation_scope"
+            ] = "confirmatory"
+        elif seed_design_variant == "p020_effect":
+            hypothesis_id = seed_payload["ordered_hypothesis_ids"][0]
+            seed_payload["minimum_relevant_effects"][hypothesis_id] *= 2.0
+        elif seed_design_variant == "p020_critical":
+            seed_payload["family_seed_audit"]["holm_step_thresholds"][0] += 0.01
+        elif seed_design_variant == "p020_power":
+            seed_payload["estimated_power"] -= 0.1
+        elif seed_design_variant == "p020_fwer":
+            seed_payload["family_seed_audit"]["heldout_null_fwer"] += 0.1
+        elif seed_design_variant.startswith("nonfinite_"):
+            _, location, value_name = seed_design_variant.split("_", 2)
+            value = {
+                "nan": float("nan"),
+                "posinf": float("inf"),
+                "neginf": float("-inf"),
+            }[value_name]
+            hypothesis_id = seed_payload["ordered_hypothesis_ids"][0]
+            if location == "minimum-effect":
+                seed_payload["minimum_relevant_effects"][hypothesis_id] = value
+            elif location == "target-power":
+                seed_payload["target_power"] = value
+            elif location == "critical-value":
+                seed_payload["family_seed_audit"]["holm_step_thresholds"][0] = value
+            elif location == "metric-power":
+                seed_payload["family_seed_audit"]["hypothesis_power"][hypothesis_id][
+                    "two_sided_minimum"
+                ] = value
+            elif location == "heldout-fwer":
+                seed_payload["family_seed_audit"]["heldout_null_fwer"] = value
+            else:
+                raise AssertionError(f"unknown non-finite location: {location}")
+        elif seed_design_variant == "bool_designed_seed":
+            seed_payload["designed_seed_ids"][0] = False
+        elif seed_design_variant == "bool_expected_seed":
+            seed_payload["normalized_invocation"]["expected_seed_ids"][0] = False
+        elif seed_design_variant == "bool_hypothesis_count":
+            seed_payload["total_hypothesis_count"] = True
+        elif seed_design_variant == "bool_simulation_seed":
+            seed_payload["simulation_seed"] = False
+            seed_payload["normalized_invocation"]["simulation_seed"] = False
+        elif seed_design_variant.startswith("family-alpha_"):
+            write_json(family, family_payload, allow_nan=True)
+        elif seed_design_variant == "p020_omitted_comparison":
+            mutated = json.loads(family.read_text())
+            mutated["expected_comparisons"] = mutated["expected_comparisons"][:1]
+            write_json(family, mutated)
+        elif seed_design_variant == "p020_reused_comparison":
+            mutated = json.loads(family.read_text())
+            mutated["expected_comparisons"][1]["comparison_id"] = mutated[
+                "expected_comparisons"
+            ][0]["comparison_id"]
+            write_json(family, mutated)
+        elif seed_design_variant == "p020_omitted_hypothesis":
+            mutated = json.loads(family.read_text())
+            mutated["hypotheses"] = mutated["hypotheses"][:-1]
+            write_json(family, mutated)
+        elif seed_design_variant == "p020_pilot_size":
+            mutated = json.loads(pilot_matrix.read_text())
+            mutated["hypotheses"] = mutated["hypotheses"][:-1]
+            write_json(pilot_matrix, mutated)
+        elif seed_design_variant in {
+            "p020_comparison_repetitions",
+            "p020_comparison_seed",
+        }:
+            mutated_spec = json.loads(self.spec_path.read_text())
+            if seed_design_variant == "p020_comparison_repetitions":
+                mutated_spec["bootstrap_repetitions"] = 10000
+            else:
+                mutated_spec["bootstrap_seed"] += 1
+            write_json(self.spec_path, mutated_spec)
+            mutated_family = json.loads(family.read_text())
+            mutated_hash = sha256(self.spec_path)
+            for comparison in mutated_family["expected_comparisons"]:
+                if comparison["comparison_id"] == "main":
+                    comparison["comparison_spec_sha256"] = mutated_hash
+            for hypothesis in mutated_family["hypotheses"]:
+                if hypothesis["comparison_id"] == "main":
+                    hypothesis["comparison_spec_sha256"] = mutated_hash
+            write_json(family, mutated_family)
+        elif seed_design_variant != "valid":
+            raise AssertionError(f"unknown seed-design fixture variant: {seed_design_variant}")
+        file_mutations = {
+            "p020_omitted_comparison",
+            "p020_reused_comparison",
+            "p020_omitted_hypothesis",
+            "p020_pilot_size",
+            "p020_comparison_repetitions",
+            "p020_comparison_seed",
+        }
+        if (
+            seed_design_variant != "valid"
+            and not seed_design_variant.startswith("family-alpha_")
+            and seed_design_variant not in file_mutations
+        ):
+            write_json(seed_design, seed_payload, allow_nan=True)
         freeze_commit = git_commit(
             self.root,
             "freeze family",
@@ -894,6 +1035,7 @@ class ClaimFixture:
             seed_design,
             generator_module,
             generator_entrypoint,
+            inference_module,
             access_ledger,
             family,
             self.protocol_path,
@@ -1115,7 +1257,7 @@ class DriveCLClaimProtocolTest(unittest.TestCase):
             ).read_text()
         )
         self.assertEqual(
-            family["schema"], "selector_bench.drive_cl_global_holm_family.v5"
+            family["schema"], "selector_bench.drive_cl_global_holm_family.v6"
         )
         self.assertEqual(
             [item["metric"] for item in family["hypotheses"]],
@@ -1637,7 +1779,7 @@ class DriveCLClaimProtocolTest(unittest.TestCase):
             result["resources"]["transient_bytes"] = 0
             write_json(paths["result"], result)
             with self.assertRaisesRegex(
-                StatisticsError, "lacks measured nonzero transient storage"
+                StatisticsError, "resource transient_bytes must be positive"
             ):
                 load_training_run_contract(paths["protocol"], paths["result"])
 
@@ -2192,8 +2334,8 @@ class DriveCLClaimProtocolTest(unittest.TestCase):
             for value in ("nan", "posinf", "neginf", "bool")
         ] + [
             "bool_designed_seed",
-            "bool_candidate_seed",
-            "bool_family_metric_count",
+            "bool_expected_seed",
+            "bool_hypothesis_count",
             "bool_simulation_seed",
         ]
         for variant in receipt_variants:
@@ -2219,45 +2361,340 @@ class DriveCLClaimProtocolTest(unittest.TestCase):
                 audit_rejected_cli("P0-19", variant, failed, claim_output)
                 self.assertNotEqual(failed.returncode, 0)
                 self.assertFalse(claim_output.exists())
+        self._assert_nonfinite_joint_pilot_inputs()
 
+    def test_p0_20_seed_design_binds_complete_family_and_exact_inference(self) -> None:
+        variants = (
+            "p020_omitted_comparison",
+            "p020_reused_comparison",
+            "p020_omitted_hypothesis",
+            "p020_hypothesis_order",
+            "p020_family_path",
+            "p020_family_hash",
+            "p020_pilot_path",
+            "p020_pilot_hash",
+            "p020_pilot_size",
+            "p020_comparison_repetitions",
+            "p020_comparison_seed",
+            "p020_method_identity",
+            "p020_baseline_identity",
+            "p020_metric_identity",
+            "p020_procedure",
+            "p020_unconditional_surrogate",
+            "p020_floor",
+            "p020_sign_tail",
+            "p020_seed",
+            "p020_repetition",
+            "p020_memo_key",
+            "p020_simulation_scope",
+            "p020_effect",
+            "p020_critical",
+            "p020_power",
+            "p020_fwer",
+        )
+        for variant in variants:
+            with self.subTest(variant=variant), TemporaryDirectory() as directory:
+                fixture = ClaimFixture(Path(directory), tuple(range(9)), "test")
+                family, freeze_commit, _, _ = fixture.freeze_confirmatory_family(
+                    seed_design_variant=variant
+                )
+                claim_output = fixture.root / "failed.json"
+                failed = run_script(
+                    "52_compare_drive_cl_crossed_pdm.py",
+                    "--comparison-spec",
+                    fixture.spec_path,
+                    "--family-repository",
+                    fixture.root,
+                    "--family-spec",
+                    family,
+                    "--family-freeze-commit",
+                    freeze_commit,
+                    "--output",
+                    claim_output,
+                )
+                audit_rejected_cli("P0-20", variant, failed, claim_output)
+                self.assertNotEqual(failed.returncode, 0)
+                self.assertFalse(claim_output.exists())
+
+        with self.subTest(variant="receipt-bootstrap-repetitions"), TemporaryDirectory() as directory:
+            chain = self._confirmatory_chain(Path(directory))
+            receipt = json.loads(chain["claim"].read_text())
+            receipt["bootstrap_repetitions"] = 10000
+            write_json(chain["claim"], receipt)
+            mutant_inventory = chain["fixture"].root / "mutant_evidence_inventory.json"
+            inventory = run_script(
+                "56_build_drive_cl_evidence_inventory.py",
+                "--family-spec",
+                chain["family"],
+                "--repository",
+                chain["fixture"].root,
+                "--family-freeze-commit",
+                chain["freeze_commit"],
+                "--output",
+                mutant_inventory,
+            )
+            self.assertEqual(inventory.returncode, 0, inventory.stderr)
+            evidence_commit = git_commit(
+                chain["fixture"].root,
+                "freeze mutation-specific evidence inventory",
+                mutant_inventory,
+            )
+            claim_output = chain["fixture"].root / "failed_holm.json"
+            failed = run_script(
+                "50_apply_drive_cl_global_holm.py",
+                "--family-spec",
+                chain["family"],
+                "--repository",
+                chain["fixture"].root,
+                "--freeze-commit",
+                chain["freeze_commit"],
+                "--evidence-inventory",
+                mutant_inventory,
+                "--evidence-freeze-commit",
+                evidence_commit,
+                "--output",
+                claim_output,
+            )
+            audit_rejected_cli(
+                "P0-20", "receipt-bootstrap-repetitions", failed, claim_output
+            )
+            self.assertNotEqual(failed.returncode, 0)
+            self.assertFalse(claim_output.exists())
+
+        with self.subTest(variant="synthetic-scope-is-non-transferable"), TemporaryDirectory() as directory:
+            fixture = ClaimFixture(Path(directory), tuple(range(9)), "test")
+            family, _, _, _ = fixture.freeze_confirmatory_family()
+            real_family = json.loads(family.read_text())
+            real_family["dataset_identity"] = {
+                "dataset": "navsim",
+                "dataset_version": "navtrain",
+                "dataset_root_metadata_sha256": "e" * 64,
+            }
+            write_json(family, real_family)
+            output = fixture.root / "synthetic_real_family.json"
+            failed = run_script(
+                "55_design_drive_cl_confirmatory_seeds.py",
+                "--family-spec",
+                family,
+                "--pilot-matrix",
+                fixture.root / "pilot_matrix.json",
+                "--target-power",
+                0.8,
+                "--simulation-repetitions",
+                4,
+                "--simulation-seed",
+                0,
+                "--synthetic-cpu-fixture",
+                "--repository",
+                fixture.root,
+                "--output",
+                output,
+            )
+            audit_rejected_cli(
+                "P0-20", "synthetic-real-family", failed, output
+            )
+            self.assertNotEqual(failed.returncode, 0)
+            self.assertFalse(output.exists())
+
+        with self.subTest(variant="forged-persistent-cache"), TemporaryDirectory() as directory:
+            base = Path(directory)
+            fixture = ClaimFixture(base / "repository", tuple(range(9)), "test")
+            family, freeze_commit, _, _ = fixture.freeze_confirmatory_family(
+                seed_design_variant="handwritten_output"
+            )
+            forged_root = base / "attacker-cache"
+            forged_root.mkdir()
+            forged_design = json.loads((fixture.root / "seed_design.json").read_text())
+            forged_path = forged_root / f"{forged_design['replay_memo_key']}.json"
+            write_json(
+                forged_path,
+                {
+                    "schema": "selector_bench.seed_design_replay_cache.v1",
+                    "cache_key": forged_design["replay_memo_key"],
+                    "payload_sha256": hashlib.sha256(
+                        json.dumps(
+                            forged_design,
+                            sort_keys=True,
+                            separators=(",", ":"),
+                            allow_nan=False,
+                        ).encode()
+                    ).hexdigest(),
+                    "payload": forged_design,
+                },
+            )
+            prior = os.environ.get("SELECTOR_BENCH_SEED_DESIGN_CACHE")
+            os.environ["SELECTOR_BENCH_SEED_DESIGN_CACHE"] = str(forged_root)
+            try:
+                claim_output = fixture.root / "forged_cache_failed.json"
+                failed = run_script(
+                    "52_compare_drive_cl_crossed_pdm.py",
+                    "--comparison-spec",
+                    fixture.spec_path,
+                    "--family-repository",
+                    fixture.root,
+                    "--family-spec",
+                    family,
+                    "--family-freeze-commit",
+                    freeze_commit,
+                    "--output",
+                    claim_output,
+                )
+            finally:
+                if prior is None:
+                    os.environ.pop("SELECTOR_BENCH_SEED_DESIGN_CACHE", None)
+                else:
+                    os.environ["SELECTOR_BENCH_SEED_DESIGN_CACHE"] = prior
+            audit_rejected_cli(
+                "P0-20", "forged-persistent-cache", failed, claim_output
+            )
+            self.assertNotEqual(failed.returncode, 0)
+            self.assertFalse(claim_output.exists())
+
+    def test_p0_21_resource_receipts_reject_coercion_before_claim(self) -> None:
+        mutations: list[tuple[str, str, object]] = [
+            ("wall-bool", "wall_seconds", True),
+            ("wall-string", "wall_seconds", "1.0"),
+            ("wall-zero", "wall_seconds", 0.0),
+            ("wall-negative", "wall_seconds", -1.0),
+            ("wall-nan", "wall_seconds", float("nan")),
+            ("wall-posinf", "wall_seconds", float("inf")),
+            ("wall-neginf", "wall_seconds", float("-inf")),
+            ("peak-bool", "peak_vram_bytes", True),
+            ("peak-fraction", "peak_vram_bytes", 1.5),
+            ("peak-string", "peak_vram_bytes", "1"),
+            ("peak-negative", "peak_vram_bytes", -1),
+            ("persistent-bool", "persistent_bytes", True),
+            ("persistent-fraction", "persistent_bytes", 1.5),
+            ("persistent-string", "persistent_bytes", "1"),
+            ("persistent-zero", "persistent_bytes", 0),
+            ("persistent-negative", "persistent_bytes", -1),
+            ("transient-bool", "transient_bytes", True),
+            ("transient-fraction", "transient_bytes", 1.5),
+            ("transient-string", "transient_bytes", "1"),
+            ("transient-zero", "transient_bytes", 0),
+            ("transient-negative", "transient_bytes", -1),
+            ("host-bool", "host", True),
+            ("host-empty", "host", ""),
+            ("host-blank", "host", " "),
+            ("device-bool", "execution_device", True),
+            ("device-empty", "execution_device", ""),
+            ("device-unknown", "execution_device", "cpu"),
+            ("cpu-gpu-bool", "gpu_uuid", True),
+            ("cpu-gpu-empty", "gpu_uuid", ""),
+            ("cpu-gpu-string", "gpu_uuid", "GPU-forged"),
+        ]
+        for variant, field, value in mutations:
+            with self.subTest(variant=variant), TemporaryDirectory() as directory:
+                fixture = ClaimFixture(Path(directory), (0, 1), "audit")
+                paths = fixture.run_paths[("drive_opd_fixed", 0)]
+                result = json.loads(paths["result"].read_text())
+                result["resources"][field] = value
+                write_json(paths["result"], result, allow_nan=True)
+                claim_output = fixture.root / "failed.json"
+                failed = run_script(
+                    "52_compare_drive_cl_crossed_pdm.py",
+                    "--comparison-spec",
+                    fixture.spec_path,
+                    "--output",
+                    claim_output,
+                )
+                audit_rejected_cli("P0-21", variant, failed, claim_output)
+                self.assertNotEqual(failed.returncode, 0)
+                self.assertFalse(claim_output.exists())
+
+        with self.assertRaises(StatisticsError):
+            validate_training_resources(
+                {
+                    "wall_seconds": 1.0,
+                    "peak_vram_bytes": 0,
+                    "persistent_bytes": 1,
+                    "transient_bytes": 1,
+                    "host": "cpu-fixture",
+                    "execution_device": "cuda",
+                    "gpu_uuid": None,
+                }
+            )
+
+    def _assert_nonfinite_joint_pilot_inputs(self) -> None:
         for value_name, value in (
             ("nan", float("nan")),
             ("posinf", float("inf")),
             ("neginf", float("-inf")),
             ("bool", True),
         ):
-            with self.subTest(variant=f"pilot-{value_name}"), TemporaryDirectory() as directory:
+            with self.subTest(variant=f"pilot-{value_name}"), TemporaryDirectory(
+                dir=REPOSITORY_ROOT
+            ) as directory:
                 root = Path(directory)
+                comparisons = [
+                    {
+                        "comparison_id": comparison_id,
+                        "baseline_method": "sequential",
+                        "baseline_training_arm": "sequential",
+                        "candidate_method": candidate_method,
+                        "candidate_training_arm": candidate_arm,
+                    }
+                    for comparison_id, candidate_method, candidate_arm in (
+                        ("opd", "drive_opd_fixed", "fixed_opd"),
+                        ("lwf", "lwf", "lwf"),
+                    )
+                ]
+                hypotheses = [
+                    {
+                        "id": f"{comparison['comparison_id']}::{metric}",
+                        "comparison_id": comparison["comparison_id"],
+                        "metric": metric,
+                        "baseline_method": comparison["baseline_method"],
+                        "baseline_training_arm": comparison["baseline_training_arm"],
+                        "candidate_method": comparison["candidate_method"],
+                        "candidate_training_arm": comparison["candidate_training_arm"],
+                    }
+                    for comparison in comparisons
+                    for metric in PDM_DEFAULT_METRICS
+                ]
+                family = root / "family.json"
+                write_json(
+                    family,
+                    {
+                        "family_id": "finite-pilot-fixture",
+                        "alpha": 0.05,
+                        "expected_seed_ids": list(range(9)),
+                        "expected_comparisons": comparisons,
+                        "hypotheses": hypotheses,
+                    },
+                )
                 pilot = root / "pilot.json"
                 matrix = [[0.00, 0.01], [0.02, 0.03]]
                 payload = {
-                    "schema": "selector_bench.drive_cl_audit_pilot_matrix.v1",
+                    "schema": "selector_bench.drive_cl_joint_audit_pilot_matrix.v2",
                     "split": "audit",
-                    "metrics": list(PDM_DEFAULT_METRICS),
+                    "family_id": "finite-pilot-fixture",
+                    "family_spec_sha256": sha256(family),
+                    "ordered_hypothesis_ids": [item["id"] for item in hypotheses],
                     "seed_ids": [0, 1],
                     "session_ids": ["session-a", "session-b"],
                     "source_receipts": ["audit.json"],
                     "source_receipt_sha256": ["0" * 64],
-                    "candidate_minus_baseline": {
-                        metric: [list(row) for row in matrix]
-                        for metric in PDM_DEFAULT_METRICS
-                    },
+                    "hypotheses": [
+                        {
+                            **hypothesis,
+                            "minimum_relevant_effect": 0.1,
+                            "candidate_minus_baseline": [list(row) for row in matrix],
+                        }
+                        for hypothesis in hypotheses
+                    ],
                 }
-                payload["candidate_minus_baseline"]["score"][0][0] = value
+                payload["hypotheses"][0]["candidate_minus_baseline"][0][0] = value
                 write_json(pilot, payload, allow_nan=True)
                 claim_output = root / "seed_design.json"
                 failed = run_script(
                     "55_design_drive_cl_confirmatory_seeds.py",
+                    "--family-spec",
+                    family,
                     "--pilot-matrix",
                     pilot,
-                    "--candidate-seed-ids",
-                    "0,1,2,3,4,5,6,7,8",
-                    "--minimum-relevant-effect",
-                    0.1,
                     "--target-power",
                     0.8,
-                    "--family-alpha",
-                    0.05,
                     "--simulation-repetitions",
                     10000,
                     "--simulation-seed",

@@ -187,6 +187,89 @@ class DriveOPDLossTest(unittest.TestCase):
         loss.backward()
         self.assertIsNotNone(scale.grad)
 
+    def test_aler_audit_is_exactly_optimizer_state_neutral(self) -> None:
+        def build(scale: torch.nn.Parameter) -> DiffusionDriveOPDAdapter:
+            adapter = DiffusionDriveOPDAdapter.__new__(DiffusionDriveOPDAdapter)
+            adapter.student = torch.nn.Module()
+            adapter.teacher = torch.nn.Module()
+            adapter._active_query_audit = None
+
+            def query_impl(planner, context, state, time):
+                del context, time
+                if planner is adapter.student:
+                    logits = torch.stack(
+                        [scale.expand(state.shape[0]), -scale.expand(state.shape[0])],
+                        dim=-1,
+                    )
+                    return state * scale, logits
+                return state, torch.tensor([[1.0, -1.0]]).repeat(
+                    state.shape[0], 1
+                )
+
+            adapter._query_impl = query_impl
+            return adapter
+
+        def queries(adapter):
+            student = lambda value, time: adapter.query(
+                adapter.student, None, value, time
+            )
+            teacher = lambda value, time: adapter.query(
+                adapter.teacher, None, value, time
+            )
+            return student, teacher
+
+        plain_scale = torch.nn.Parameter(torch.tensor(0.8))
+        audited_scale = torch.nn.Parameter(torch.tensor(0.8))
+        plain_adapter = build(plain_scale)
+        audited_adapter = build(audited_scale)
+        plain_optimizer = torch.optim.AdamW(
+            [plain_scale], lr=1e-3, betas=(0.9, 0.999), weight_decay=0.01
+        )
+        audited_optimizer = torch.optim.AdamW(
+            [audited_scale], lr=1e-3, betas=(0.9, 0.999), weight_decay=0.01
+        )
+        state = torch.tensor([[1.0, 0.5, -0.5], [0.25, 1.5, -1.0]])
+        plain_student, plain_teacher = queries(plain_adapter)
+        audited_student, audited_teacher = queries(audited_adapter)
+        plain_searched, plain_search_metrics = aler_adversarial_latent_search(
+            state, plain_student, plain_teacher, 10, search_steps=2
+        )
+        plain_loss, plain_repair_metrics = aler_repair_loss(
+            plain_searched, plain_student, plain_teacher, 10
+        )
+        with audited_adapter.capture_query_audit() as audit:
+            audited_searched, audited_search_metrics = aler_adversarial_latent_search(
+                state, audited_student, audited_teacher, 10, search_steps=2
+            )
+            audited_loss, audited_repair_metrics = aler_repair_loss(
+                audited_searched, audited_student, audited_teacher, 10
+            )
+        declared_queries = int(
+            audited_search_metrics["aler_teacher_queries"]
+            + audited_repair_metrics["aler_teacher_queries"]
+        )
+        audit.assert_budget(student=declared_queries, teacher=declared_queries)
+        torch.testing.assert_close(plain_searched, audited_searched)
+        torch.testing.assert_close(plain_loss, audited_loss)
+        self.assertEqual(plain_search_metrics, audited_search_metrics)
+        self.assertEqual(plain_repair_metrics, audited_repair_metrics)
+
+        plain_loss.backward()
+        audited_loss.backward()
+        torch.testing.assert_close(plain_scale.grad, audited_scale.grad)
+        plain_optimizer.step()
+        audited_optimizer.step()
+        torch.testing.assert_close(plain_scale, audited_scale)
+        plain_state = plain_optimizer.state[plain_scale]
+        audited_state = audited_optimizer.state[audited_scale]
+        self.assertEqual(set(plain_state), set(audited_state))
+        for key in plain_state:
+            if isinstance(plain_state[key], torch.Tensor):
+                torch.testing.assert_close(plain_state[key], audited_state[key])
+            else:
+                self.assertEqual(plain_state[key], audited_state[key])
+        self.assertTrue(all("timesteps" not in record for record in audit.records))
+
     def test_full_distillation_loss_and_gradients_are_identical_with_query_audit(self) -> None:
         def build(scale: torch.nn.Parameter):
             scheduler = _FrozenStateScheduler()

@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import numbers
 import re
 import subprocess
 from dataclasses import dataclass
@@ -14,8 +15,10 @@ from typing import Any, Mapping
 
 from selector_bench.continual.seed_design import (
     INVOCATION_SCHEMA,
+    PILOT_SCHEMA,
     SEED_DESIGN_SCHEMA,
     build_seed_design_payload,
+    family_hypothesis_contract,
     finite_integer,
     finite_real,
     require_finite_tree,
@@ -32,7 +35,7 @@ EVALUATOR_RUN_SCHEMA = "selector_bench.drive_cl_evaluator_run.v2"
 CELL_SUMMARY_SCHEMA = "selector_bench.drive_cl_pdm_cell_summary.v5"
 CROSSED_SPEC_SCHEMA = "selector_bench.drive_cl_crossed_comparison_spec.v2"
 CROSSED_RECEIPT_SCHEMA = "selector_bench.drive_cl_crossed_pdm_comparison.v4"
-GLOBAL_FAMILY_SCHEMA = "selector_bench.drive_cl_global_holm_family.v5"
+GLOBAL_FAMILY_SCHEMA = "selector_bench.drive_cl_global_holm_family.v6"
 GLOBAL_RESULT_SCHEMA = "selector_bench.drive_cl_global_holm_result.v4"
 SEALED_ACCESS_SCHEMA = "selector_bench.drive_cl_sealed_test_access.v2"
 SEALED_LEDGER_SCHEMA = "selector_bench.drive_cl_sealed_test_access_ledger.v1"
@@ -418,16 +421,31 @@ def validate_method_arm(
 def validate_seed_design(
     family: dict[str, Any],
     *,
-    family_root: Path,
+    family_path: Path,
     repository: Path,
     freeze_commit: str,
     expected_seeds: tuple[int, ...],
 ) -> dict[str, Any]:
-    """Replay the frozen audit-only seed power/calibration computation."""
+    """Replay the exact complete-family audit-only seed calibration."""
 
-    design_path = resolve(
-        family_root, family.get("seed_design_receipt"), "seed-design receipt"
-    )
+    family_path = family_path.resolve()
+    family_root = family_path.parent
+    family_repository_path = family_path.relative_to(repository.resolve()).as_posix()
+    family_digest = sha256(family_path)
+    contract = family_hypothesis_contract(family, repository=repository)
+    for comparison in contract["ordered_comparison_contracts"]:
+        comparison_spec_path = resolve(
+            repository,
+            comparison["comparison_spec_repository_path"],
+            "seed-design comparison specification",
+        )
+        verify_frozen_file(repository, comparison_spec_path, freeze_commit)
+        require_equal(
+            sha256(comparison_spec_path),
+            comparison["comparison_spec_sha256"],
+            "seed-design frozen comparison spec SHA256",
+        )
+    design_path = resolve(family_root, family.get("seed_design_receipt"), "seed-design receipt")
     verify_frozen_file(repository, design_path, freeze_commit)
     design = load_json(design_path, "seed-design receipt")
     require_finite_tree(design, "seed-design receipt")
@@ -438,13 +456,23 @@ def validate_seed_design(
         tuple(design.get("designed_seed_ids", [])), expected_seeds, "designed seed IDs"
     )
     require_equal(design.get("design_split"), "audit", "seed-design split")
-    require_equal(
-        family.get("seed_design_receipt_sha256"),
-        sha256(design_path),
-        "family seed-design receipt SHA256",
-    )
+    family_bindings = {
+        "family_spec_repository_path": family_repository_path,
+        "family_spec_sha256": family_digest,
+        "family_id": contract["family_id"],
+        "dataset_identity": contract["dataset_identity"],
+        "family_alpha": contract["family_alpha"],
+        "ordered_comparison_contracts": contract["ordered_comparison_contracts"],
+        "ordered_hypothesis_contracts": contract["ordered_hypothesis_contracts"],
+        "ordered_hypothesis_ids": contract["ordered_hypothesis_ids"],
+        "total_hypothesis_count": contract["total_hypothesis_count"],
+    }
+    for field, expected in family_bindings.items():
+        require_equal(design.get(field), expected, f"seed-design {field}")
     family_alpha = finite_real(family.get("alpha"), "family alpha")
-    pilot_path = resolve(family_root, design.get("pilot_matrix"), "seed-design pilot matrix")
+    pilot_path = resolve(
+        design_path.parent, design.get("pilot_matrix"), "seed-design pilot matrix"
+    )
     verify_frozen_file(repository, pilot_path, freeze_commit)
     require_equal(
         design.get("pilot_matrix_sha256"), sha256(pilot_path), "seed-design pilot matrix SHA256"
@@ -453,19 +481,35 @@ def validate_seed_design(
     require_finite_tree(pilot, "seed-design pilot matrix")
     require_equal(
         pilot.get("schema"),
-        "selector_bench.drive_cl_audit_pilot_matrix.v1",
+        PILOT_SCHEMA,
         "seed-design pilot schema",
     )
     require_equal(pilot.get("split"), "audit", "seed-design pilot split")
-    require_equal(tuple(pilot.get("metrics", [])), PDM_DEFAULT_METRICS, "seed-design pilot metrics")
+    require_equal(pilot.get("family_id"), contract["family_id"], "seed-design pilot family ID")
+    require_equal(
+        pilot.get("family_spec_sha256"), family_digest, "seed-design pilot family SHA256"
+    )
+    require_equal(
+        pilot.get("ordered_hypothesis_ids"),
+        contract["ordered_hypothesis_ids"],
+        "seed-design pilot hypothesis order",
+    )
     invocation = design.get("normalized_invocation")
     invocation_keys = {
         "schema",
+        "family_spec_repository_path",
+        "family_spec_sha256",
         "pilot_matrix_sha256",
-        "candidate_seed_ids",
-        "minimum_relevant_effect",
-        "target_power",
+        "family_id",
+        "dataset_identity",
         "family_alpha",
+        "expected_seed_ids",
+        "ordered_comparison_contracts",
+        "ordered_hypothesis_contracts",
+        "ordered_hypothesis_ids",
+        "total_hypothesis_count",
+        "target_power",
+        "simulation_scope",
         "simulation_repetitions",
         "simulation_seed",
     }
@@ -475,24 +519,22 @@ def validate_seed_design(
     require_equal(
         invocation.get("pilot_matrix_sha256"), sha256(pilot_path), "seed invocation pilot SHA256"
     )
-    require_equal(
-        tuple(invocation.get("candidate_seed_ids", [])),
-        tuple(design.get("candidate_seed_ids", [])),
-        "seed invocation candidate IDs",
-    )
-    candidate_seed_ids = tuple(
-        finite_integer(value, "seed invocation candidate ID")
-        for value in invocation.get("candidate_seed_ids", [])
-    )
-    minimum_relevant_effect = finite_real(
-        invocation.get("minimum_relevant_effect"),
-        "seed invocation minimum relevant effect",
-    )
+    invocation_bindings = {
+        "family_spec_repository_path": family_repository_path,
+        "family_spec_sha256": family_digest,
+        "family_id": contract["family_id"],
+        "dataset_identity": contract["dataset_identity"],
+        "family_alpha": family_alpha,
+        "expected_seed_ids": list(expected_seeds),
+        "ordered_comparison_contracts": contract["ordered_comparison_contracts"],
+        "ordered_hypothesis_contracts": contract["ordered_hypothesis_contracts"],
+        "ordered_hypothesis_ids": contract["ordered_hypothesis_ids"],
+        "total_hypothesis_count": contract["total_hypothesis_count"],
+    }
+    for field, expected in invocation_bindings.items():
+        require_equal(invocation.get(field), expected, f"seed invocation {field}")
     target_power_input = finite_real(
         invocation.get("target_power"), "seed invocation target power"
-    )
-    invocation_alpha = finite_real(
-        invocation.get("family_alpha"), "seed invocation family alpha"
     )
     simulation_repetitions = finite_integer(
         invocation.get("simulation_repetitions"),
@@ -501,7 +543,9 @@ def validate_seed_design(
     simulation_seed = finite_integer(
         invocation.get("simulation_seed"), "seed invocation simulation seed"
     )
-    require_equal(invocation.get("family_alpha"), family_alpha, "seed invocation family alpha")
+    simulation_scope = invocation.get("simulation_scope")
+    if simulation_scope not in {"confirmatory", "synthetic_cpu_fixture"}:
+        raise StatisticsError("seed invocation simulation scope is invalid")
     module_path = resolve(
         repository,
         design.get("generator_module_repository_path"),
@@ -512,8 +556,13 @@ def validate_seed_design(
         design.get("generator_entrypoint_repository_path"),
         "seed-design generator entrypoint",
     )
-    verify_frozen_file(repository, module_path, freeze_commit)
-    verify_frozen_file(repository, entrypoint_path, freeze_commit)
+    inference_path = resolve(
+        repository,
+        design.get("inference_module_repository_path"),
+        "seed-design inference module",
+    )
+    for path in (module_path, entrypoint_path, inference_path):
+        verify_frozen_file(repository, path, freeze_commit)
     require_equal(
         design.get("generator_module_sha256"), sha256(module_path), "generator module SHA256"
     )
@@ -522,20 +571,32 @@ def validate_seed_design(
         sha256(entrypoint_path),
         "generator entrypoint SHA256",
     )
+    require_equal(
+        design.get("inference_module_sha256"),
+        sha256(inference_path),
+        "inference module SHA256",
+    )
     executing_module = Path(__file__).with_name("seed_design.py")
     executing_entrypoint = Path(__file__).resolve().parents[2] / "scripts" / "55_design_drive_cl_confirmatory_seeds.py"
+    executing_inference = Path(__file__).with_name("statistics.py")
     require_equal(sha256(module_path), sha256(executing_module), "executing seed module identity")
     require_equal(
         sha256(entrypoint_path), sha256(executing_entrypoint), "executing seed CLI identity"
     )
+    require_equal(
+        sha256(inference_path),
+        sha256(executing_inference),
+        "executing familywise inference identity",
+    )
     try:
         replay = build_seed_design_payload(
+            family_path,
             pilot_path,
+            repository=repository,
+            family_spec_repository_path=family_repository_path,
             pilot_reference=str(design.get("pilot_matrix")),
-            candidate_seed_ids=candidate_seed_ids,
-            minimum_relevant_effect=minimum_relevant_effect,
+            simulation_scope=simulation_scope,
             target_power=target_power_input,
-            family_alpha=invocation_alpha,
             simulation_repetitions=simulation_repetitions,
             simulation_seed=simulation_seed,
             generator_module_repository_path=str(
@@ -546,6 +607,10 @@ def validate_seed_design(
                 design.get("generator_entrypoint_repository_path")
             ),
             generator_entrypoint_sha256=sha256(entrypoint_path),
+            inference_module_repository_path=str(
+                design.get("inference_module_repository_path")
+            ),
+            inference_module_sha256=sha256(inference_path),
         )
     except (TypeError, ValueError) as exc:
         raise StatisticsError("seed-design invocation values are malformed") from exc
@@ -559,29 +624,27 @@ def validate_seed_design(
     require_finite_tree(replay, "seed-design replay")
     target_power = finite_real(replay["target_power"], "replayed target power")
     achieved_power = finite_real(replay["estimated_power"], "replayed estimated power")
-    minimum_effect = finite_real(
-        replay["minimum_relevant_effect"], "replayed minimum effect"
-    )
     repetitions = finite_integer(
         replay["power_simulation_repetitions"], "replayed simulation repetitions"
     )
-    tail_resolution_minimum = finite_integer(
-        replay["minimum_seed_count_for_two_sided_family_tail_resolution"],
-        "replayed minimum seed count",
-    )
-    if target_power < 0.8 or achieved_power < target_power or minimum_effect <= 0.0:
-        raise StatisticsError("seed design does not meet its preregistered power/effect target")
-    selected = next(
-        (
-            row
-            for row in replay["candidate_seed_audits"]
-            if finite_integer(row["seed_count"], "replayed audit seed count")
-            == len(expected_seeds)
-        ),
-        None,
-    )
+    if target_power < 0.8 or achieved_power < target_power:
+        raise StatisticsError("seed design does not meet its preregistered power target")
+    selected = replay.get("family_seed_audit")
     if not isinstance(selected, dict):
-        raise StatisticsError("seed design lacks the selected finite audit row")
+        raise StatisticsError("seed design lacks the complete family audit")
+    require_equal(selected.get("seed_count"), len(expected_seeds), "family audit seed count")
+    require_equal(
+        selected.get("total_hypothesis_count"),
+        contract["total_hypothesis_count"],
+        "family audit hypothesis count",
+    )
+    require_equal(
+        selected.get("ordered_hypothesis_ids"),
+        contract["ordered_hypothesis_ids"],
+        "family audit hypothesis order",
+    )
+    if selected.get("bootstrap_resolution_pass") is not True:
+        raise StatisticsError("bootstrap p-value floor cannot reach the first Holm threshold")
     sources = design.get("audit_source_receipt_sha256")
     if not isinstance(sources, list) or not sources or any(
         not isinstance(value, str) or len(value) != 64 for value in sources
@@ -602,15 +665,26 @@ def validate_seed_design(
         "seed_design_receipt_sha256": sha256(design_path),
         "target_power": target_power,
         "estimated_power": achieved_power,
-        "minimum_relevant_effect": minimum_effect,
+        "minimum_relevant_effects": replay["minimum_relevant_effects"],
+        "total_hypothesis_count": contract["total_hypothesis_count"],
+        "comparison_inference_contracts": contract[
+            "ordered_comparison_contracts"
+        ],
         "power_simulation_repetitions": repetitions,
+        "simulation_scope": replay["simulation_scope"],
+        "paper_claim_eligible": replay["simulation_scope"] == "confirmatory",
         "heldout_null_fwer": finite_real(
             selected["heldout_null_fwer"], "selected heldout null FWER"
         ),
         "null_fwer_tolerance": finite_real(
             selected["null_fwer_tolerance"], "selected null FWER tolerance"
         ),
-        "minimum_seed_count_for_two_sided_family_tail_resolution": tail_resolution_minimum,
+        "bootstrap_pvalue_floor": finite_real(
+            selected["bootstrap_pvalue_floor"], "bootstrap p-value floor"
+        ),
+        "first_holm_threshold": finite_real(
+            selected["first_holm_threshold"], "first Holm threshold"
+        ),
     }
     require_finite_tree(result, "validated seed-design result")
     return result
@@ -933,6 +1007,7 @@ def comparison_inventory_record(
                 "run_id": run.get("run_id"),
                 "optimizer_state_sha256": run.get("optimizer_state_sha256"),
             }
+            reported_resources = validate_training_resources(run.get("resources"))
             for prefix in (
                 "run_registration",
                 "training_protocol",
@@ -954,7 +1029,18 @@ def comparison_inventory_record(
                     registered_path = str(path)
                 record[f"{prefix}_path"] = registered_path
                 record[f"{prefix}_sha256"] = digest
+                if prefix == "training_result":
+                    training_result = load_json(path, "inventory training result")
+                    actual_resources = validate_training_resources(
+                        training_result.get("resources")
+                    )
+                    require_equal(
+                        reported_resources,
+                        actual_resources,
+                        "inventory/training-result resources",
+                    )
             record["run_registration_commit"] = run.get("run_registration_commit")
+            record["resources"] = reported_resources
             side_record["runs"].append(record)
         result[side] = side_record
     return result
@@ -994,6 +1080,76 @@ def require_equal(actual: object, expected: object, label: str) -> None:
         raise StatisticsError(
             f"{label} mismatch: expected={expected!r} actual={actual!r}"
         )
+
+
+def validate_training_resources(resources: object) -> dict[str, Any]:
+    """Validate one measured resource receipt without Python numeric coercion."""
+
+    expected = {
+        "wall_seconds",
+        "peak_vram_bytes",
+        "persistent_bytes",
+        "transient_bytes",
+        "host",
+        "execution_device",
+        "gpu_uuid",
+    }
+    if not isinstance(resources, dict) or set(resources) != expected:
+        raise StatisticsError("training resource receipt is malformed")
+
+    wall_seconds = resources.get("wall_seconds")
+    if (
+        isinstance(wall_seconds, bool)
+        or not isinstance(wall_seconds, numbers.Real)
+        or not math.isfinite(float(wall_seconds))
+        or float(wall_seconds) <= 0.0
+    ):
+        raise StatisticsError("resource wall_seconds must be a finite positive real")
+
+    validated_bytes: dict[str, int] = {}
+    for field, minimum in (
+        ("peak_vram_bytes", 0),
+        ("persistent_bytes", 1),
+        ("transient_bytes", 1),
+    ):
+        value = resources.get(field)
+        if isinstance(value, bool) or not isinstance(value, numbers.Integral):
+            raise StatisticsError(f"resource {field} must be an exact integer")
+        integer = int(value)
+        if integer < minimum:
+            relation = "nonnegative" if minimum == 0 else "positive"
+            raise StatisticsError(f"resource {field} must be {relation}")
+        validated_bytes[field] = integer
+
+    host = resources.get("host")
+    device = resources.get("execution_device")
+    gpu_uuid = resources.get("gpu_uuid")
+    if not isinstance(host, str) or not host.strip() or host != host.strip():
+        raise StatisticsError("resource host must be a non-empty canonical string")
+    if (
+        not isinstance(device, str)
+        or not device.strip()
+        or device != device.strip()
+        or device not in {"cpu_fixture", "cuda"}
+    ):
+        raise StatisticsError("resource execution_device is invalid")
+    if device == "cuda":
+        if (
+            not isinstance(gpu_uuid, str)
+            or not gpu_uuid.strip()
+            or gpu_uuid != gpu_uuid.strip()
+        ):
+            raise StatisticsError("CUDA training receipt lacks a canonical GPU UUID")
+    elif gpu_uuid is not None:
+        raise StatisticsError("CPU fixture resource receipt must set gpu_uuid to null")
+
+    return {
+        "wall_seconds": float(wall_seconds),
+        **validated_bytes,
+        "host": host,
+        "execution_device": device,
+        "gpu_uuid": gpu_uuid,
+    }
 
 
 def validate_sealed_test_access_binding(
@@ -1540,31 +1696,7 @@ def load_training_run_contract(
         endpoint_hash,
         "optimizer-state endpoint SHA256",
     )
-    resources = result.get("resources")
-    if not isinstance(resources, dict) or set(resources) != {
-        "wall_seconds",
-        "peak_vram_bytes",
-        "persistent_bytes",
-        "transient_bytes",
-        "host",
-        "execution_device",
-        "gpu_uuid",
-    }:
-        raise StatisticsError("training resource receipt is malformed")
-    if (
-        float(resources.get("wall_seconds", -1.0)) < 0.0
-        or int(resources.get("peak_vram_bytes", -1)) < 0
-        or int(resources.get("persistent_bytes", -1)) < 0
-        or int(resources.get("transient_bytes", 0)) <= 0
-        or not isinstance(resources.get("host"), str)
-        or resources.get("execution_device") not in {"cpu_fixture", "cuda"}
-    ):
-        raise StatisticsError(
-            "training resource receipt contains invalid values or lacks measured "
-            "nonzero transient storage"
-        )
-    if resources["execution_device"] == "cuda" and not resources.get("gpu_uuid"):
-        raise StatisticsError("CUDA training receipt lacks a GPU UUID")
+    validate_training_resources(result.get("resources"))
     return TrainingRunContract(
         protocol_path=protocol_path,
         protocol=protocol,

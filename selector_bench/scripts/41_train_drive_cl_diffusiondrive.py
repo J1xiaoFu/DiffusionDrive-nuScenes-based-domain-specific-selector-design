@@ -26,6 +26,8 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader, Dataset
 
+from selector_bench.continual.claim_protocol import validate_training_resources
+
 
 ARMS = (
     "sequential",
@@ -1248,6 +1250,17 @@ def main() -> None:
         for path in args.output_dir.rglob("*")
         if path.is_file() and not path.is_symlink()
     )
+    resources = validate_training_resources(
+        {
+            "wall_seconds": time.monotonic() - run_started,
+            "peak_vram_bytes": run_peak_vram_bytes,
+            "persistent_bytes": persistent_bytes,
+            "transient_bytes": storage_counter.peak_atomic_temporary_bytes,
+            "host": socket.gethostname(),
+            "execution_device": "cuda",
+            "gpu_uuid": current_gpu_uuid(),
+        }
+    )
     result = {
         "schema": TRAINING_RESULT_SCHEMA,
         "training_protocol": str(protocol_path.resolve()),
@@ -1284,15 +1297,7 @@ def main() -> None:
         "optimizer_state_receipt_sha256": sha256_file(optimizer_receipt_path),
         "optimizer_state_sha256": optimizer_digest,
         "parent_checkpoint_sha256": protocol["source_checkpoint_sha256"],
-        "resources": {
-            "wall_seconds": time.monotonic() - run_started,
-            "peak_vram_bytes": run_peak_vram_bytes,
-            "persistent_bytes": persistent_bytes,
-            "transient_bytes": storage_counter.peak_atomic_temporary_bytes,
-            "host": socket.gethostname(),
-            "execution_device": "cuda",
-            "gpu_uuid": current_gpu_uuid(),
-        },
+        "resources": resources,
     }
     atomic_json(result_path, result)
     print(

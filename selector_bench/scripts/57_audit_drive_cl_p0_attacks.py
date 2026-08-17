@@ -32,6 +32,8 @@ ATTACKS = (
     ("P0-17", "active-family-test-binding"),
     ("P0-18", "shared-cell-common-baseline"),
     ("P0-19", "finite-seed-design-numerics"),
+    ("P0-20", "complete-family-seed-design"),
+    ("P0-21", "strict-resource-schema"),
 )
 REJECTION_MARKER = "DRIVE_CL_P0_REJECTION="
 
@@ -57,6 +59,8 @@ def node_for(identifier: str) -> str:
         "P0-17": "test_p0_17_test_evidence_is_bound_to_active_family",
         "P0-18": "test_p0_18_shared_cell_requires_two_candidates_one_baseline",
         "P0-19": "test_p0_19_seed_design_rejects_nonfinite_and_boolean_numerics",
+        "P0-20": "test_p0_20_seed_design_binds_complete_family_and_exact_inference",
+        "P0-21": "test_p0_21_resource_receipts_reject_coercion_before_claim",
     }[identifier]
     return (
         "selector_bench/tests/test_drive_cl_claim_protocol.py::"

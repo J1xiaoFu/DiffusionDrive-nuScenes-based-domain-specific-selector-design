@@ -1,5 +1,5 @@
 {
-  "schema": "selector_bench.drive_cl_global_holm_family.v5",
+  "schema": "selector_bench.drive_cl_global_holm_family.v6",
   "family_id": "REPLACE_FROZEN_FAMILY_ID",
   "alpha": 0.05,
   "dataset_identity": {
@@ -24,7 +24,6 @@
   ],
   "expected_seed_ids": [0, 1, 2, 3, 4, 5, 6, 7, 8],
   "seed_design_receipt": "drive_cl_seed_design.example.json",
-  "seed_design_receipt_sha256": "REPLACE_SEED_DESIGN_SHA256",
   "sealed_test_access_ledger_repository_path": "drive_cl_sealed_test_access_ledger.example.json",
   "sealed_test_access_ledger_empty_sha256": "REPLACE_EMPTY_ACCESS_LEDGER_SHA256",
   "claim_receipt_root": "REPLACE_CLAIM_RECEIPT_ROOT",

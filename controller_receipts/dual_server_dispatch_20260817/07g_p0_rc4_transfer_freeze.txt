@@ -1,0 +1,39 @@
+DRIVE-OPD 07G RC4 SOURCE-ONLY TRANSFER FREEZE
+
+Recorded date: 2026-08-18
+Decision: SOURCE_BUNDLE_FROZEN_LOCALLY_FOR_PUBLICATION_AND_EXACT_RC4_REVIEW_ONLY
+
+Accepted candidate
+- branch: codex/iclr2027-drive-opd-07g-p0-rc4
+- commit: 653e797a2381cdf017466ef95aefcc41961f6715
+- parent: 79a2c529f35fb18049b4f30b46a2fe9926bf7e5a
+- tree: 53943615137849d3338cc037914b302d6e3db363
+- controller acceptance commit: 717948267564c4659683481dfc1b613d7dddbbac
+- source worktree clean before and after freeze: yes
+
+Deterministic source bundle
+- generator: selector_bench/scripts/51_freeze_drive_opd_06g_transfer.py
+- generator SHA256: 49ba27be6e553d1d8d4b670a2b16ec5ec0d356b1b8019462b71f86f1c43fa7f8
+- manifest: 07g_p0_rc4_transfer_manifest.json
+- manifest bytes: 7434
+- manifest SHA256: 7ee2fc57e8f3ea9420b0a18fafa7f8c7e9deae34fa45799c3367a1f3f97ad4e9
+- source file count: 41
+- canonical serialization: sort source_files by path; serialize each as path + NUL + sha256;
+  join rows with LF and append a trailing LF; SHA256 the UTF-8 bytes
+- declared logical bundle SHA256: e9aa55e56dabe55064f8a06523bf08aea468a7315020190926668b35cc18913b
+- independently recomputed logical bundle SHA256: e9aa55e56dabe55064f8a06523bf08aea468a7315020190926668b35cc18913b
+- missing source files: 0
+- mismatched source hashes: 0
+
+Boundary
+- This freeze authorizes publication of the exact 41 source blobs and controller receipt bytes, then
+  a fresh context-free exact-RC4 source/CPU review using gpt-5.6-sol with xhigh reasoning.
+- It does not dispatch 06G replay and does not authorize dataset/raw-data access, provenance or
+  adapter execution, cache work, real-model preflight, T0, model or checkpoint access, CUDA/GPU
+  work, training, evaluation, final-test unsealing or a performance claim.
+- Before any 06G source replay, the fresh exact-RC4 xhigh review must report zero open P0 and the
+  controller must separately freeze dataset-specific, session-atomic CL manifests for both NAVSIM
+  and nuScenes, followed by an explicit controller source-replay gate. Neither dataset manifest may
+  substitute for the other.
+- The manifest data gate remains BLOCKED_UNTIL_06G_REPLAY_RECEIPT_PASSES; no RC4 destination receipt
+  or execution authorization exists at this freeze.
