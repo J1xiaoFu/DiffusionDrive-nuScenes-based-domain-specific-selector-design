@@ -1,0 +1,92 @@
+{
+  "schema_version": 1,
+  "audit_id": "P001-DRIVE-OPD-NAVSIM-SCENE-LOG-SEMANTICS",
+  "recorded_date": "2026-08-18",
+  "status": "official_source_rules_out_scene_log_alias_exact_r1_mapping_required",
+  "scope": "read-only official NAVSIM source semantics; no dataset or execution access",
+  "official_source": {
+    "repository": "https://github.com/autonomousvision/navsim.git",
+    "ls_remote_command": "git ls-remote https://github.com/autonomousvision/navsim.git refs/heads/v1.1 refs/tags/v1.1",
+    "ls_remote_output_bytes": 113,
+    "ls_remote_output_sha256": "336ac1104342f5989e74211143a0e4d5108200cf9b369b00b81b9e5d4bbe4986",
+    "v1_1_branch_commit": "3e8291bfa89ff247231e0227778840cd0a036896",
+    "v1_1_branch_tree": "6f930e75636f0ea9ee911c4e1bdfd8d4381f06f9",
+    "v1_1_tag_commit": "0811876c274e8b058ab2be9b3dcd4d37bd23f177",
+    "v1_1_tag_tree": "db55d2e6f03fadbcae1c6c34207063eea00a4cae"
+  },
+  "byte_identity": {
+    "same_semantic_source_blobs_at_tag_and_branch": true,
+    "dataloader": {
+      "path": "navsim/common/dataloader.py",
+      "git_blob": "66332b6365f95899a5ec1d5cf741c21bf25f0769",
+      "sha256": "f9c1af29cd08d3da7b8b892db0e1d6676b0ab3aab0447c36a474b4a8c08e0696"
+    },
+    "dataclasses": {
+      "path": "navsim/common/dataclasses.py",
+      "git_blob": "7e8321a316912a320ad2db761db1848c1b0a5552",
+      "sha256": "17d96f48101982d4a0842bb4cc1de441672207ad9fed3e460bbbdcf74440a32b"
+    }
+  },
+  "source_findings": [
+    {
+      "finding": "filter_scenes reads each log pickle, splits its frame list into scene windows, selects the center-frame token and keys each filtered scene by that token",
+      "dataloader_lines": "40-57"
+    },
+    {
+      "finding": "get_tokens_list_per_log groups filtered-scene tokens under the source-row log_name",
+      "dataloader_lines": "141-154"
+    },
+    {
+      "finding": "SceneMetadata declares log_name, scene_token and initial_token as separate fields and loads them from separate source-row keys",
+      "dataclasses_lines": "251-258, 421-428"
+    }
+  ],
+  "controller_interpretation": {
+    "scene_token_equals_segmented_log_name": "rejected_as_unsupported",
+    "reason": "the official source represents scene_token and log_name separately and derives filtered-scene identity from a frame token; it provides no identity rule equating scene_token with log_name",
+    "current_requirements_scene_counts": {
+      "development": 978,
+      "full": 1192,
+      "sealed_evaluation": 214
+    },
+    "current_requirements_log_counts": {
+      "development": 978,
+      "full": 1192,
+      "sealed_evaluation": 214
+    },
+    "current_equal_counts_status": "unproven_and_not_eligible_for_manifest_acceptance",
+    "required_future_evidence": "a content-addressed exact-R1 mapping row for every accepted token containing token, segmented_log_name and source scene_token, with unique-set counts and hashes recomputed per official partition and complete timestamp-vehicle session",
+    "requirements_update_rule": "do not revise or populate the frozen scene-token expectations until that exact mapping is controller-accepted and independently replayed"
+  },
+  "limitations": [
+    "the official source check does not identify which exact NAVSIM checkout produced the accepted R1 ledger",
+    "the source check does not read the R1 metadata rows and therefore does not establish R1 scene-token cardinality or membership",
+    "the accepted R1 162-row session ledger contains log IDs and frame tokens but no independent scene_token field",
+    "no Failure-Patch selection evidence is supplied"
+  ],
+  "decision": {
+    "navsim_scene_identity_authority": "stopped_pending_exact_r1_mapping",
+    "navsim_manifest_generation": "stopped",
+    "nuscenes_manifest_generation": "stopped",
+    "rc4_blind_review": "pending_valid_exact_rc4_xhigh_zero_p0_verdict",
+    "six_g_source_replay": "stopped",
+    "cache": "stopped",
+    "model": "stopped",
+    "t0": "stopped",
+    "cuda_gpu": "stopped",
+    "training": "stopped",
+    "evaluation": "stopped",
+    "final_test": "stopped",
+    "performance_claim": "stopped"
+  },
+  "artifact_boundary": {
+    "official_source_fetch_to_temporary_directory_only": true,
+    "navsim_or_nuscenes_dataset_accessed": false,
+    "manifest_or_membership_generated": false,
+    "cache_read_or_built": false,
+    "model_or_checkpoint_loaded": false,
+    "cuda_or_gpu_used": false,
+    "training_or_evaluation_performed": false,
+    "final_test_accessed": false
+  }
+}

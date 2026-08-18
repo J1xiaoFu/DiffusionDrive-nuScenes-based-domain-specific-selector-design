@@ -1,0 +1,185 @@
+{
+  "schema": "drive_opd.controller.rc3_blind_review_intake.v1",
+  "recorded_date": "2026-08-18",
+  "review": {
+    "review_id": "P001-DRIVE-OPD-P0-RC3-EXACT",
+    "authoritative_task": "01a010f6-4606-7a51-a482-be5a01fb6d1e",
+    "invalid_medium_effort_task": "01a010ef-c27d-76d0-a3da-fb367e6ddf99",
+    "invalid_task_verdict_used": false,
+    "model": "gpt-5.6-sol",
+    "reasoning_effort": "xhigh",
+    "actual_session_metadata_verified": true,
+    "fresh_context_free": true,
+    "score": 3,
+    "score_denominator": 10,
+    "decision": "REJECT",
+    "verdict": "FAIL",
+    "confidence": 5,
+    "confidence_denominator": 5,
+    "task_final_message_bytes": 19471,
+    "task_final_message_sha256": "bd1dae448703f4208ff256e5ef48000cf9095a73db7f2ca5f2016b04c633d310",
+    "stored_report_path": "controller_receipts/dual_server_dispatch_20260817/07g_p0_rc3_blind_review.md",
+    "stored_report_normalization": "remove one Markdown hard-break trailing-space pair and append one terminal newline",
+    "stored_report_bytes": 19470,
+    "stored_report_sha256": "921240b8b2de2eedea12a320b41ae738a3f900740123a4221a62af2e4fac1d9c"
+  },
+  "identities": {
+    "logical_source_branch": "codex/iclr2027-drive-opd-07g-p0-rc3",
+    "logical_source_commit": "79a2c529f35fb18049b4f30b46a2fe9926bf7e5a",
+    "logical_source_parent": "d527274d368b6d6def5809b002324b31e88ae1bd",
+    "logical_source_tree": "3ec47127a6d7c85326bbcf1d72ef76e2971f100d",
+    "logical_changed_path_count": 29,
+    "logical_worktree_clean_before_and_after": true,
+    "public_source_commit": "b1e1991afe7b9b14fd83f7510394c0ffb77ad700",
+    "public_source_parent": "7892cbcd06b99f44dc593813459b12e5eb84f902",
+    "public_source_tree": "1090673c5e8f148f2ec1b127044fa306b51b19cd",
+    "public_changed_path_count": 28,
+    "remote_public_head_verified": true,
+    "existing_remote_tracking_ref_changed": false
+  },
+  "hash_audit": {
+    "transfer_manifest_sha256": "ff8ca94ebd3dd39abb048dabe8c8a87eaa383465b5cdb899d74cc6fbe2bcd437",
+    "source_file_count": 41,
+    "local_source_hashes_matched": 41,
+    "public_source_hashes_matched": 41,
+    "local_public_source_blob_differences": 0,
+    "logical_bundle_declared_sha256": "68259f07dc97db312c00c71dcd18a899502588b4eb303ee12cce585e1cc894b1",
+    "logical_bundle_recomputed_sha256": "68259f07dc97db312c00c71dcd18a899502588b4eb303ee12cce585e1cc894b1"
+  },
+  "cpu_replay": {
+    "interpreter": "/home/khwang/domain-selector/.conda/diffusiondrive_py310/bin/python3.10",
+    "python_version": "3.10.20",
+    "cuda_visible_devices": "",
+    "python_dont_write_bytecode": "1",
+    "python_hash_seed": "0",
+    "pytest_cache_provider_disabled": true,
+    "test_functions_passed": 67,
+    "subtests_passed": 73,
+    "suite_failures": 0,
+    "suite_results": [
+      {
+        "suite": "test_navsim_continual_protocol.py",
+        "passed": 3,
+        "subtests": 0,
+        "stdout_sha256": "c2cba0e5b1275bde99432021fd22a26635493fa35d0886fcd5cd38708b0f7cca"
+      },
+      {
+        "suite": "test_drive_opd_losses.py",
+        "passed": 13,
+        "subtests": 0,
+        "stdout_sha256": "966c787c5b84cff1f2940469590ae6aaeac6fc4b1240c747205f8f8b0dff3d82"
+      },
+      {
+        "suite": "test_drive_cl_baselines.py",
+        "passed": 8,
+        "subtests": 0,
+        "stdout_sha256": "98e8124148330ddb6708ee670f805e418d50c4d4e70c5753d2aed5547314b2a5"
+      },
+      {
+        "suite": "test_drive_cl_statistics.py",
+        "passed": 8,
+        "subtests": 0,
+        "stdout_sha256": "2258da9311f6395f328963456cede3d56523ef15c0585df78fd82e95fa259756"
+      },
+      {
+        "suite": "test_drive_cl_claim_protocol.py",
+        "passed": 28,
+        "subtests": 73,
+        "stdout_sha256": "4ea0ef379520d5bbca247866508f1a9ac85e5517e5af3ab2cc5a34b929eceaec"
+      },
+      {
+        "suite": "test_drive_cl_run_budget.py",
+        "passed": 7,
+        "subtests": 0,
+        "stdout_sha256": "8f72f6ef79c4ba95867373899f0d4b43c07b227d042cfa7261eac1f688b3f613"
+      }
+    ],
+    "all_suite_stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "attack_harness": {
+      "exit_code": 0,
+      "status": "PASS",
+      "attack_families_passed": 19,
+      "attack_families_total": 19,
+      "mutation_instances_rejected_nonzero": 87,
+      "mutation_instances_without_claim_output": 87,
+      "mutation_instances_total": 87,
+      "positive_fixture_exit_code": 0,
+      "standalone_stdout_sha256": "ec6b73c2329ffdbd471034e393882a8a3c016983a52ffd2703380d10b54d0b51",
+      "immediate_receipt_sha256": "1f7b4b7d9a8a4bad15ed7e59d8c74f1fa31b99905129800e1c4d30d767a34e1e",
+      "path_sensitive_rerun_receipt_sha256": "82ea25dcf72f628f353435a2b3ed06ce20acb2a31136d56296c53c7363722a5b"
+    },
+    "higher_level_claim_audit": {
+      "exit_code": 0,
+      "duration_seconds": 517.505,
+      "combined_test_output_sha256": "6d55bfbd8f88cd94b0342a4c871ea54b675b182504e9893603eafff7de21608d",
+      "attack_output_sha256": "9d6245bf1d296bbc5e28b9e4e4fbfd33a7fabf902d399d87e4abfc521fd96556",
+      "stdout_sha256": "14ed9a94735321630e8431be433659500cbe416475213eb665699b2373764e68",
+      "audit_json_sha256": "31f3ef590ae064f9ac7b89ae44a601450e0329bbc0d5af94a9158f0376b0b28f"
+    },
+    "static_checks_stdout_sha256": "cc077b0547bb817fe815d55307192a3f463a8db677b5c70f19385242f011aaf6",
+    "independent_post_write_and_sealing_attacks_stdout_sha256": "82e7ae9a597dedc9b7f3ac89e2f017c92924a07e41a283de048c522819a9d13e",
+    "pytest_cache_paths_created": 0,
+    "python_bytecode_paths_created": 0
+  },
+  "open_findings": [
+    {
+      "id": "RC3-P0-01",
+      "level": "P0",
+      "title": "seed design calibrates one anonymous seven-metric comparison while the frozen family contains two comparisons and fourteen hypotheses",
+      "implemented_seed_floor": 9,
+      "full_family_stated_rule_seed_floor": 10,
+      "first_holm_threshold": 0.0035714285714285713,
+      "nine_seed_sign_resolution": 0.00390625,
+      "reproduction_stdout_sha256": "b28bc3fde2cfeef0848d5133ed6e110df20ea21316ac224ecc4941f1fd3b306f"
+    },
+    {
+      "id": "RC3-P0-02",
+      "level": "P0",
+      "title": "coercive resource validation accepts boolean, fractional, string and non-finite values and permits final global-Holm output",
+      "accepted_examples": [
+        "transient_bytes=true",
+        "transient_bytes=1.5",
+        "wall_seconds=NaN",
+        "wall_seconds=string_nan",
+        "persistent_bytes=true"
+      ],
+      "direct_bypass_stdout_sha256": "d3e3633854f9a9758ea6baeef4e699264e8ba2f76fcb5a2a89ec077e87b0713e",
+      "end_to_end_stdout_sha256": "ed39777ac687dc5da674bf39c84623e54b26eac3513089b21d0eee92a5cd46c8",
+      "emitted_global_result_sha256": "4ba3e605804fa11b9696c793aef9caf7d1bccb01fdf23f19bdfc695ccf08c15d"
+    }
+  ],
+  "finding_counts": {
+    "open_p0": 2,
+    "open_p1": 2,
+    "open_p2": 1
+  },
+  "gate_decisions": {
+    "A_exact_rc3_source_claim_protocol_contract": "NO",
+    "B_non_promoting_source_only_publication_and_cpu_fixture_archive": "YES_NARROWLY_REJECTED_NON_PROMOTING_ONLY",
+    "C_isolated_06g_cpu_source_replay": "NO",
+    "D_any_dataset_cache_model_t0_gpu_training_evaluation_or_performance_claim": "NO"
+  },
+  "controller_decision": {
+    "rc3": "REJECTED_P0_OPEN",
+    "dispatch_06g_source_cpu_replay": "STOPPED",
+    "dataset_provenance_adapter": "STOPPED",
+    "session_atomic_cl_manifest": "STOPPED",
+    "cache": "STOPPED",
+    "real_model_preflight": "STOPPED",
+    "t0": "STOPPED",
+    "model": "STOPPED",
+    "gpu": "STOPPED",
+    "training": "STOPPED",
+    "evaluation": "STOPPED",
+    "final_test_unsealing": "STOPPED",
+    "performance_claim": "STOPPED"
+  },
+  "next_required_actions": [
+    "bind seed design to the exact ordered fourteen-hypothesis family and comparison identities",
+    "use per-comparison or preregistered joint crossed pilot arrays and calibrate the same downstream familywise procedure",
+    "correct or remove the two-to-the-one-minus-n tail-resolution claim to match bootstrap p-values",
+    "enforce strict finite non-boolean real and integer resource types and non-empty host and device identities",
+    "add end-to-end resource-field attacks and exact ALER audit-on-off optimizer-state equivalence",
+    "produce a new forward-only candidate, rerun source CPU audits, obtain a fresh xhigh review, then re-freeze and publish"
+  ]
+}

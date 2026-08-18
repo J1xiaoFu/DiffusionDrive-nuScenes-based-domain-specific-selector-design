@@ -1,0 +1,99 @@
+{
+  "schema_version": 1,
+  "authorization_id": "P001-DRIVE-OPD-P0-RC4-FORWARD",
+  "recorded_date": "2026-08-18",
+  "status": "authorized_source_cpu_only",
+  "immutable_base": {
+    "branch": "codex/iclr2027-drive-opd-07g-p0-rc3",
+    "commit": "79a2c529f35fb18049b4f30b46a2fe9926bf7e5a",
+    "parent": "d527274d368b6d6def5809b002324b31e88ae1bd",
+    "tree": "3ec47127a6d7c85326bbcf1d72ef76e2971f100d",
+    "verdict": "rejected_3_of_10_two_open_p0"
+  },
+  "authorized_destination": {
+    "branch": "codex/iclr2027-drive-opd-07g-p0-rc4",
+    "suggested_worktree": "/home/khwang/domain-selector-p0-rc4",
+    "commit_count_from_base": 1,
+    "parent_must_equal_base": true,
+    "merge_commit_allowed": false
+  },
+  "p0_repairs": [
+    {
+      "id": "P0-A",
+      "name": "full_family_seed_design_alignment",
+      "required_family_size": 14,
+      "required_comparison_count": 2,
+      "requirements": [
+        "bind exact family path hash comparison ids hypothesis ids methods baselines metrics and order",
+        "cover every comparison metric cell or a preregistered equivalent joint crossed array",
+        "replay the downstream fourteen-hypothesis familywise procedure or checked exact surrogate",
+        "derive resolution from bootstrap p-value floor and first Holm threshold",
+        "bind pilot program invocation seed repetitions effects critical values power FWER and output",
+        "reject non-finite and incomplete structures"
+      ]
+    },
+    {
+      "id": "P0-B",
+      "name": "strict_resource_evidence_types",
+      "requirements": [
+        "byte fields are exact positive integers excluding bool float string zero and negative",
+        "wall time is finite positive real excluding bool string NaN and infinities",
+        "host and device identity and type fields are non-empty strings",
+        "validate at producer load inventory comparison and global Holm boundaries",
+        "reject before comparison claim or global output"
+      ]
+    }
+  ],
+  "p1_requirements": [
+    "ALER audit-on audit-off equality for loss gradients parameters and AdamW state",
+    "explicit effect-size evidence limitation",
+    "related-work refresh without efficacy promotion",
+    "preserve all RC3 closed invariants and nineteen attack families"
+  ],
+  "authorized_actions": [
+    "source_config_test_paper_response_edits",
+    "static_checks",
+    "synthetic_temporary_git_fixtures",
+    "cuda_hidden_cpu_tests",
+    "one_auditable_rc4_commit",
+    "exact_identity_hash_receipt"
+  ],
+  "prohibited_actions": [
+    "move_existing_refs",
+    "reset_rebase_amend_merge_history_rewrite_force_update",
+    "publication",
+    "new_review_task",
+    "06g_dispatch",
+    "dataset_or_raw_data_access",
+    "cache_read_or_build",
+    "real_model_import",
+    "final_test_unsealing",
+    "cuda_or_gpu",
+    "training",
+    "evaluation",
+    "performance_claim"
+  ],
+  "post_candidate_controller_gates": {
+    "publication": "stopped",
+    "source_transfer_freeze": "stopped",
+    "fresh_exact_rc4_review": {
+      "status": "stopped",
+      "required_model": "gpt-5.6-sol",
+      "required_reasoning_effort": "xhigh",
+      "required_open_p0_count": 0
+    },
+    "before_any_06g_source_replay": [
+      "fresh_exact_rc4_xhigh_review_pass",
+      "controller_frozen_dataset_specific_session_atomic_navsim_manifest",
+      "controller_frozen_dataset_specific_session_atomic_nuscenes_manifest"
+    ],
+    "source_replay": "stopped",
+    "cache": "stopped",
+    "real_model_preflight": "stopped",
+    "t0": "stopped",
+    "gpu": "stopped",
+    "training": "stopped",
+    "evaluation": "stopped",
+    "performance_claim": "stopped"
+  }
+}

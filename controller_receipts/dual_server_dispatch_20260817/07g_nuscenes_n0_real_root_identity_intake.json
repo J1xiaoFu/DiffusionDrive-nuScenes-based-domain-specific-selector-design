@@ -1,0 +1,148 @@
+{
+  "schema_version": 1,
+  "intake_id": "P001-DRIVE-OPD-07G-NUSCENES-N0-REAL-ROOT-IDENTITY",
+  "recorded_date": "2026-08-18",
+  "status": "passed_for_root_identity_inventory_only",
+  "executor": {
+    "task": "01a00dab-5dc6-7413-8ca7-930353db0e0c",
+    "server": "07G",
+    "mode": "read_only_nonrecursive_stat",
+    "source_commit": "ac38c9ffca9d4a428cee97606a92f93fb5ff8d82",
+    "source_tree": "07900590456acb6e523f7d815f969dccc11ae226",
+    "source_worktree": "/home/khwang/domain-selector-nuscenes-n0-provenance-source-v1",
+    "source_worktree_clean": true
+  },
+  "canonical_roots": {
+    "data_root": {
+      "path": "/home/khwang/datasets/nuscenes/data",
+      "type": "directory",
+      "device": 2052,
+      "inode": 667066520,
+      "mode": "0755",
+      "symlink": false
+    },
+    "metadata_root": {
+      "path": "/home/khwang/datasets/nuscenes/data/v1.0-trainval",
+      "type": "directory",
+      "device": 2052,
+      "inode": 670335362,
+      "mode": "0755",
+      "symlink": false
+    },
+    "samples_root": {
+      "path": "/home/khwang/datasets/nuscenes/data/samples",
+      "type": "directory",
+      "device": 2052,
+      "inode": 667066522,
+      "mode": "0755",
+      "symlink": false
+    },
+    "sweeps_root": {
+      "path": "/home/khwang/datasets/nuscenes/data/sweeps",
+      "type": "directory",
+      "device": 2052,
+      "inode": 667166612,
+      "mode": "0755",
+      "symlink": false
+    },
+    "maps_root": {
+      "path": "/home/khwang/datasets/nuscenes/data/maps",
+      "type": "directory",
+      "device": 2052,
+      "inode": 670335357,
+      "mode": "0755",
+      "symlink": false
+    },
+    "can_root": {
+      "path": "/home/khwang/datasets/nuscenes/data/can_bus",
+      "type": "directory",
+      "device": 2052,
+      "inode": 670335409,
+      "mode": "0775",
+      "symlink": false
+    }
+  },
+  "devkit_identity_roots": {
+    "package": {
+      "path": "/home/khwang/domain-selector/.conda/diffusiondrive_py310/lib/python3.10/site-packages/nuscenes",
+      "type": "directory",
+      "device": 2052,
+      "inode": 670537435,
+      "mode": "0700",
+      "symlink": false
+    },
+    "distribution_metadata": {
+      "path": "/home/khwang/domain-selector/.conda/diffusiondrive_py310/lib/python3.10/site-packages/nuscenes_devkit-1.1.10.dist-info",
+      "type": "directory",
+      "device": 2052,
+      "inode": 670537598,
+      "mode": "0700",
+      "symlink": false
+    },
+    "official_split_source": {
+      "path": "/home/khwang/domain-selector/.conda/diffusiondrive_py310/lib/python3.10/site-packages/nuscenes/utils/splits.py",
+      "type": "regular_file",
+      "device": 2052,
+      "inode": 670537592,
+      "mode": "0600",
+      "symlink": false
+    }
+  },
+  "path_safety": {
+    "canonical_root_parent_chains_contain_symlink": false,
+    "diffusiondrive_alias": {
+      "path": "/home/khwang/domain-selector/DiffusionDrive/data/nuscenes",
+      "type": "symlink",
+      "inode": 670343259,
+      "target": "/home/khwang/datasets/nuscenes/data",
+      "authorized_as_canonical_root": false
+    },
+    "historical_root": {
+      "path": "/root/autodl-pub/nuScenes/Fulldatasetv1.0/Trainval",
+      "status": "unverifiable_and_stale",
+      "reason": "/root is mode 0700; this path cannot be current evidence"
+    }
+  },
+  "archive_boundary": {
+    "expected_archive_paths": [
+      "/home/khwang/datasets/nuscenes/data/v1.0-trainval_meta.tgz",
+      "/home/khwang/datasets/nuscenes/incoming/train/v1.0-trainval_meta.tgz"
+    ],
+    "archive_present": false,
+    "sidecar_path": "/home/khwang/datasets/nuscenes/data/.v1.0-trainval_meta.txt",
+    "sidecar_type": "regular_file",
+    "sidecar_read_or_trusted": false,
+    "upstream_origin_proven": false
+  },
+  "sealed_population_boundary": {
+    "samples_and_sweeps_roots_may_contain_test_release_files": true,
+    "directory_wide_discovery_or_inventory_authorized": false,
+    "future_inventory_rule": "resolve and hash only paths referenced by tokens reachable from the explicitly addressed v1.0-trainval metadata tables",
+    "sealed_test_access_authorized": false
+  },
+  "unresolved_controller_choices": [
+    "which independently verifiable upstream receipt proves the extracted v1.0-trainval metadata directory origin without an archive",
+    "how the installed devkit version, package bytes, official splits.py and upstream repository identity are bound into one content-addressed input",
+    "the exact isolated input specification root and future output parent"
+  ],
+  "decision": {
+    "canonical_real_roots_frozen_for_future_addressed_reads": true,
+    "dataset_content_or_metadata_read": false,
+    "content_hash_or_row_count_observed": false,
+    "real_input_spec_authorized": false,
+    "real_n0_scan_authorized": false,
+    "real_n0_output_or_manifest_generated": false,
+    "upstream_release_identity_accepted": false,
+    "source_identity_remains_frozen": true,
+    "cache_model_t0_gpu_training_evaluation": "stopped"
+  },
+  "preservation": {
+    "file_or_worktree_write": false,
+    "branch_ref_or_config_mutation": false,
+    "fetch_or_checkout": false,
+    "raw_nuscenes_or_navsim_access": false,
+    "metadata_table_or_archive_read": false,
+    "sensor_map_or_can_content_read": false,
+    "model_checkpoint_or_gpu_action": false
+  }
+}

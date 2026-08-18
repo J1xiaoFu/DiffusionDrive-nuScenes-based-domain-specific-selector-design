@@ -1,0 +1,143 @@
+{
+  "schema_version": 1,
+  "audit_id": "P001-DRIVE-OPD-07G-NUSCENES-N0-PROVENANCE-SOURCE-V1-CANDIDATE",
+  "recorded_date": "2026-08-18",
+  "status": "passed_for_source_identity_freeze_only",
+  "candidate": {
+    "branch": "codex/iclr2027-drive-opd-07g-nuscenes-n0-provenance-source-v1",
+    "commit": "ac38c9ffca9d4a428cee97606a92f93fb5ff8d82",
+    "parent": "495bac670073fc3f46f0f773ca51033331078509",
+    "tree": "07900590456acb6e523f7d815f969dccc11ae226",
+    "commit_count_from_base": 1,
+    "non_merge": true,
+    "changed_path_count": 4,
+    "changed_path_inventory_sha256": "d8b8afdbef192ff03c0a12cc5cd5594526caf98b79ff599ba9cad2fc1390014d",
+    "changed_path_content_inventory_sha256": "9821b29887358d6fb21553636c414cdfd8c95bb5b25426e7f62b66ea92a5789e",
+    "worktree_clean": true,
+    "published_or_pushed": false
+  },
+  "changed_paths": [
+    {
+      "path": "paper_iterations/P001_scheduler_session_contract/NUSCENES_N0_PROVENANCE_SOURCE_V1.md",
+      "sha256": "413c06a743c9cfb1bea48858dc049fafbf671d08f1ddc4d1858fe952a6df3ad5"
+    },
+    {
+      "path": "selector_bench/scripts/60_audit_nuscenes_n0_provenance.py",
+      "sha256": "83f7be72572ba12116fa549ac8924234d40f1d24c4eadefcf8d3bb86abe8c7e3"
+    },
+    {
+      "path": "selector_bench/selector_bench/continual/nuscenes_provenance.py",
+      "sha256": "e1f0ce3f704b003d4e61a484c2417a0c1d0bdee7ffcd4df34632fe83a578bc09"
+    },
+    {
+      "path": "selector_bench/tests/test_nuscenes_provenance.py",
+      "sha256": "4d1e669d9abc986c48425713622814edbd94730b027ada91d46af36dd455a94f"
+    }
+  ],
+  "frozen_source_identity": {
+    "source_commit": "ac38c9ffca9d4a428cee97606a92f93fb5ff8d82",
+    "source_tree": "07900590456acb6e523f7d815f969dccc11ae226",
+    "library_source_path": "selector_bench/selector_bench/continual/nuscenes_provenance.py",
+    "library_source_sha256": "e1f0ce3f704b003d4e61a484c2417a0c1d0bdee7ffcd4df34632fe83a578bc09",
+    "cli_source_path": "selector_bench/scripts/60_audit_nuscenes_n0_provenance.py",
+    "cli_source_sha256": "83f7be72572ba12116fa549ac8924234d40f1d24c4eadefcf8d3bb86abe8c7e3",
+    "frozen_manifest_producer_commit": "495bac670073fc3f46f0f773ca51033331078509",
+    "frozen_manifest_producer_path": "selector_bench/selector_bench/continual/nuscenes_protocol.py",
+    "frozen_manifest_producer_sha256": "a5e509d9fb33e5bbc00bdea71ecc51521eeeee39335f18e8667bea124ac2d773"
+  },
+  "source_executor_replay": {
+    "focused_provenance_suite": {
+      "passed": 54,
+      "failed": 0,
+      "duration_seconds": 60.81,
+      "stdout_sha256": "04b08c06a5fe147b4d0588300e7dee6afa53276c85bf20b1638ce2b644e2def6"
+    },
+    "adjacent_nuscenes_manifest_suite": {
+      "passed": 71,
+      "failed": 0,
+      "duration_seconds": 12.81,
+      "stdout_sha256": "5408aee7d1ca2fbb1123a2468dc657aecee1bad2d1898007b07cf8ad1c8b12cf"
+    },
+    "controller_contract_suite": {
+      "passed": 19,
+      "failed": 0,
+      "duration_seconds": 0.49,
+      "stdout_sha256": "64412999eb1220a7d35e2673b3de588fae08ea08f3032ae9eae9cf5a61150685"
+    },
+    "full_repository_suite": {
+      "passed": 227,
+      "subtests_passed": 132,
+      "failed": 0,
+      "duration_seconds": 388.90,
+      "stdout_sha256": "1f0c18a70b21c23ef8e6fb4d8a8ff4c447616644c6793d714f9b4cf0f0272993"
+    }
+  },
+  "independent_controller_replay": {
+    "detached_exact_commit": "ac38c9ffca9d4a428cee97606a92f93fb5ff8d82",
+    "cuda_visible_devices": "",
+    "python_dont_write_bytecode": "1",
+    "pytest_cache_provider_disabled": true,
+    "focused_and_adjacent_suites": {
+      "passed": 132,
+      "failed": 0,
+      "duration_seconds": 71.65,
+      "stdout_sha256": "559b07f6481d9b859cbbb1fd329f62d7608809dad2947977fd586056526588a5"
+    },
+    "archive_only_diagnostic": {
+      "candidate_failure": false,
+      "passed": 79,
+      "failed": 53,
+      "stdout_sha256": "ee39e48ff937032eee3c113de6adb8c88335d9bdb99baae51a981c65efa7517e",
+      "reason": "A Git archive has no object database, so provenance fixtures could not fetch the frozen producer commit; the corrected detached-Git replay passed 132/132."
+    },
+    "temporary_worktrees_removed": true,
+    "bytecode_or_pytest_cache_path_count": 0
+  },
+  "static_verification": {
+    "git_show_check_passed": true,
+    "git_show_check_output_sha256": "b79ce63d8d53b7fbcbf54db28d24d233a767f3e6e79b805941be21b355a3dfcd",
+    "remote_ref_containing_candidate_count": 0,
+    "exact_changed_path_set": true,
+    "source_and_detached_worktrees_clean": true
+  },
+  "closed_source_surface_attacks": [
+    "duplicate keys, non-finite values, Boolean integers and noncanonical JSON/JSONL",
+    "foreign-key, reciprocal-chain, reverse-reachability and complete-log closure breaks",
+    "official split fallback or cross-partition log substitution",
+    "missing, duplicate, symlinked, escaping, swapped or changed-during-read files and parent/root components",
+    "unbound repository origin, ambient Git redirection, untracked or assume-unchanged producer substitution and non-blob producer paths",
+    "credential-bearing devkit, map or CAN repository identities",
+    "arbitrary producer-command prefix or incomplete input binding",
+    "output nested in or aliasing any input, data or source root",
+    "partial write, staged semantic mutation, post-validation mutation, pre-publication mutation and pre-existing output"
+  ],
+  "decision": {
+    "source_identity_frozen": true,
+    "synthetic_source_surface_p0_open": false,
+    "real_input_spec_authorized": false,
+    "real_nuscenes_access": "stopped",
+    "real_n0_scan_or_receipt": "stopped",
+    "session_atomic_manifest_generation": "stopped",
+    "publication_or_transfer": "stopped",
+    "six_g_source_replay": "stopped",
+    "cache_model_t0_gpu_training_evaluation": "stopped"
+  },
+  "remaining_external_prerequisites": [
+    "a later separate controller authorization must freeze one content-addressed real nuScenes N0 input specification before any real scan",
+    "the resulting N0 source receipt, complete-log ledger and registered-file inventories must be independently audited",
+    "a complete real session-atomic nuScenes manifest must be generated only from accepted N0 evidence and independently replayed",
+    "the exact RC4 gpt-5.6-sol xhigh blind review still lacks a valid zero-P0 verdict",
+    "the accepted NAVSIM and nuScenes manifests plus a later explicit gate remain mandatory before any 06G source replay"
+  ],
+  "artifact_boundary": {
+    "raw_nuscenes_or_navsim_accessed": false,
+    "real_n0_input_or_output_generated": false,
+    "real_manifest_or_membership_generated": false,
+    "cache_read_or_built": false,
+    "model_or_checkpoint_loaded": false,
+    "cuda_or_gpu_used": false,
+    "training_or_evaluation_performed": false,
+    "final_test_accessed": false,
+    "publication_or_push_performed": false
+  }
+}

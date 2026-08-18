@@ -1,0 +1,127 @@
+{
+  "schema_version": 1,
+  "authorization_id": "P001-DRIVE-OPD-07G-NAVSIM-MANIFEST-SOURCE-V1",
+  "recorded_date": "2026-08-18",
+  "status": "authorized_source_cpu_synthetic_only",
+  "authorization_is_dataset_or_execution_unlock": false,
+  "immutable_base": {
+    "branch": "codex/iclr2027-drive-opd-07g-p0-rc4",
+    "commit": "653e797a2381cdf017466ef95aefcc41961f6715",
+    "parent": "79a2c529f35fb18049b4f30b46a2fe9926bf7e5a",
+    "tree": "53943615137849d3338cc037914b302d6e3db363"
+  },
+  "authorized_destination": {
+    "branch": "codex/iclr2027-drive-opd-07g-navsim-manifest-source-v1",
+    "worktree": "/home/khwang/domain-selector-navsim-manifest-source-v1",
+    "commit_count_from_base": 1,
+    "parent_must_equal_base": true,
+    "merge_commit_allowed": false
+  },
+  "normative_contract": {
+    "controller_commit": "2c0694213b1db0289dd3fec9094d3f1531ee9a23",
+    "controller_tree": "f9a929e5530b342dd3779ac1bea63b8c0f4e39b2",
+    "copy_root": "controller_protocols/drive_opd_session_atomic_v1",
+    "files": [
+      {
+        "path": "MANIFEST_CONTRACT.md",
+        "sha256": "d9034a7d8829fcc7cfc98b409ca41ba08d482bb518f2e5c2fafdc2b194e7ac87"
+      },
+      {
+        "path": "session_atomic_manifest.schema.json",
+        "sha256": "6e43ae2af5a981368c9e4bd764691d3d9d8849031e4a02910c5db982ab04e791"
+      },
+      {
+        "path": "population_ledger_row.schema.json",
+        "sha256": "e5ac1719c08b37351fb42576cabb63fcf261b97112185e57e2ed3f78df2b7752"
+      },
+      {
+        "path": "protocol_assignment_row.schema.json",
+        "sha256": "fa8d3f93a57bc33dcb3655a7c8a782e9c727b18b651a608a9252463938986f96"
+      },
+      {
+        "path": "selection_input_row.schema.json",
+        "sha256": "0b05cd114277e98e267953a0d94f3514715e1018ff7767c5222e2537575afc28"
+      },
+      {
+        "path": "navsim_manifest_requirements.v1.json",
+        "sha256": "bf2e6cbf385892bf1aa8316d0ebd12957c3bf5367948899de6d51acfc42f5cbb"
+      },
+      {
+        "path": "validate_session_atomic_manifest.py",
+        "sha256": "70b53893c3bc0704fbf09945a677412effdf4a2b0258ac56c2f8084798805ba3"
+      }
+    ],
+    "production_requirements_must_remain_blocked": true
+  },
+  "accepted_input_identities": {
+    "population_receipt_sha256": "fa2f8c417957c22d3fce83d36544c373353a533302deeb5b9a618d9db4aedb1a",
+    "session_integrity_receipt_sha256": "7156370a742df6328b03350f48c7b55a1608e9d0498dbd131f17ac075a2e63bd",
+    "session_ledger_sha256": "cf12df3e215874362c67a6ce404a8bb8ae054fdc5c393f7a58385abd2453fa08",
+    "session_ledger_rows": 162,
+    "boundary": "inputs may be represented only by synthetic fixtures during this source candidate; no real evidence read is authorized"
+  },
+  "required_candidate_paths": {
+    "module": "selector_bench/selector_bench/continual/navsim_protocol.py",
+    "cli": "selector_bench/scripts/59_build_navsim_session_atomic_manifest.py",
+    "tests": "selector_bench/tests/test_navsim_continual_protocol.py"
+  },
+  "required_semantics": [
+    "exact_r1_session_ledger_and_receipt_identity_inputs_only_no_cache_index",
+    "complete_timestamp_vehicle_session_atomicity_and_official_partition_consistency",
+    "explicit_segmented_log_to_scene_token_semantic_identity_proof_or_independent_mapping",
+    "canonical_population_selection_assignment_and_manifest_artifacts",
+    "strict_utc_chronology_and_exact_chronological_cell_rule_replay",
+    "failure_patch_fail_closed_without_controller_authorized_evidence",
+    "exact_controller_frozen_failure_patch_rule_when_authority_later_exists",
+    "source_invocation_input_output_hash_lineage",
+    "validate_before_atomic_nonexistent_directory_publication",
+    "pure_source_replay_without_navsim_diffusiondrive_model_or_cache_import"
+  ],
+  "required_attack_classes": [
+    "cache_index_pickle_historical_default_or_filename_population_input",
+    "train_validation_session_crossover_or_sealed_identifier_leakage",
+    "unknown_missing_duplicate_or_reused_session_log_scene_or_token",
+    "wrong_count_list_split_hash_or_official_expectation",
+    "missing_duplicate_invalid_or_rollback_chronology",
+    "silent_log_id_to_scene_token_alias_or_wrong_independent_mapping",
+    "selection_payload_stage_cell_or_descendant_substitution",
+    "blocked_self_declared_wrong_family_or_wrong_access_failure_evidence",
+    "tampered_population_receipt_session_receipt_source_producer_or_validator",
+    "boolean_nonfinite_duplicate_key_or_noncanonical_input",
+    "preexisting_output_partial_write_or_post_write_mutation"
+  ],
+  "authorized_actions": [
+    "create_separate_forward_only_branch_and_worktree",
+    "copy_exact_controller_contract_files",
+    "source_config_test_documentation_edits",
+    "synthetic_temporary_directory_fixtures",
+    "cuda_hidden_source_cpu_tests",
+    "one_auditable_candidate_commit",
+    "exact_identity_and_hash_receipt"
+  ],
+  "prohibited_actions": [
+    "move_existing_refs",
+    "reset_rebase_amend_merge_force_or_history_rewrite",
+    "publication_or_push",
+    "dataset_raw_data_or_real_r1_evidence_access",
+    "real_manifest_or_membership_generation",
+    "cache_index_read_or_cache_build",
+    "failure_metrics_or_final_test_access",
+    "model_or_checkpoint_import",
+    "cuda_or_gpu",
+    "training_or_evaluation",
+    "performance_claim",
+    "06g_dispatch"
+  ],
+  "post_candidate_gates": {
+    "controller_source_audit": "required",
+    "approved_producer_freeze": "stopped",
+    "failure_patch_authoritative_evidence_freeze": "stopped",
+    "real_manifest_generation": "stopped",
+    "independent_manifest_replay": "stopped",
+    "exact_rc4_xhigh_zero_p0_review": "pending",
+    "complete_nuscenes_manifest": "stopped",
+    "06g_source_replay": "stopped",
+    "cache_model_t0_gpu_training_evaluation_claims": "stopped"
+  }
+}

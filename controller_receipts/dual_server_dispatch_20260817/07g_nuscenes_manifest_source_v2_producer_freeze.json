@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "freeze_id": "P001-DRIVE-OPD-07G-NUSCENES-MANIFEST-PRODUCER-V2",
+  "recorded_date": "2026-08-18",
+  "status": "producer_identity_frozen_membership_blocked",
+  "audit_parent": {
+    "controller_commit": "145d6504ed09457e0cd094fad41341bd4a07306c",
+    "controller_tree": "d26ea5a4426307a0d5422d49f9bb9df259920755",
+    "audit_receipt": "controller_receipts/dual_server_dispatch_20260817/07g_nuscenes_manifest_source_v2_audit.json",
+    "audit_receipt_sha256": "f3b9f870ad6d82a31644503508c0c0c92e5422eb563f4802840daa3aa3b891ea"
+  },
+  "approved_producer": {
+    "source_commit": "495bac670073fc3f46f0f773ca51033331078509",
+    "source_tree": "a7c86fbafea77ec647197c6d24d65edff83c95a8",
+    "producer_source_path": "selector_bench/selector_bench/continual/nuscenes_protocol.py",
+    "producer_source_sha256": "a5e509d9fb33e5bbc00bdea71ecc51521eeeee39335f18e8667bea124ac2d773",
+    "validator_source_path": "controller_protocols/drive_opd_session_atomic_v1/validate_session_atomic_manifest.py",
+    "validator_source_sha256": "70b53893c3bc0704fbf09945a677412effdf4a2b0258ac56c2f8084798805ba3"
+  },
+  "updated_contract": {
+    "manifest_contract_path": "controller_protocols/drive_opd_session_atomic_v1/MANIFEST_CONTRACT.md",
+    "manifest_contract_sha256": "d9034a7d8829fcc7cfc98b409ca41ba08d482bb518f2e5c2fafdc2b194e7ac87",
+    "requirements_path": "controller_protocols/drive_opd_session_atomic_v1/nuscenes_manifest_requirements.v1.json",
+    "requirements_sha256": "08968b1af352210fb57bfdc7db0946f4f75191ba865b2889e476fb5fc8409507",
+    "semantic_validator_path": "controller_protocols/drive_opd_session_atomic_v1/validate_session_atomic_manifest.py",
+    "semantic_validator_sha256": "70b53893c3bc0704fbf09945a677412effdf4a2b0258ac56c2f8084798805ba3"
+  },
+  "independent_validation": {
+    "controller_contract_tests_passed": 19,
+    "controller_contract_tests_failed": 0,
+    "duration_seconds": 0.45,
+    "output_path": "/tmp/drive_opd_controller_nusc_v2_producer_freeze_tests.txt",
+    "output_sha256": "82f2132e84555fb9e8a16514fde4f5f090399de8c5b7f6812c1edf54709f30e6",
+    "json_parse_passed": true,
+    "git_diff_check_passed": true
+  },
+  "still_blocked_in_requirements": {
+    "accepted_prior_evidence": "NO_DATASET_MEMBERSHIP_EVIDENCE_ACCEPTED",
+    "failure_patch_parameters": "BLOCKED_PENDING_NUSCENES_METRIC_AND_DOMAIN_REGISTRIES",
+    "failure_patch_evidence": "BLOCKED_PENDING_CONTROLLER_AUTHORIZED_FAILURE_EVIDENCE",
+    "official_population": "COUNTS_AND_HASHES_REQUIRED"
+  },
+  "decision": {
+    "approved_producer_identity": "frozen",
+    "nuscenes_n0_metadata_access": "stopped_pending_separate_authorization",
+    "authoritative_failure_patch_evidence": "stopped",
+    "real_manifest_generation": "stopped",
+    "source_publication_and_destination_replay": "stopped",
+    "rc4_blind_review": "pending_valid_exact_rc4_xhigh_zero_p0_verdict",
+    "navsim_and_nuscenes_complete_manifests": "stopped",
+    "six_g_source_replay": "stopped",
+    "cache_model_t0_gpu_training_evaluation": "stopped"
+  },
+  "artifact_boundary": {
+    "raw_nuscenes_or_navsim_accessed": false,
+    "real_manifest_or_membership_generated": false,
+    "cache_read_or_built": false,
+    "model_or_checkpoint_loaded": false,
+    "cuda_or_gpu_used": false,
+    "training_or_evaluation_performed": false,
+    "final_test_accessed": false,
+    "publication_or_push_performed": false
+  }
+}

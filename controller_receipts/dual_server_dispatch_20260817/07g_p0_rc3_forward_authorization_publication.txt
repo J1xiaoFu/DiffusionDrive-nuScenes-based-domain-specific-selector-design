@@ -1,0 +1,52 @@
+Drive-OPD 07G P0 RC3 forward-only authorization publication receipt
+Recorded: 2026-08-18 Asia/Shanghai
+Decision boundary: SOURCE/CPU REPAIR AUTHORIZATION ONLY; NOT AN EXECUTION UNLOCK
+
+Controller authorization
+- branch: codex/iclr2027-dual-server-controller
+- commit: c5025248efc9b1c5b2a1cb5dfe7c27f2bac71a3e
+- parent: 4c22dfbabdb9597592408f56b5f729b031918c52
+- tree: 847882ac03cda19b4546c3e5bbf76ab5580e43cb
+- authorization Markdown SHA256: 5308b6c0ae9e6c34bd508407c944e89738f0f8c6cd1ad828f5918beac54aee14
+- authorization JSON SHA256: dcc28aecf84ccbca199d5162d16e9c11e355373f011f5a144dc5f42ffb3ae0dd
+
+Preserved local publication snapshot
+- branch: codex/iclr2027-dual-server-dispatch-publication
+- commit: 0bc3e4521534a55a370293a6ff34aaca2f752ca5
+- parent: 3a4ca9ee5edacc8fe40e859595a025d5329ef44a
+- tree: 559f03f519b5c9e01515708b105813172632a68c
+- status: clean detached construction worktree
+
+Public publication
+- repository: J1xiaoFu/DiffusionDrive-nuScenes-based-domain-specific-selector-design
+- branch: codex/iclr2027-dual-server-dispatch-publication
+- prior public head / sole parent: e36eb38da827290c277a0f5ffc615456046f5524
+- commit: 7892cbcd06b99f44dc593813459b12e5eb84f902
+- tree: 559f03f519b5c9e01515708b105813172632a68c
+- update: one non-force ref update (force=false)
+- pull request: none
+
+Exact changed path set
+- A controller_receipts/dual_server_dispatch_20260817/07g_p0_rc3_forward_authorization.json
+  blob 63cf779eec80081711de9e9e6502132ca89447c0
+- A controller_receipts/dual_server_dispatch_20260817/07g_p0_rc3_forward_authorization.md
+  blob ba421d0cad65afb06921a86234f82327c396e50b
+- M controller_receipts/dual_server_dispatch_20260817/AUDIT.md
+  blob 22320ee96f4e707321083575ab35eda4daca53ad
+- M controller_receipts/dual_server_dispatch_20260817/SHA256SUMS
+  blob f79f28356b2357fd29952d2f84907df9f6bd9efc
+
+Verification
+- all four remote blob SHAs exactly matched the local publication snapshot
+- remote created tree exactly matched local tree 559f03f519b5c9e01515708b105813172632a68c
+- ordinary HTTPS fetch reproduced commit, sole parent, tree, subject and exact four-path set
+- local/public tree diff exit: 0 (empty)
+- public full-index diff SHA256: d47417076f11cdca13ed1ebc0faa00ef3c005c4115cbf906c3d1ea27797721f4
+- git show --check: PASS
+- no checkout, merge, rebase, force update or remote-configuration change was performed
+
+Boundary
+This receipt publishes only the reviewed controller authorization for forward-only RC3 source/config/
+test/paper repair and CUDA-hidden CPU validation. It does not authorize NAVSIM/raw-data access,
+dataset adapters, session-atomic CL manifests, cache/model/T0/GPU/training/evaluation activity,
+final-test unsealing, 06G dispatch or performance claims.

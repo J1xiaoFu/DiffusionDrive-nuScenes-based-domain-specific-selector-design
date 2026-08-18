@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "freeze_id": "P001-DRIVE-OPD-07G-NAVSIM-MANIFEST-PRODUCER-V1",
+  "recorded_date": "2026-08-18",
+  "status": "producer_identity_frozen_real_manifest_blocked",
+  "audit_parent": {
+    "controller_commit": "00d3853e11105e0b5c4653e62482ae5c29f3c2c6",
+    "controller_tree": "deec5c5d0e6e4634392b4bf0d115ecdfc227fdd7",
+    "audit_receipt": "controller_receipts/dual_server_dispatch_20260817/07g_navsim_manifest_source_v1_candidate_audit.json",
+    "audit_receipt_sha256": "aab0cd9008d0c38b0de2409f2e9d8fd86e0535e730c7d373731313b04d7e9d4f"
+  },
+  "approved_producer": {
+    "source_commit": "64447d3a9cc60f61b8596aed41086b5b4311c889",
+    "source_tree": "5ce81ef06d71189d1ff46676ecc1b4d01e415728",
+    "producer_source_path": "selector_bench/selector_bench/continual/navsim_protocol.py",
+    "producer_source_sha256": "75f683cb8a7931783f1342a9b479d37470bc215b297efc421b003e3a2ab6cfae",
+    "validator_source_path": "controller_protocols/drive_opd_session_atomic_v1/validate_session_atomic_manifest.py",
+    "validator_source_sha256": "70b53893c3bc0704fbf09945a677412effdf4a2b0258ac56c2f8084798805ba3"
+  },
+  "updated_contract": {
+    "manifest_contract_path": "controller_protocols/drive_opd_session_atomic_v1/MANIFEST_CONTRACT.md",
+    "manifest_contract_sha256": "d9034a7d8829fcc7cfc98b409ca41ba08d482bb518f2e5c2fafdc2b194e7ac87",
+    "requirements_path": "controller_protocols/drive_opd_session_atomic_v1/navsim_manifest_requirements.v1.json",
+    "requirements_sha256": "54d3f5f203a3db568c5cc5d18305c3dc4b00b81863e353c9dbd30bdefc833d64",
+    "semantic_validator_path": "controller_protocols/drive_opd_session_atomic_v1/validate_session_atomic_manifest.py",
+    "semantic_validator_sha256": "70b53893c3bc0704fbf09945a677412effdf4a2b0258ac56c2f8084798805ba3"
+  },
+  "independent_validation": {
+    "controller_contract_tests_passed": 19,
+    "controller_contract_tests_failed": 0,
+    "duration_seconds": 0.40,
+    "stdout_sha256": "b84a5f56832006ce4e2bf9f759666949900308668a781b362e5aab41c6c2b8e8",
+    "json_parse_passed": true,
+    "git_diff_check_passed": true
+  },
+  "still_blocked_in_requirements": {
+    "scene_identity_evidence": "MISSING_PENDING_CONTROLLER_AUTHORIZED_PROOF_OR_MAPPING",
+    "failure_patch_evidence": "BLOCKED_PENDING_CONTROLLER_AUTHORIZED_FAILURE_EVIDENCE",
+    "real_input_transfer": "NOT_PERFORMED",
+    "real_manifest_membership": "NOT_GENERATED"
+  },
+  "decision": {
+    "approved_producer_identity": "frozen",
+    "scene_identity_authority": "stopped",
+    "authoritative_failure_patch_evidence": "stopped",
+    "real_manifest_generation": "stopped",
+    "source_publication_and_destination_replay": "stopped",
+    "rc4_blind_review": "pending_valid_exact_rc4_xhigh_zero_p0_verdict",
+    "navsim_complete_manifest": "stopped",
+    "nuscenes_complete_manifest": "stopped",
+    "six_g_source_replay": "stopped",
+    "cache_model_t0_gpu_training_evaluation": "stopped"
+  },
+  "artifact_boundary": {
+    "raw_nuscenes_or_navsim_accessed": false,
+    "real_manifest_or_membership_generated": false,
+    "cache_read_or_built": false,
+    "model_or_checkpoint_loaded": false,
+    "cuda_or_gpu_used": false,
+    "training_or_evaluation_performed": false,
+    "final_test_accessed": false,
+    "publication_or_push_performed": false
+  }
+}

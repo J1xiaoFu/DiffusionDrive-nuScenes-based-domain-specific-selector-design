@@ -1,0 +1,100 @@
+{
+  "schema_version": 1,
+  "audit_id": "P001-DRIVE-OPD-07G-NUSCENES-MANIFEST-SOURCE-V1",
+  "recorded_date": "2026-08-18",
+  "status": "rejected_p0_open",
+  "candidate": {
+    "branch": "codex/iclr2027-drive-opd-07g-nuscenes-manifest-source-v1",
+    "commit": "37234dc194242a31459b0210bfbbd220c4d1a1ee",
+    "parent": "653e797a2381cdf017466ef95aefcc41961f6715",
+    "tree": "c1d83c19ef2e08167b0014ac48c4828a95bb5651",
+    "commit_count_from_parent": 1,
+    "non_merge": true,
+    "changed_path_count": 11,
+    "changed_name_status_sha256": "e40696dd2ac7454b726accb267874a60b4b2f097a2ee67b510c3c502bd29abbc",
+    "changed_path_content_inventory_sha256": "ae22711866201a2f306f418d3e42091bd9608756bf64810b633aa92aba06cc82",
+    "worktree_clean": true,
+    "candidate_receipt_sha256": "316b2309c3671ea769d5edc0cb81f5c03a96f6d7fee39d3c61abd0a6c357fe63"
+  },
+  "contract_copy": {
+    "source_controller_commit": "04b2290979cb711ada763967ad55a62586f7d7be",
+    "file_count": 7,
+    "byte_identity_passed": true
+  },
+  "independent_cpu_replay": {
+    "cuda_visible_devices": "",
+    "python_dont_write_bytecode": "1",
+    "pytest_cache_provider_disabled": true,
+    "focused": {
+      "passed": 44,
+      "failed": 0,
+      "duration_seconds": 7.85,
+      "output_path": "/tmp/controller_audit_nuscenes_37234dc_focused.txt",
+      "output_sha256": "c4c40cd882547a6c315a144b7821915653427abce9f2c5714257af2518c5bfd1"
+    },
+    "adjacent_regression": {
+      "passed": 10,
+      "failed": 0,
+      "duration_seconds": 0.12,
+      "output_path": "/tmp/controller_audit_nuscenes_37234dc_regression.txt",
+      "output_sha256": "6df23f5e7aa2f42be8c82e63634e296d396d4d919f2ef69394b6bb2129841712"
+    }
+  },
+  "positive_findings": [
+    "complete log_token grouping and descendant closure are recomputed",
+    "official split fallback, foreign keys, reciprocal chains and selected file inventories fail closed in synthetic fixtures",
+    "producer and validator source bytes are compared with the supplied controller requirements",
+    "pre-validation output bytes are re-read after semantic validation",
+    "publication uses a no-replace atomic directory rename and removes failed staging directories"
+  ],
+  "p0_findings": [
+    {
+      "id": "NUSC-P0-01",
+      "title": "Failure-Patch pre-access evidence is self-attested",
+      "description": "The input spec supplies both the Failure-Patch stream and its receipt. The receipt only asserts pre_access/development_only/non-claim-bearing Booleans and hashes the same stream. Neither accepted_prior_evidence nor another controller-frozen requirement binds the receipt or stream SHA256, an authorization time, an authoritative access ledger, evaluator identity, or chronology. A caller can therefore handwrite arbitrary post hoc statistics and a matching receipt and still publish a controller-validator-passing Failure-Patch assignment once parameters are unblocked.",
+      "reproduction_output_path": "/tmp/controller_audit_nuscenes_37234dc_failure_receipt_bypass.json",
+      "reproduction_output_sha256": "9a4da0777d7f3063af348d1eee37d814484bd3b50289de9e15494d516f501810",
+      "reproduction_exit_code": 0,
+      "reproduction_controller_validation_status": "passed",
+      "reproduction_published_failure_assignment": true
+    }
+  ],
+  "p1_findings": [
+    {
+      "id": "NUSC-P1-01",
+      "title": "Paper atomic-unit formula understates the ledger descendant set",
+      "description": "The report defines D(q) as selected six-camera and LIDAR_TOP records, while the implementation and frozen row contract include every sample_data descendant. The paper-facing definition must match the implemented all-sample_data ledger and separately describe the selected physical-file inventory."
+    },
+    {
+      "id": "NUSC-P1-02",
+      "title": "Official split and CAN provenance remain dependent on later external acceptance",
+      "description": "The producer hashes supplied devkit source bytes and explicit CAN rows but does not independently derive the split mapping from those bytes or authenticate each CAN-to-log association. A later N0 freeze must bind authoritative split and CAN provenance identities explicitly; they cannot be inferred from the producer's self-consistency alone."
+    }
+  ],
+  "required_repair": [
+    "freeze exact Failure-Patch stream and receipt SHA256 values in controller-owned requirements before generation",
+    "bind an authoritative pre-access chronology or access-ledger receipt, evaluation/family/domain identities, and source/evaluator commit identities",
+    "reject any input-spec substitution even when the substituted receipt is internally hash-consistent",
+    "add a positive fixture that uses a controller-frozen receipt and adversarial negatives for handwritten receipt, stream substitution, chronology rollback and identity mismatch",
+    "correct the paper atomic-unit formula to include all sample_data descendants"
+  ],
+  "decision": {
+    "source_candidate_approved": false,
+    "approved_producer_freeze": "stopped",
+    "nuscenes_n0_metadata_authorization": "stopped",
+    "real_manifest_generation": "stopped",
+    "publication_or_transfer": "stopped",
+    "source_replay": "stopped",
+    "cache_model_t0_gpu_training_evaluation": "stopped"
+  },
+  "artifact_boundary": {
+    "raw_nuscenes_or_navsim_accessed": false,
+    "real_manifest_or_membership_generated": false,
+    "cache_read_or_built": false,
+    "model_or_checkpoint_loaded": false,
+    "cuda_or_gpu_used": false,
+    "training_or_evaluation_performed": false,
+    "final_test_accessed": false,
+    "publication_or_push_performed": false
+  }
+}

@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "audit_id": "P001-DRIVE-OPD-07G-NUSCENES-N0-INPUT-BUILDER-DOC-SCOPE-V2-CANDIDATE",
+  "recorded_date": "2026-08-18",
+  "status": "passed_for_documentation_scope_correction_only",
+  "controller_parent_at_intake": "5c7d69bb6eb2ecf0e27f65757ec0143b47571319",
+  "authorization": {
+    "controller_commit": "88e9c33f6444b08d0367dd96f5be5d623f4717ef",
+    "base_commit": "2734b602e6ed92b6c1111bb36b4a9c02eacd471a",
+    "base_tree": "cc8780eabb763ee8d05f355e96df55d71ecf4d82",
+    "authorized_changed_path": "paper_iterations/P001_scheduler_session_contract/NUSCENES_N0_INPUT_BUILDER_SOURCE_V1.md"
+  },
+  "candidate": {
+    "branch": "codex/iclr2027-drive-opd-07g-nuscenes-n0-input-builder-doc-scope-v2",
+    "commit": "b4c3ffd8b197c6fdd4a7ef7416cc8852714a5717",
+    "parent": "2734b602e6ed92b6c1111bb36b4a9c02eacd471a",
+    "tree": "068b319424359eb43bb35fc24948ea52df3c5c51",
+    "commit_count_from_base": 1,
+    "non_merge": true,
+    "worktree_clean": true,
+    "changed_path_count": 1,
+    "changed_path_inventory_sha256": "a3f2acf4723dc29c463deedb85be49697f4e834f720102c37e84e915bef3fe1f",
+    "full_index_diff_sha256": "fb8e53c1ebaa2b224105b61618e8515b01e25ce79fe1eb659c785cded993796c",
+    "published_or_pushed": false
+  },
+  "changed_path": {
+    "path": "paper_iterations/P001_scheduler_session_contract/NUSCENES_N0_INPUT_BUILDER_SOURCE_V1.md",
+    "sha256": "431a18c660667909323266e3df59110e725ab202ba62f206dd8bef1c97f6866a"
+  },
+  "unchanged_source_identity": {
+    "cli_path": "selector_bench/scripts/61_build_nuscenes_n0_input.py",
+    "cli_sha256": "5796fb4706dde879dcec3bafeec97ce6d60b9ec6125edc313c3e5a7544761242",
+    "library_path": "selector_bench/selector_bench/continual/nuscenes_input_builder.py",
+    "library_sha256": "d802e8543ce5e73368395ab31fb70f30d8df414f6c501489147e2afbdef60100",
+    "test_path": "selector_bench/tests/test_nuscenes_input_builder.py",
+    "test_sha256": "e65dadf612090222eb5100f5d264af14f86f6a29248d124815b5bd4e249a7169",
+    "git_blob_identity_matches_base": true
+  },
+  "scope_corrections": {
+    "extracted_metadata_directory_only": true,
+    "archive_input_implemented_or_accepted": false,
+    "real_mode_graph_scope": "only the graph required to derive explicit sensor, map and CAN path expectations",
+    "complete_all_table_closure_gate": "later frozen script-60 N0 gate",
+    "synthetic_script_60_replay_scope": "interface compatibility only"
+  },
+  "independent_controller_replay": {
+    "temporary_root": "/tmp/drive-opd-n0-doc-controller-audit.is31qR",
+    "detached_exact_commit": "b4c3ffd8b197c6fdd4a7ef7416cc8852714a5717",
+    "test_files": [
+      "selector_bench/tests/test_nuscenes_input_builder.py",
+      "selector_bench/tests/test_nuscenes_provenance.py",
+      "selector_bench/tests/test_nuscenes_continual_protocol.py"
+    ],
+    "passed": 185,
+    "failed": 0,
+    "duration_seconds": 127.15,
+    "stdout_sha256": "f138d3d94dac3e51e779c3b8da1ac88c0ec91e4e89f68bb3c90032b8857a437e",
+    "detached_worktree_clean": true,
+    "python_bytecode_or_pytest_cache_path_count": 0,
+    "cache_scan_output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "cuda_visible_devices": "",
+    "python_dont_write_bytecode": "1",
+    "pytest_cache_provider_disabled": true
+  },
+  "static_verification": {
+    "git_show_check_passed": true,
+    "exact_changed_path_set": true,
+    "source_config_test_bytes_changed": false
+  },
+  "decision": {
+    "documentation_scope_corrections_satisfied": true,
+    "input_builder_source_identity_unchanged": true,
+    "archive_input_supported": false,
+    "complete_all_table_graph_closure_delegated_to_frozen_script_60": true,
+    "paper_or_publication_promoted": false,
+    "real_input_specification_authorized": false,
+    "real_nuscenes_access": "stopped",
+    "real_n0_scan_or_receipt": "stopped",
+    "session_atomic_manifest_generation": "stopped",
+    "publication_or_transfer": "stopped",
+    "six_g_source_replay": "stopped",
+    "cache_model_t0_gpu_training_evaluation": "stopped"
+  },
+  "remaining_external_prerequisites": [
+    "a human-approved independent upstream-origin route for the extracted trainval release",
+    "the exact-RC4 context-free gpt-5.6-sol xhigh review must finish with zero P0",
+    "complete frozen session-atomic NAVSIM and nuScenes manifests",
+    "a later explicit controller execution gate"
+  ],
+  "artifact_boundary": {
+    "raw_nuscenes_or_navsim_accessed": false,
+    "real_input_specification_generated": false,
+    "real_n0_input_or_output_generated": false,
+    "real_manifest_or_membership_generated": false,
+    "cache_read_or_built": false,
+    "model_or_checkpoint_loaded": false,
+    "cuda_or_gpu_used": false,
+    "training_or_evaluation_performed": false,
+    "final_test_accessed": false,
+    "publication_or_push_performed": false
+  }
+}

@@ -1,0 +1,125 @@
+{
+  "schema_version": 1,
+  "authorization_id": "P001-DRIVE-OPD-07G-NAVSIM-SCENE-MAPPING-SOURCE-V2-FORWARD",
+  "recorded_date": "2026-08-18",
+  "status": "authorized_source_cpu_only",
+  "reason": "official NAVSIM source keeps log_name and scene_token distinct; the approved v1 producer incorrectly constrains independent evidence to a one-to-one log-to-scene mapping",
+  "immutable_base": {
+    "branch": "codex/iclr2027-drive-opd-07g-navsim-manifest-source-v1",
+    "commit": "64447d3a9cc60f61b8596aed41086b5b4311c889",
+    "parent": "653e797a2381cdf017466ef95aefcc41961f6715",
+    "tree": "5ce81ef06d71189d1ff46676ecc1b4d01e415728",
+    "producer_source_path": "selector_bench/selector_bench/continual/navsim_protocol.py",
+    "producer_source_sha256": "75f683cb8a7931783f1342a9b479d37470bc215b297efc421b003e3a2ab6cfae"
+  },
+  "authorized_destination": {
+    "branch": "codex/iclr2027-drive-opd-07g-navsim-scene-mapping-source-v2",
+    "suggested_worktree": "/home/khwang/domain-selector-navsim-scene-mapping-source-v2",
+    "commit_count_from_base": 1,
+    "parent_must_equal_base": true,
+    "merge_commit_allowed": false
+  },
+  "controller_authority": {
+    "semantic_audit_commit": "164b8677ec20ea71ab4f45a1443bd96c93c6ba80",
+    "semantic_audit_tree": "3d68e0b738221cab84de90d48d16c2431519a20c",
+    "semantic_audit_path": "controller_receipts/dual_server_dispatch_20260817/navsim_scene_log_semantics_audit.json",
+    "semantic_audit_sha256": "d2a2d76e11d6c8b2a2dff2280a8fece0b5b426f9e33bb4e604cdb5063e41504f",
+    "accepted_r1_session_ledger_sha256": "cf12df3e215874362c67a6ce404a8bb8ae054fdc5c393f7a58385abd2453fa08",
+    "requirements_path": "controller_protocols/drive_opd_session_atomic_v1/navsim_manifest_requirements.v1.json",
+    "requirements_sha256": "54d3f5f203a3db568c5cc5d18305c3dc4b00b81863e353c9dbd30bdefc833d64",
+    "validator_path": "controller_protocols/drive_opd_session_atomic_v1/validate_session_atomic_manifest.py",
+    "validator_sha256": "70b53893c3bc0704fbf09945a677412effdf4a2b0258ac56c2f8084798805ba3"
+  },
+  "official_semantic_source": {
+    "repository": "https://github.com/autonomousvision/navsim.git",
+    "v1_1_branch_commit": "3e8291bfa89ff247231e0227778840cd0a036896",
+    "v1_1_tag_commit": "0811876c274e8b058ab2be9b3dcd4d37bd23f177",
+    "dataloader_path": "navsim/common/dataloader.py",
+    "dataloader_sha256": "f9c1af29cd08d3da7b8b892db0e1d6676b0ab3aab0447c36a474b4a8c08e0696",
+    "dataclasses_path": "navsim/common/dataclasses.py",
+    "dataclasses_sha256": "17d96f48101982d4a0842bb4cc1de441672207ad9fed3e460bbbdcf74440a32b"
+  },
+  "required_mapping_row": {
+    "schema": "drive_opd.navsim_scene_mapping_row.v2",
+    "exact_keys": [
+      "schema",
+      "dataset_id",
+      "token",
+      "segmented_log_name",
+      "scene_token",
+      "initial_token",
+      "official_partition",
+      "atomic_unit_id",
+      "source_identity_sha256"
+    ],
+    "dataset_id": "navsim_official_navtrain",
+    "sort_key": [
+      "token"
+    ],
+    "source_identity_sha256_rule": "SHA256 of canonical UTF-8 JSON plus LF for the exact object {initial_token,log_name,scene_token,token}, with sorted keys, compact separators and allow_nan=false"
+  },
+  "required_producer_repairs": [
+    "replace the v1 per-log bijection mapping with the exact token-level v2 mapping row",
+    "require exactly one mapping row for every token in the accepted R1 session ledger and no extra token",
+    "require each mapping row segmented_log_name, official_partition and atomic_unit_id to match the exact ledger row containing its token",
+    "require non-empty source scene_token and initial_token and verify source_identity_sha256 from the exact four-field source identity object",
+    "derive each population scene_token descendant set as the sorted unique scene tokens evidenced by that session's token rows",
+    "reject any scene_token occurring in more than one complete session or official partition",
+    "permit multiple tokens per scene, multiple scenes per segmented log and multiple segmented logs per scene only when all rows remain inside one complete session",
+    "remove every assumption that unique scene count equals segmented-log count",
+    "bind the mapping bytes, row count, token/log/scene unique counts, per-partition counts and hashes, exact ledger hash, semantic-source identities, builder source identity and invocation in a controller-authorized proof",
+    "keep the production requirements blocked and do not self-authorize a synthetic mapping",
+    "validate staged outputs, re-read them and publish with atomic no-replace semantics"
+  ],
+  "required_source_surface": [
+    "selector_bench/selector_bench/continual/navsim_protocol.py",
+    "selector_bench/scripts/59_build_navsim_session_atomic_manifest.py",
+    "selector_bench/scripts/60_build_navsim_scene_mapping.py",
+    "selector_bench/tests/test_navsim_continual_protocol.py"
+  ],
+  "required_adversarial_coverage": [
+    "legacy v1 log-to-scene mapping rejection",
+    "missing duplicate unknown or extra token",
+    "token assigned to the wrong segmented log session or official partition",
+    "empty or altered scene_token or initial_token",
+    "wrong source_identity_sha256 or noncanonical source identity",
+    "same scene_token crossing complete sessions or official partitions",
+    "asserted row unique-count or hash substitution",
+    "mapping proof ledger source program invocation or mapping hash substitution",
+    "Boolean counts NaN Infinity duplicate JSON keys and noncanonical JSONL",
+    "pre-existing output staged-write failure post-validation mutation and pre-publication mutation"
+  ],
+  "required_positive_coverage": [
+    "multiple tokens belonging to one scene",
+    "one segmented log containing multiple scenes inside one complete session",
+    "one scene spanning multiple segmented logs inside one complete session",
+    "full token coverage with independently derived scene descendant counts and hashes"
+  ],
+  "authorized_actions": [
+    "create one separate forward-only source branch and worktree",
+    "edit only the required source surface and bounded source documentation",
+    "run static checks and synthetic temporary-fixture CPU tests with CUDA hidden",
+    "create exactly one non-merge candidate commit and exact hash receipt"
+  ],
+  "prohibited_actions": [
+    "move rewrite amend reset rebase merge or force-update any existing ref",
+    "read NAVSIM or nuScenes real metadata raw data sensors or caches",
+    "read or build the historical 10444 or 14951 token caches",
+    "generate a real scene mapping or session manifest",
+    "self-authorize scene identity Failure-Patch evidence or official counts",
+    "publish push transfer dispatch 06G or create a new review task",
+    "import a real model or checkpoint",
+    "use CUDA GPU training evaluation final-test or performance claims"
+  ],
+  "post_candidate_gates": {
+    "controller_source_audit_and_exact_identity_freeze": "required",
+    "separate_real_metadata_access_authorization": "required",
+    "real_mapping_generation_and_independent_replay": "stopped",
+    "requirements_scene_counts_update": "stopped",
+    "real_navsim_manifest_generation": "stopped",
+    "rc4_blind_review": "pending_valid_exact_rc4_xhigh_zero_p0_verdict",
+    "nuscenes_complete_manifest": "stopped",
+    "six_g_source_replay": "stopped",
+    "cache_model_t0_gpu_training_evaluation_final_test_claims": "stopped"
+  }
+}

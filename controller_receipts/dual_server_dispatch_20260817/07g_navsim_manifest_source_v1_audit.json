@@ -1,0 +1,119 @@
+{
+  "schema_version": 1,
+  "audit_id": "P001-DRIVE-OPD-07G-NAVSIM-MANIFEST-SOURCE-LEGACY-INVENTORY",
+  "recorded_date": "2026-08-18",
+  "status": "legacy_source_rejected_new_source_candidate_required",
+  "scope": "read-only source and accepted-evidence inventory; no dataset or execution action",
+  "controller_identity": {
+    "branch": "codex/iclr2027-dual-server-controller",
+    "commit": "2c0694213b1db0289dd3fec9094d3f1531ee9a23",
+    "tree": "f9a929e5530b342dd3779ac1bea63b8c0f4e39b2"
+  },
+  "immutable_candidate_base": {
+    "branch": "codex/iclr2027-drive-opd-07g-p0-rc4",
+    "commit": "653e797a2381cdf017466ef95aefcc41961f6715",
+    "parent": "79a2c529f35fb18049b4f30b46a2fe9926bf7e5a",
+    "tree": "53943615137849d3338cc037914b302d6e3db363"
+  },
+  "accepted_population_boundary": {
+    "population_commit": "1bc9cc2957eeccc6927f3dc826135ce85bfae790",
+    "evidence_commit": "af9213b216b0260b184d3d3ae109a4ed1bed70b8",
+    "population_receipt_sha256": "fa2f8c417957c22d3fce83d36544c373353a533302deeb5b9a618d9db4aedb1a",
+    "session_integrity_receipt_sha256": "7156370a742df6328b03350f48c7b55a1608e9d0498dbd131f17ac075a2e63bd",
+    "session_ledger_sha256": "cf12df3e215874362c67a6ce404a8bb8ae054fdc5c393f7a58385abd2453fa08",
+    "session_ledger_rows": 162,
+    "development_sessions": 101,
+    "sealed_sessions": 61,
+    "full_segmented_logs": 1192,
+    "full_tokens": 103288,
+    "development_segmented_logs": 978,
+    "development_tokens": 85109,
+    "sealed_segmented_logs": 214,
+    "sealed_tokens": 18179,
+    "boundary": "population and official partition evidence only; no CL stage or cell assignment"
+  },
+  "legacy_source": {
+    "controller_worktree_files": [
+      {
+        "path": "selector_bench/selector_bench/continual/navsim_protocol.py",
+        "sha256": "4134a00b29cb3328fffc73e2eef498915253cb3ea30feb2cdd8b01a61e5a1e5f"
+      },
+      {
+        "path": "selector_bench/scripts/40_build_drive_cl_protocol.py",
+        "sha256": "9797565c427d2ec35fb72d89e2d435f1f8bc3a8e5ad857b95c227350644ab916"
+      },
+      {
+        "path": "selector_bench/tests/test_navsim_continual_protocol.py",
+        "sha256": "eb5201a8d45d46469fa9ec84dc7b95231942285f6483f6686e7b635b0a7a01bf"
+      }
+    ],
+    "exact_rc4_files": [
+      {
+        "path": "selector_bench/selector_bench/continual/navsim_protocol.py",
+        "sha256": "568ffc9f57f81f25241f6bdc12db584f8c3f3cf1038c6fdde92f701f4cf234ce"
+      },
+      {
+        "path": "selector_bench/scripts/40_build_drive_cl_protocol.py",
+        "sha256": "e7ceb775f8341dcdee4349cdb38d2582b3b99d978f72951138ff1830d1a59079"
+      },
+      {
+        "path": "selector_bench/tests/test_navsim_continual_protocol.py",
+        "sha256": "37b072a66913416ea65948d334682664f958a1c5b8eaf5690301317f62834257"
+      }
+    ],
+    "disqualifying_findings": [
+      "population_is_loaded_from_a_pickle_cache_index",
+      "cli_contains_historical_valid_cache_train_default",
+      "failure_patch_statistics_are_loaded_from_a_generic_metrics_csv",
+      "no_controller_authorized_failure_stream_family_access_ledger_or_evaluator_lineage",
+      "legacy_protocol_schema_does_not_emit_the_common_controller_manifest_artifacts",
+      "no_exact_162_row_population_ledger_conversion_or_source_receipt_binding",
+      "no_approved_producer_identity_or_normative_validator_output",
+      "no_sealed_population_omission_and_exact_set_replay_under_the_common_contract"
+    ],
+    "decision": "not_eligible_for_approved_producer_freeze"
+  },
+  "r1_session_row_contract": {
+    "observed_keys": [
+      "duplicate_chronology_count",
+      "invalid_chronology_count",
+      "log_count",
+      "log_ids",
+      "max_chronology_key",
+      "min_chronology_key",
+      "missing_chronology_count",
+      "session_key",
+      "split",
+      "token_count",
+      "token_ids"
+    ],
+    "required_conversion": [
+      "atomic_unit_id_equals_session_key",
+      "official_train_maps_to_development_and_official_validation_maps_to_sealed_evaluation",
+      "segmented_log_name_descendants_equal_sorted_unique_log_ids",
+      "scene_token_semantics_must_be_explicitly_proven_as_the_same_segmented_log_identity_or_replaced_by_an_independent_exact_mapping",
+      "token_descendants_equal_sorted_unique_token_ids",
+      "strict_utc_order_key_is_derived_deterministically_from_validated_min_chronology_key",
+      "source_row_sha256_binds_the_exact_canonical_input_row",
+      "declared_counts_lists_splits_chronology_and_official_expectations_are_recomputed"
+    ],
+    "unresolved_semantic_guard": "the source ledger has no independent scene_token field; a producer must never silently copy log_ids into scene_token without a dataset-specific identity proof"
+  },
+  "decision": {
+    "new_forward_only_source_candidate": "authorized_separately",
+    "approved_producer": "stopped",
+    "failure_patch_evidence": "stopped",
+    "real_manifest_generation": "stopped",
+    "06g_source_replay": "stopped",
+    "dataset_cache_model_t0_gpu_training_evaluation_final_test_claims": "stopped"
+  },
+  "boundary_attestation": {
+    "dataset_or_raw_data_accessed": false,
+    "real_manifest_generated": false,
+    "cache_read_or_built": false,
+    "model_or_checkpoint_imported": false,
+    "cuda_or_gpu_action_performed": false,
+    "training_or_evaluation_performed": false,
+    "refs_or_worktrees_changed": false
+  }
+}

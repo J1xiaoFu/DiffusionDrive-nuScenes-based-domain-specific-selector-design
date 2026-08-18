@@ -1,0 +1,111 @@
+{
+  "schema_version": 1,
+  "authorization_id": "P001-DRIVE-OPD-07G-NUSCENES-MANIFEST-SOURCE-V2",
+  "recorded_date": "2026-08-18",
+  "status": "authorized_source_cpu_synthetic_repair_only",
+  "authorization_is_dataset_or_execution_unlock": false,
+  "rejected_base": {
+    "branch": "codex/iclr2027-drive-opd-07g-nuscenes-manifest-source-v1",
+    "commit": "37234dc194242a31459b0210bfbbd220c4d1a1ee",
+    "parent": "653e797a2381cdf017466ef95aefcc41961f6715",
+    "tree": "c1d83c19ef2e08167b0014ac48c4828a95bb5651",
+    "disposition": "rejected_p0_self_attested_failure_patch_evidence"
+  },
+  "authorized_destination": {
+    "branch": "codex/iclr2027-drive-opd-07g-nuscenes-manifest-source-v2",
+    "commit_count_from_base": 1,
+    "parent_must_equal_rejected_base": true,
+    "merge_commit_allowed": false
+  },
+  "normative_contract": {
+    "controller_commit": "fd169e509af64da942ba9c63fc1e0e8ff5e584e9",
+    "controller_tree": "3ebe4edbc1072e19c1d666cadd89c426357f343e",
+    "copy_root": "controller_protocols/drive_opd_session_atomic_v1",
+    "files": [
+      {
+        "path": "MANIFEST_CONTRACT.md",
+        "sha256": "04d3109b3f7f33290d563699f0980550ddc1a35e1479ab1049b9d70234b9e0e0"
+      },
+      {
+        "path": "session_atomic_manifest.schema.json",
+        "sha256": "6e43ae2af5a981368c9e4bd764691d3d9d8849031e4a02910c5db982ab04e791"
+      },
+      {
+        "path": "population_ledger_row.schema.json",
+        "sha256": "e5ac1719c08b37351fb42576cabb63fcf261b97112185e57e2ed3f78df2b7752"
+      },
+      {
+        "path": "protocol_assignment_row.schema.json",
+        "sha256": "fa8d3f93a57bc33dcb3655a7c8a782e9c727b18b651a608a9252463938986f96"
+      },
+      {
+        "path": "selection_input_row.schema.json",
+        "sha256": "0b05cd114277e98e267953a0d94f3514715e1018ff7767c5222e2537575afc28"
+      },
+      {
+        "path": "nuscenes_manifest_requirements.v1.json",
+        "sha256": "fbbf99edce7362fd0537ca694f573e0ed2372927f992da0ad29ac1df11100440"
+      },
+      {
+        "path": "validate_session_atomic_manifest.py",
+        "sha256": "70b53893c3bc0704fbf09945a677412effdf4a2b0258ac56c2f8084798805ba3"
+      }
+    ],
+    "production_requirements_must_remain_blocked": true
+  },
+  "required_repair": [
+    "replace_v1_controller_contract_copies_byte_for_byte",
+    "require_failure_patch_evidence_status_controller_authorized",
+    "bind_exact_canonical_selection_input_to_controller_frozen_sha256",
+    "bind_raw_stream_receipt_family_access_ledger_evaluator_metric_and_domain_identities",
+    "enforce_monotone_family_authorization_access_observation_receipt_utc_chronology",
+    "reject_internal_receipt_and_stream_self_consistency_as_authority",
+    "include_failure_patch_evidence_in_selection_parameter_digest",
+    "fix_report_descendant_formula_to_all_sample_data_descendants"
+  ],
+  "required_attack_classes": [
+    "arbitrary_statistics_plus_matching_pre_access_receipt",
+    "selection_stream_or_canonical_selection_input_substitution",
+    "blocked_missing_unknown_or_boolean_evidence_status",
+    "wrong_dataset_protocol_family_or_registry_identity",
+    "wrong_stream_receipt_ledger_evaluator_or_source_hash",
+    "family_freeze_authorization_access_observation_or_receipt_chronology_rollback",
+    "duplicate_key_nonfinite_or_noncanonical_evidence",
+    "failure_after_staging_leaves_no_published_output_or_receipt"
+  ],
+  "authorized_actions": [
+    "create_separate_forward_only_branch_and_worktree",
+    "copy_exact_controller_contract_files",
+    "repair_source_tests_and_documentation",
+    "synthetic_temporary_directory_fixtures",
+    "cuda_hidden_source_cpu_tests",
+    "one_auditable_candidate_commit",
+    "exact_identity_and_hash_receipt"
+  ],
+  "prohibited_actions": [
+    "move_existing_refs",
+    "reset_rebase_amend_merge_force_or_history_rewrite",
+    "publication_or_push",
+    "dataset_or_raw_metadata_access",
+    "real_manifest_or_membership_generation",
+    "sensor_file_enumeration_on_real_data",
+    "info_pkl_or_anchor_materialization",
+    "cache_read_or_build",
+    "model_or_checkpoint_import",
+    "final_test_access",
+    "cuda_or_gpu",
+    "training_or_evaluation",
+    "performance_claim",
+    "06g_dispatch"
+  ],
+  "post_candidate_gates": {
+    "controller_source_audit": "required",
+    "approved_producer_freeze": "stopped",
+    "failure_patch_authoritative_evidence_freeze": "stopped",
+    "nuscenes_n0_metadata_only_authorization": "stopped",
+    "official_population_expectations_freeze": "stopped",
+    "real_manifest_generation": "stopped",
+    "source_replay": "stopped",
+    "cache_model_t0_gpu_training_evaluation_claims": "stopped"
+  }
+}

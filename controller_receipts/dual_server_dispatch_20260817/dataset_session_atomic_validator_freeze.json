@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "receipt_type": "drive_opd_dataset_session_atomic_semantic_validator_freeze",
+  "recorded_date": "2026-08-18",
+  "status": "validator_frozen_manifests_blocked",
+  "controller": {
+    "branch": "codex/iclr2027-dual-server-controller",
+    "parent_commit": "74309e292aeec3805d84f651b3911015be557bc8",
+    "worktree": "/home/khwang/.codex/worktrees/f376/domain-selector"
+  },
+  "purpose": "close self-consistent-subset, self-declared-receipt, unapproved-producer, stage/cell substitution, and post-validation receipt-write bypasses in the prospective dataset manifest gate",
+  "contract_files": [
+    {
+      "bytes": 8556,
+      "path": "controller_protocols/drive_opd_session_atomic_v1/MANIFEST_CONTRACT.md",
+      "sha256": "826da2e22066bcebf712e64e7dc2c583983252b948441a60eca629bfd59c1a67"
+    },
+    {
+      "bytes": 14035,
+      "path": "controller_protocols/drive_opd_session_atomic_v1/session_atomic_manifest.schema.json",
+      "sha256": "6e43ae2af5a981368c9e4bd764691d3d9d8849031e4a02910c5db982ab04e791"
+    },
+    {
+      "bytes": 1617,
+      "path": "controller_protocols/drive_opd_session_atomic_v1/population_ledger_row.schema.json",
+      "sha256": "e5ac1719c08b37351fb42576cabb63fcf261b97112185e57e2ed3f78df2b7752"
+    },
+    {
+      "bytes": 1569,
+      "path": "controller_protocols/drive_opd_session_atomic_v1/protocol_assignment_row.schema.json",
+      "sha256": "fa8d3f93a57bc33dcb3655a7c8a782e9c727b18b651a608a9252463938986f96"
+    },
+    {
+      "bytes": 1199,
+      "path": "controller_protocols/drive_opd_session_atomic_v1/selection_input_row.schema.json",
+      "sha256": "0b05cd114277e98e267953a0d94f3514715e1018ff7767c5222e2537575afc28"
+    },
+    {
+      "bytes": 5891,
+      "path": "controller_protocols/drive_opd_session_atomic_v1/navsim_manifest_requirements.v1.json",
+      "sha256": "65af775174d7e9d63c96ed8e367fad8dd10e8f6910a333628a2e44c1718b1082"
+    },
+    {
+      "bytes": 5911,
+      "path": "controller_protocols/drive_opd_session_atomic_v1/nuscenes_manifest_requirements.v1.json",
+      "sha256": "72ec753d36bb5383a4eaee3854cfa991a56406d66920e0f4920996f768665162"
+    },
+    {
+      "bytes": 50383,
+      "path": "controller_protocols/drive_opd_session_atomic_v1/validate_session_atomic_manifest.py",
+      "sha256": "6799593056840ae60a1b900079f35ea043db9612d5531a4347f9ad88cb30d029"
+    },
+    {
+      "bytes": 28600,
+      "path": "controller_protocols/drive_opd_session_atomic_v1/tests/test_validate_session_atomic_manifest.py",
+      "sha256": "48b2364ab951833297178f1ab52bff70fdc2368d71c5ff180390a9bd3e46bb60"
+    }
+  ],
+  "semantic_invariants": {
+    "atomic_unit": "one complete capture session; NAVSIM timestamp-vehicle session or nuScenes log_token",
+    "population": "exact official development plus sealed-evaluation union with controller-approved counts and at least one per-partition descendant-ID digest",
+    "assignment": "every development unit exactly once per protocol in one stage and one train/audit/test development cell; every sealed unit absent",
+    "selection": "exact development set, recomputed row payload hashes, finite prospective statistics, deterministic chronological/failure-patch stage replay",
+    "source": "producer and validator bytes must hash from an explicit source root and exactly match controller-approved commit/tree/path/hash identities",
+    "receipt": "population receipt bytes must match accepted prior evidence; validation output is created exclusively only after full validation, fsynced and reread"
+  },
+  "validation": {
+    "json_files_parsed": 6,
+    "python_files_compiled_in_memory": 2,
+    "unittest_count": 16,
+    "unittest_status": "passed",
+    "unittest_output_bytes": 2934,
+    "unittest_output_sha256": "40fc3201f5294162d3b16cba85b2db408a2f1e55616d0773478aad830a88fd18",
+    "receipt_set_replay_entries": 48,
+    "receipt_set_replay_output_sha256": "c3ba97b32a7c5ecc5dd71336f235d680bb2e5f7d330fd8ddf45028df60c8ee76",
+    "git_diff_check": "passed",
+    "cache_or_bytecode_created": false
+  },
+  "deliberate_blockers": {
+    "navsim_approved_producer": "BLOCKED_PENDING_CONTROLLER_REVIEWED_DATASET_MANIFEST_SOURCE",
+    "nuscenes_approved_producer": "BLOCKED_PENDING_CONTROLLER_REVIEWED_DATASET_MANIFEST_SOURCE",
+    "nuscenes_population_receipt": null,
+    "nuscenes_exact_population_expectations": "blocked",
+    "nuscenes_failure_patch_parameters": "blocked_pending_metric_and_domain_registries"
+  },
+  "decision": {
+    "contract_semantics": "frozen",
+    "navsim_manifest": "blocked",
+    "nuscenes_manifest": "blocked",
+    "fresh_exact_rc4_xhigh_review": "pending",
+    "source_replay_06g": "stopped",
+    "dataset_or_raw_data_access": "stopped",
+    "cache": "stopped",
+    "real_model_preflight": "stopped",
+    "t0": "stopped",
+    "gpu": "stopped",
+    "training": "stopped",
+    "evaluation": "stopped",
+    "final_test": "stopped",
+    "performance_claim": "stopped"
+  }
+}

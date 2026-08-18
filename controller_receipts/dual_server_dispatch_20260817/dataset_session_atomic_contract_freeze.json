@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "receipt_type": "drive_opd_dataset_session_atomic_contract_freeze",
+  "recorded_date": "2026-08-18",
+  "status": "contract_frozen_membership_blocked",
+  "controller": {
+    "branch": "codex/iclr2027-dual-server-controller",
+    "parent_commit": "3a5e602068dec2212228936cdcb2b4fe5f587467",
+    "worktree": "/home/khwang/.codex/worktrees/f376/domain-selector"
+  },
+  "contract_files": [
+    {
+      "bytes": 4911,
+      "path": "controller_protocols/drive_opd_session_atomic_v1/MANIFEST_CONTRACT.md",
+      "sha256": "21c87716cd25ef6f6c8c8c11eab535b7ffa42f278bf1dcecd7d31315eab4e0c9"
+    },
+    {
+      "bytes": 11867,
+      "path": "controller_protocols/drive_opd_session_atomic_v1/session_atomic_manifest.schema.json",
+      "sha256": "735d5e2b221493c0243bfdacb6f25e053535043607925b0def632ababb9a2cbc"
+    },
+    {
+      "bytes": 3700,
+      "path": "controller_protocols/drive_opd_session_atomic_v1/navsim_manifest_requirements.v1.json",
+      "sha256": "0e61b94ecbceb600ba10ae9effe9db6fff259e7f11ce12b94cffd9601cca8109"
+    },
+    {
+      "bytes": 4942,
+      "path": "controller_protocols/drive_opd_session_atomic_v1/nuscenes_manifest_requirements.v1.json",
+      "sha256": "4deaffe3fa64cf7980e1ec0b347582a54a8f03b778f3d2a54608dd9373b35664"
+    }
+  ],
+  "navsim_prior_evidence": {
+    "canonical_session_table_git_blob": "45649ddfea00b8577bc274e0433ebfb4d70e1f86",
+    "canonical_session_table_sha256": "cf12df3e215874362c67a6ce404a8bb8ae054fdc5c393f7a58385abd2453fa08",
+    "population_commit": "1bc9cc2957eeccc6927f3dc826135ce85bfae790",
+    "population_receipt_path": "controller_receipts/06g/R1_official_navtrain_20260817/receipt.json",
+    "population_receipt_sha256": "fa2f8c417957c22d3fce83d36544c373353a533302deeb5b9a618d9db4aedb1a",
+    "session_integrity_commit": "af9213b216b0260b184d3d3ae109a4ed1bed70b8",
+    "session_integrity_receipt_git_blob": "6b899031c550ac9483ce7f5bfdd3f864c572b5cf",
+    "session_integrity_receipt_sha256": "7156370a742df6328b03350f48c7b55a1608e9d0498dbd131f17ac075a2e63bd"
+  },
+  "nuscenes_decision": {
+    "atomic_unit": "complete_nuscenes_log_token",
+    "accepted_population_receipt": null,
+    "accepted_session_ledger": null,
+    "reason": "scene-level prototypes can separate scenes sharing one capture log; source provenance, all-table closure, descendant inventory and materialization lineage are not yet frozen"
+  },
+  "validation": {
+    "all_json_parse": "passed",
+    "git_diff_check": "passed",
+    "json_schema_library_replay": "not_run_dependency_unavailable",
+    "schema_validation_boundary": "shape validation never substitutes for the dataset-specific semantic validator and independent destination replay"
+  },
+  "decision": {
+    "contract_shape": "frozen",
+    "navsim_manifest": "blocked_missing_stage_assignments_and_controller_intake_of_session_ledger",
+    "nuscenes_manifest": "blocked_missing_dataset_provenance_and_membership",
+    "fresh_exact_rc4_xhigh_review": "pending",
+    "source_replay_06g": "stopped",
+    "dataset_or_raw_data_access": "stopped",
+    "cache": "stopped",
+    "real_model_preflight": "stopped",
+    "t0": "stopped",
+    "gpu": "stopped",
+    "training": "stopped",
+    "evaluation": "stopped",
+    "final_test": "stopped",
+    "performance_claim": "stopped"
+  }
+}

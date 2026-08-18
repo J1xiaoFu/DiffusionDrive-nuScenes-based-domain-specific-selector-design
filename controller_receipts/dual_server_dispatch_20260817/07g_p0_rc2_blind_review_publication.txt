@@ -1,0 +1,68 @@
+Drive-OPD RC2 blind-review rejection publication receipt
+Recorded: 2026-08-17 Asia/Shanghai
+
+Decision boundary
+-----------------
+This receipt publishes and replays a rejected, non-promoting source/CPU review result only.
+RC2 remains rejected with four open P0 findings. No 06G dispatch or execution authorization follows.
+
+Public repository
+-----------------
+repository: J1xiaoFu/DiffusionDrive-nuScenes-based-domain-specific-selector-design
+branch: codex/iclr2027-dual-server-dispatch-publication
+update mode: one non-force ref update
+
+public commit: e36eb38da827290c277a0f5ffc615456046f5524
+public parent: 81973da8c2768e71f5f79cefc17888e19d2f6cbd
+public tree: 2cce21835436150ad65fe03805f294c6196d010d
+exact changed path count: 4
+full-index diff SHA256: 5e10bc79edc8d477f51df19b4f35caaabfac6c5d834cabd471a4e62645dde45b
+sorted changed-path inventory SHA256: 3131f907f2c3e729389befdc0d7c5f55a8f61b720d3b2f444348c670027c24cd
+
+Exact published paths
+---------------------
+controller_receipts/dual_server_dispatch_20260817/AUDIT.md
+  Git blob: ed9c0fa861f2d0919716a9ad8a5b619124ef4c0f
+  SHA256: 31450b0c4a0a0973705abab22addef93773fb07c6d7419865d158d5b99f740b2
+controller_receipts/dual_server_dispatch_20260817/SHA256SUMS
+  Git blob: 922170f26ef0e34472a9895d7511740118575cd3
+  SHA256: 184b4c077c5837ff254fedd95d995898e8fb6c6b0d169e5510f2f757d2433ae3
+controller_receipts/dual_server_dispatch_20260817/07g_p0_rc2_blind_review.md
+  Git blob: 066ec028cb73f4d998a743b2a027a3c0b537346f
+  SHA256: 78664e96f07209691f633330bad51e6e642c6b3c33ec1954fa928ad0087c66bd
+controller_receipts/dual_server_dispatch_20260817/07g_p0_rc2_blind_review_intake.json
+  Git blob: c46e30d92ac8c96fa2296c9aece164a5e5419e3f
+  SHA256: af650d8449e5dcc3d94021a64fba4690c04d837529186823e617118972b02f8f
+
+Preserved local publication object
+----------------------------------
+local commit: 3a4ca9ee5edacc8fe40e859595a025d5329ef44a
+local parent: 389e07b54fd0c220d9637b24d17788cddd6a16be
+local tree: 2cce21835436150ad65fe03805f294c6196d010d
+public/local tree content diff: empty
+
+Ordinary HTTPS replay
+---------------------
+command: GIT_TERMINAL_PROMPT=0 git fetch --no-tags --no-recurse-submodules https://github.com/J1xiaoFu/DiffusionDrive-nuScenes-based-domain-specific-selector-design.git refs/heads/codex/iclr2027-dual-server-dispatch-publication
+destination: FETCH_HEAD only
+fetched commit: e36eb38da827290c277a0f5ffc615456046f5524
+fetched parent: 81973da8c2768e71f5f79cefc17888e19d2f6cbd
+fetched tree: 2cce21835436150ad65fe03805f294c6196d010d
+exact four-path diff: PASS
+public/local tree identity: PASS
+git show --check: PASS
+
+Gate state
+----------
+source/CPU P0 contract: FAIL
+non-promoting rejected-result publication: PASS
+06G dispatch: STOPPED
+dataset provenance/adapter: STOPPED
+session-atomic CL manifest: STOPPED
+cache: STOPPED
+real-model preflight: STOPPED
+T0: STOPPED
+model/CUDA/GPU: STOPPED
+training: STOPPED
+evaluation: STOPPED
+performance claim: STOPPED

@@ -7,6 +7,27 @@
 This audit does not pass or authorize a source handoff, NAVSIM or nuScenes cache, continual-learning
 stage manifest, T0, real-model preflight, GPU training, evaluation, or paper-performance claim.
 
+## nuScenes session-manifest inventory intake
+
+- source task `01a00dab-5dc6-7413-8ca7-930353db0e0c` inspected exact RC4
+  `653e797a2381cdf017466ef95aefcc41961f6715` read-only and reported the committed prototype and
+  dataset-evidence gap surface
+- the exact 10,562-character delegated inventory hashes to
+  `de6204c1b729872b006b7796aac27cf6bf820a4beae73970e0678574989ab385`; the controller independently
+  matched all 18 advertised RC4 file hashes from the exact commit
+- atomicity is not ambiguous in the controller freeze: nuScenes uses one complete `log_token`, with
+  every child scene/sample/sample-data record inheriting one partition, stage and cell; scene-level
+  assignment and fallback sorted-scene 80/20 splitting remain forbidden
+- existing scene-level selection, converter, loader and NAVSIM claim scaffolds are prototype substrate
+  only; no all-table provenance, complete-log ledger, exact memberships, info-PKL lineage,
+  nuScenes evaluator/registries/family or independent replay exists
+- detailed intake and program evidence matrix:
+  `07g_nuscenes_session_manifest_intake_inventory.{json,md}`
+
+Decision: **ACCEPTED AS A READ-ONLY GAP INVENTORY ONLY.** No dataset evidence or producer is accepted,
+no manifest may be generated, and no source-replay or execution gate is promoted. Exact-RC4 xhigh
+review, complete NAVSIM membership and complete nuScenes membership remain independent blockers.
+
 ## Controller dispatch
 
 - controller branch: `codex/iclr2027-dual-server-controller`
@@ -528,6 +549,32 @@ dispatched. A zero-P0 exact-RC4 xhigh review, separately frozen session-atomic N
 manifests, and a later explicit controller gate are all mandatory before source replay. All later
 execution gates remain stopped.
 
+### Exact RC4 source publication
+
+- public commit `f93e53868b322b391b8a43ce4ff96ffae823f3cb`, sole parent
+  `b1e1991afe7b9b14fd83f7510394c0ffb77ad700`, tree
+  `13c5e731c9f6b2dd2ff4df2f31aaa2acf509b1c4`; exactly 18 changed paths and one non-force
+  fast-forward update
+- preserved local publication object `d23b0943f19925202b005752857a5d14a15eda63` has the same sole
+  parent and exact same tree; no local publication ref was moved
+- ordinary anonymous HTTPS replay reproduced commit, parent, tree, exact path inventory and
+  `git show --check`; the 7,434-byte manifest SHA256 is
+  `7ee2fc57e8f3ea9420b0a18fafa7f8c7e9deae34fa45799c3367a1f3f97ad4e9`
+- all 41 source blob SHA256 values matched with no missing or mismatched files; independently
+  recomputed logical bundle `e9aa55e56dabe55064f8a06523bf08aea468a7315020190926668b35cc18913b`
+  exactly matched the manifest
+- the publication tree differs by design from the whole RC4 worktree tree because the publication
+  branch has a different parent/controller-receipt layout; exactness is bound at source blobs,
+  logical bundle and source commit identity
+- receipt: `07g_p0_rc4_publication.txt`
+
+Decision: **PUBLICATION PASS FOR EXACT RC4 SOURCE AND RECEIPTS ONLY.** A fresh context-free exact-RC4
+`gpt-5.6-sol`/`xhigh` source/CPU blind review may now be created. No 06G replay is dispatched. Before
+any 06G source replay, the fresh review must return zero open P0, distinct session-atomic NAVSIM and
+nuScenes manifests must be controller-frozen, and a later explicit source-replay gate must be issued.
+Every data, adapter, cache, model, T0, GPU, training, evaluation, final-test and performance gate
+remains stopped.
+
 ## 06G R1 session-integrity intake
 
 - remote audit commit: `af9213b216b0260b184d3d3ae109a4ed1bed70b8`, parent
@@ -550,6 +597,67 @@ execution gates remain stopped.
 Decision: **PASS only for remote-patch intake, derived-table integrity and prospective session-atomic
 representability.** It is not a frozen CL stage manifest or an independently replayed cache-builder
 receipt, and it does not unlock cache construction, T0, GPU work, training, evaluation or a paper claim.
+
+## Dataset-specific session-atomic manifest contract freeze
+
+- contract directory: `controller_protocols/drive_opd_session_atomic_v1`; the Markdown contract,
+  common Draft 2020-12 shape schema and separate NAVSIM/nuScenes requirements are bound by
+  `dataset_session_atomic_contract_freeze.json`, SHA256
+  `736823243bbc798bc050dfa4d5a251a316106ca859916b8ea6131f35282c4e68`
+- NAVSIM binds the population receipt SHA256
+  `fa2f8c417957c22d3fce83d36544c373353a533302deeb5b9a618d9db4aedb1a` separately from the
+  session-integrity receipt SHA256
+  `7156370a742df6328b03350f48c7b55a1608e9d0498dbd131f17ac075a2e63bd` and canonical session
+  table SHA256 `cf12df3e215874362c67a6ce404a8bb8ae054fdc5c393f7a58385abd2453fa08`
+- nuScenes freezes `complete_nuscenes_log_token` as the assignment unit; every child scene, sample
+  and sample-data record must inherit one partition and stage. Scene-level selection and the legacy
+  sorted 80/20 fallback are forbidden
+- both datasets require separate canonical population ledgers and separate Chronological-CL and
+  Failure-Patch-CL assignment artifacts, exact-set and descendant-closure validation, development-
+  only selection inputs, producer/validator source hashes and an independent destination replay
+- all three JSON files parse and `git diff --check` passes. The optional `jsonschema` package is not
+  installed in this controller environment, so no library replay is claimed; later acceptance must
+  run both schema and dataset-specific semantic validators independently
+
+Decision: **CONTRACT SHAPE FROZEN; BOTH MEMBERSHIP MANIFESTS REMAIN BLOCKED.** NAVSIM still lacks
+controller intake of the exact session ledger and frozen stage assignments. nuScenes has no accepted
+population/provenance ledger and additionally lacks all-table closure, sensor/map/CAN inventory and
+DiffusionDrive materialization lineage. The pending exact-RC4 context-free xhigh review must return
+zero open P0, both complete manifests must later be accepted separately, and a distinct controller
+gate is still mandatory before any 06G source replay. Dataset access, cache, model, T0, CUDA/GPU,
+training, evaluation, final-test and performance gates remain stopped.
+
+## Dataset manifest row semantics and fail-closed validator freeze
+
+- this forward-only layer closes an ambiguity in the initial shape freeze: each protocol must assign
+  exactly the official **development** atomic-unit set across three stages and exactly one
+  development `train`, `audit` or `test` cell, while every official sealed-evaluation unit remains
+  absent. The development `test` cell is not the official final partition
+- population, assignment and selection-input row schemas now bind canonical JSONL bytes. NAVSIM
+  atomic rows include complete session descendants at log, scene-token and token granularity;
+  nuScenes retains complete `log_token` ownership of all scene/sample/sample-data descendants
+- the standard-library semantic validator rejects duplicate keys, non-finite values, noncanonical
+  JSONL, unsafe paths, duplicate descendants, incomplete or sealed assignments, handwritten stage or
+  cell substitutions, selection-payload substitution and inconsistent aggregate counts/hashes
+- official-population expectations are no longer self-consistency checks: the validator requires
+  exact development/sealed/full atomic-unit counts and per-kind descendant counts, then independently
+  replays controller-approved per-partition descendant-ID hashes. NAVSIM binds the accepted sorted
+  token hashes for 103,288 total, 85,109 development and 18,179 sealed tokens
+- neither the population receipt nor executable source may self-authorize: receipt bytes must equal
+  `accepted_prior_evidence.population_receipt_sha256`; producer/validator bytes are re-hashed from an
+  explicit source root and must exactly match controller-approved commit/tree/path/hash identities
+- validation receipts are created only after all checks, with exclusive creation, `fsync` and a
+  post-write byte replay; a failed validation leaves no output. Sixteen synthetic CPU tests cover the
+  positive contract and principal adversarial substitutions; output SHA256
+  `40fc3201f5294162d3b16cba85b2db408a2f1e55616d0773478aad830a88fd18`
+- receipt: `dataset_session_atomic_validator_freeze.json`
+
+Decision: **SEMANTIC VALIDATOR FROZEN; BOTH DATASET MANIFESTS STILL DELIBERATELY BLOCKED.** The
+current requirements mark both dataset producers unapproved. nuScenes additionally has no accepted
+population receipt, exact official expectations, or frozen failure-patch statistics. Those blockers
+may only be replaced by later reviewed forward commits. No 06G replay is dispatched, and dataset/raw
+access, cache, model, T0, CUDA/GPU, training, evaluation, final-test and performance gates remain
+stopped.
 
 ## 07G receipt
 
@@ -596,3 +704,369 @@ GPU remain stopped.
 
 nuScenes and NAVSIM maintain distinct manifests, metrics, result tables, statistical families and
 promotion gates. Neither lane may unlock or substitute for the other.
+
+## 07G nuScenes manifest-producer source-only authorization
+
+- authorization ID: `P001-DRIVE-OPD-07G-NUSCENES-MANIFEST-SOURCE-V1`
+- immutable base: RC4 `653e797a2381cdf017466ef95aefcc41961f6715`, parent
+  `79a2c529f35fb18049b4f30b46a2fe9926bf7e5a`, tree
+  `53943615137849d3338cc037914b302d6e3db363`
+- authorized branch: `codex/iclr2027-drive-opd-07g-nuscenes-manifest-source-v1`
+- required history: one non-merge child of exact RC4
+- normative semantic contract: controller commit
+  `04b2290979cb711ada763967ad55a62586f7d7be`, tree
+  `131f601bccf9c7846346c341323a471d3189a624`; seven named contract files must
+  be copied byte-identically and the production requirements must remain blocked
+- required source surface: nuScenes protocol module, thin build CLI and synthetic adversarial tests
+- frozen atomicity: complete `log_token`; every child scene/sample/sample-data record inherits one
+  official partition, stage and development cell
+- required source checks: official split identity with fallback disabled, all-table foreign-key and
+  sample-chain closure, metadata/sensor/sweep/map/CAN provenance inventory, canonical ledgers,
+  exact chronological/cell replay, blocked Failure-Patch behavior, source/input/output lineage and
+  validate-before-atomic-publish output semantics
+- boundary: synthetic source/CPU only; no real metadata or sensor access, membership generation,
+  info PKL, anchor, cache, model, final test, CUDA/GPU, training, evaluation, publication, 06G
+  dispatch or performance claim
+- authorization files: `07g_nuscenes_manifest_source_v1_authorization.md` SHA256
+  `3d57ed553aabefaf195806dea6f12b38429b65062aa732614e295e4b57484061` and
+  `07g_nuscenes_manifest_source_v1_authorization.json` SHA256
+  `2e666b9276c17763672203caf6a9909eae8029d98774b9ebf73bf4b6520fd121`
+
+The candidate cannot self-approve. Controller review, an approved-producer freeze, a separately
+authorized metadata-only N0 run, authoritative population expectations and real manifest generation
+remain later gates. All dataset and execution gates remain stopped.
+
+## nuScenes session-manifest source v1 controller audit
+
+- exact candidate: `37234dc194242a31459b0210bfbbd220c4d1a1ee`, sole parent
+  `653e797a2381cdf017466ef95aefcc41961f6715`, tree
+  `c1d83c19ef2e08167b0014ac48c4828a95bb5651`; one non-merge commit, 11 paths, clean worktree
+- exact controller-contract copy: PASS 7/7
+- independent focused replay: 44 passed in 7.85 seconds, output SHA256
+  `c4c40cd882547a6c315a144b7821915653427abce9f2c5714257af2518c5bfd1`
+- adjacent regressions: 10 passed in 0.12 seconds, output SHA256
+  `6df23f5e7aa2f42be8c82e63634e296d396d4d919f2ef69394b6bb2129841712`
+- executable bypass: arbitrary hand-authored Failure-Patch statistics plus an internally matching
+  `pre_access=true` receipt reached a controller-validator-passing published assignment; output
+  SHA256 `9a4da0777d7f3063af348d1eee37d814484bd3b50289de9e15494d516f501810`
+- open P0: neither the requirements nor accepted-prior-evidence surface freezes the Failure-Patch
+  stream/receipt identity or authoritative access chronology; the receipt therefore self-attests the
+  property it is meant to prove
+- P1: the paper formula describes selected camera/LiDAR records while the ledger includes all
+  sample-data descendants; authoritative split and CAN provenance must be bound in the later N0
+  freeze
+
+Decision: **SOURCE V1 REJECTED / P0 OPEN.** No producer approval, N0 dataset access, real manifest,
+publication, 06G replay, cache, model, T0, CUDA/GPU, training, evaluation, final-test access or claim
+is authorized. A repair requires a separate forward-only authorization after the controller freezes
+the missing evidence-binding semantics.
+
+## nuScenes manifest source v2 forward-only repair authorization
+
+- rejected base: source v1 `37234dc194242a31459b0210bfbbd220c4d1a1ee`, tree
+  `c1d83c19ef2e08167b0014ac48c4828a95bb5651`
+- hardened controller contract: `fd169e509af64da942ba9c63fc1e0e8ff5e584e9`, tree
+  `3ebe4edbc1072e19c1d666cadd89c426357f343e`
+- new semantics: exact controller-frozen canonical selection-input hash; raw stream/receipt,
+  family/access-ledger/evaluator/registry identities; strict monotone UTC chronology; full evidence
+  object in the selection-parameter digest
+- controller contract tests: 19 passed; output SHA256
+  `2e2e53f3dec87894284f664428a206c63548bf595b01198702e91eb260201273`
+- authorized destination: one non-merge child on
+  `codex/iclr2027-drive-opd-07g-nuscenes-manifest-source-v2`
+- boundary: synthetic source/CPU repair only; production requirements remain blocked
+
+Decision: **AUTHORIZED FOR SOURCE V2 SYNTHETIC SOURCE/CPU REPAIR ONLY.** No producer approval,
+dataset/raw metadata access, real manifest, publication, 06G replay, cache, model, T0, CUDA/GPU,
+training, evaluation, final-test access or claim is authorized.
+
+## nuScenes manifest source v2 controller audit
+
+- exact candidate: `495bac670073fc3f46f0f773ca51033331078509`, sole parent
+  `37234dc194242a31459b0210bfbbd220c4d1a1ee`, tree
+  `a7c86fbafea77ec647197c6d24d65edff83c95a8`; one non-merge commit, seven paths, clean worktree
+- exact hardened controller-contract copy: PASS 7/7
+- independent v1-bypass regression: 1 passed in 0.72 seconds, output SHA256
+  `6262dd4ae1e1610248aa7a1d90c86e6b7861110a1a434aeede186690d3652770`
+- detached source-v2 suite: 71 passed in 12.12 seconds, output SHA256
+  `9092d793d1fab5629e5e0b4de4ec9a9e0580f8675a9fc8a2f47a1c47e744e957`
+- controller-validator suite: 19 passed in 0.50 seconds, output SHA256
+  `815a1a0dc1c9272190561f6057a08651e12ab643edcc13279562a4a4390bfbc9`
+- the rejected self-attestation path is closed on the synthetic source surface: raw evidence is
+  content-bound, canonical selection input is independently frozen before stage calculation, and
+  complete-log descendants include all sample-data records including radar
+- external authority remains separate: the controller must authenticate the real family/access/
+  evaluator objects and chronology, then freeze real evidence in a later reviewed commit
+
+Decision: **PASS FOR A LATER APPROVED-PRODUCER IDENTITY FREEZE ONLY.** This audit does not itself
+approve the producer or unlock N0. Authoritative Failure-Patch evidence, official nuScenes
+provenance/expectations, real population and membership generation, publication/transfer, 06G
+replay, cache, model, T0, CUDA/GPU, training, evaluation, final-test access and claims remain stopped.
+
+## nuScenes producer-v2 identity freeze
+
+- source-v2 audit parent: controller commit `145d6504ed09457e0cd094fad41341bd4a07306c`
+- approved source identity: commit `495bac670073fc3f46f0f773ca51033331078509`, tree
+  `a7c86fbafea77ec647197c6d24d65edff83c95a8`
+- producer source SHA256: `a5e509d9fb33e5bbc00bdea71ecc51521eeeee39335f18e8667bea124ac2d773`
+- validator source SHA256: `70b53893c3bc0704fbf09945a677412effdf4a2b0258ac56c2f8084798805ba3`
+- updated nuScenes requirements SHA256:
+  `08968b1af352210fb57bfdc7db0946f4f75191ba865b2889e476fb5fc8409507`
+- controller contract replay after the freeze: 19 passed in 0.45 seconds, output SHA256
+  `82f2132e84555fb9e8a16514fde4f5f090399de8c5b7f6812c1edf54709f30e6`
+
+Decision: **PRODUCER IDENTITY FROZEN; MEMBERSHIP STILL BLOCKED.** No accepted population receipt,
+official population counts/hashes, Failure-Patch parameters or authoritative Failure-Patch evidence
+exists. Metadata-only N0 access itself requires a separate authorization. RC4 review, both complete
+manifests, source publication/destination replay and the explicit 06G source-replay gate remain
+pending. Raw data, real manifests, cache, model, T0, CUDA/GPU, training, evaluation, final test and
+claims remain stopped.
+
+## NAVSIM manifest source inventory and forward-only source authorization
+
+- accepted evidence boundary: population receipt `fa2f8c417957c22d3fce83d36544c373353a533302deeb5b9a618d9db4aedb1a`,
+  session-integrity receipt `7156370a742df6328b03350f48c7b55a1608e9d0498dbd131f17ac075a2e63bd`
+  and 162-row session ledger `cf12df3e215874362c67a6ce404a8bb8ae054fdc5c393f7a58385abd2453fa08`
+- exact accepted counts: 162 full sessions / 1,192 logs / 103,288 tokens; 101 development sessions /
+  978 logs / 85,109 tokens; 61 sealed sessions / 214 logs / 18,179 tokens
+- legacy exact-RC4 protocol source is rejected as a producer: it derives membership from a pickle
+  cache index, retains a historical cache default, loads Failure-Patch scores from a generic CSV and
+  does not emit the common controller-frozen artifacts or bind controller-authorized evidence
+- R1 conversion guard: `session_key` is the atomic unit; logs/tokens must be exact descendants and
+  chronology must be recomputed. The R1 ledger lacks an independent `scene_token` field, so a
+  candidate must prove segmented-log/scene identity from accepted dataset evidence or consume an
+  independent exact mapping; silent aliasing is forbidden
+- authorization ID: `P001-DRIVE-OPD-07G-NAVSIM-MANIFEST-SOURCE-V1`
+- immutable base: RC4 `653e797a2381cdf017466ef95aefcc41961f6715`; destination
+  `codex/iclr2027-drive-opd-07g-navsim-manifest-source-v1`; exactly one non-merge child
+- controller contract: commit `2c0694213b1db0289dd3fec9094d3f1531ee9a23`, tree
+  `f9a929e5530b342dd3779ac1bea63b8c0f4e39b2`; seven files copied byte-identically while production
+  producer and Failure-Patch evidence stay blocked
+- audit JSON SHA256 `f0ffa2a220b3fbbace2aeb544bc53c4564e64414984b77cd1aee21ccbccf820e`;
+  audit Markdown SHA256 `35387263785b701eea7ddd0bc225bd392c67ab65bf348073da71028dd33bdc28`
+- authorization JSON SHA256 `b422dbb0800562d01426cc6d483d1adfca7de0f4dd619aa939a69a365cec1321`;
+  authorization Markdown SHA256 `95d464505d7b414f3f38e5242f9e15cd9d714e337ceb21c20811bff231031b05`
+
+Decision: **AUTHORIZED FOR ONE SYNTHETIC SOURCE/CPU CANDIDATE ONLY.** No real R1 evidence or dataset
+read, manifest generation, producer approval, publication, transfer or 06G dispatch is authorized.
+A valid exact-RC4 xhigh zero-P0 review, both independently accepted dataset manifests and a later
+explicit controller gate are still required before any 06G source replay. Cache, model, T0,
+CUDA/GPU, training, evaluation, final-test access and claims remain stopped.
+
+## NAVSIM manifest source v1 candidate controller audit
+
+- exact candidate: `64447d3a9cc60f61b8596aed41086b5b4311c889`, sole parent
+  `653e797a2381cdf017466ef95aefcc41961f6715`, tree
+  `5ce81ef06d71189d1ff46676ecc1b4d01e415728`; one non-merge commit, 12 paths, clean worktree
+- exact controller-contract copy: PASS 7/7
+- independent producer suite: 44 passed in 4.64 seconds, stdout SHA256
+  `ab022635f1110d3ff024e7942a0a37f47789bfc432a943d9d2571c327175c9cf`
+- controller-validator suite: 19 passed in 0.56 seconds, stdout SHA256
+  `d0654e6b420aef5ffb33b81c839cd73cd87307576aa967d1be275e3ca8fe8bce`
+- independent full repository replay: 143 tests and 132 subtests passed in 304.57 seconds
+- historical cache/pickle/CSV surfaces reject; session descendants, sealed partition, exact scene
+  identity authority, Failure-Patch authority and staged output sealing all fail closed
+
+Decision: **PASS FOR A SEPARATE APPROVED-PRODUCER IDENTITY FREEZE ONLY.** This audit does not approve
+the producer or generate a real manifest. Scene identity, authoritative Failure-Patch evidence, real
+R1 input transfer, complete manifest validation/destination replay and exact-RC4 xhigh zero-P0 review
+remain pending. 06G source replay, cache, model, T0, CUDA/GPU, training, evaluation, final-test
+access and claims remain stopped.
+
+## NAVSIM producer-v1 identity freeze
+
+- source audit parent: controller commit `00d3853e11105e0b5c4653e62482ae5c29f3c2c6`
+- approved source identity: commit `64447d3a9cc60f61b8596aed41086b5b4311c889`, tree
+  `5ce81ef06d71189d1ff46676ecc1b4d01e415728`
+- producer source SHA256: `75f683cb8a7931783f1342a9b479d37470bc215b297efc421b003e3a2ab6cfae`
+- validator source SHA256: `70b53893c3bc0704fbf09945a677412effdf4a2b0258ac56c2f8084798805ba3`
+- updated NAVSIM requirements SHA256:
+  `54d3f5f203a3db568c5cc5d18305c3dc4b00b81863e353c9dbd30bdefc833d64`
+- controller-validator replay after freeze: 19 passed in 0.40 seconds, stdout SHA256
+  `b84a5f56832006ce4e2bf9f759666949900308668a781b362e5aab41c6c2b8e8`
+
+Decision: **PRODUCER IDENTITY FROZEN; REAL MANIFEST STILL BLOCKED.** Controller-authorized scene
+identity and Failure-Patch evidence are absent; real R1 inputs are not transferred and no real
+membership exists. The exact-RC4 xhigh zero-P0 review, both complete manifests and explicit 06G gate
+remain pending. Cache, model, T0, CUDA/GPU, training, evaluation, final-test access and claims remain
+stopped.
+
+## NAVSIM token-level scene-mapping source-v2 authorization
+
+The official-source semantic audit closes the alias option and also exposes an overconstraint in the
+approved v1 producer: one row per segmented log plus unique scene tokens imposes an unsupported
+log-to-scene bijection. The controller authorizes one forward-only source/CPU child of exact
+`64447d3a9cc60f61b8596aed41086b5b4311c889` to replace that surface with one canonical row per
+accepted R1 token. Exact ledger coverage and log/session/partition membership are mandatory;
+multiple empirical log/scene relationships are allowed only within one complete session, and scene
+tokens may never cross sessions or official partitions.
+
+This is source authorization only. It does not authorize real metadata access, mapping or manifest
+generation, count updates, publication, 06G dispatch, cache/model/T0/CUDA/GPU/training/evaluation,
+final-test access or claims. A separate source audit/freeze and later real-evidence authorization are
+required.
+
+## nuScenes N0 provenance source-v1 authorization
+
+- controller parent: `702d50280a69c98951c985b9935f460a4aea4e87`, tree
+  `bebfd54dece7a87caf01d494ca8e22c8c09335da`
+- exact forward base: nuScenes manifest producer-v2 commit
+  `495bac670073fc3f46f0f773ca51033331078509`, tree
+  `a7c86fbafea77ec647197c6d24d65edff83c95a8`
+- authorized branch: `codex/iclr2027-drive-opd-07g-nuscenes-n0-provenance-source-v1`
+- changed-path budget: four exact source/test/paper paths
+- phase boundary: source and synthetic CPU fixtures only
+
+Decision: **FORWARD-ONLY N0 PROVENANCE SOURCE AUTHORIZED; REAL DATA ACCESS STOPPED.** The candidate
+must provide explicit content-addressed release/devkit/table/split/map/CAN inputs, all-table
+foreign-key and reciprocal-chain closure, one complete-log population ledger, streaming registered
+sensor/map/CAN inventories, deterministic semantic replay and atomic no-replace publication. It must
+not inspect the real nuScenes or NAVSIM installations in this phase. A later controller audit and a
+separate authorization are required before any real N0 scan. Real manifest generation, 06G source
+replay, cache, model, T0, CUDA/GPU, training, evaluation, final-test access and claims remain stopped.
+
+## nuScenes N0 provenance source-v1 candidate controller audit
+
+- exact candidate: `ac38c9ffca9d4a428cee97606a92f93fb5ff8d82`, sole parent
+  `495bac670073fc3f46f0f773ca51033331078509`, tree
+  `07900590456acb6e523f7d815f969dccc11ae226`; one non-merge commit, four authorized paths, clean
+- source executor: focused provenance 54/54, adjacent nuScenes manifest 71/71, controller contract
+  19/19, and full repository 227 tests plus 132 subtests passed
+- independent detached-Git controller replay: 132/132 passed in 71.65 seconds, output SHA256
+  `559b07f6481d9b859cbbb1fd329f62d7608809dad2947977fd586056526588a5`
+- source identity binds isolated Git state, one origin, exact tracked HEAD blobs, frozen manifest
+  producer ancestry/blob, descriptor-safe input reads, strict CLI inputs and private staged output
+  semantic replay with atomic no-replace publication
+
+Decision: **SOURCE IDENTITY FROZEN; REAL N0 SCAN STILL BLOCKED.** A later separate controller
+authorization must freeze a content-addressed real input specification before any nuScenes access.
+Real N0 evidence, session-atomic manifest generation, publication/transfer, 06G source replay,
+cache, model, T0, CUDA/GPU, training, evaluation, final-test access and claims remain stopped.
+
+## nuScenes N0 real-root identity intake
+
+- exact accepted source inspected read-only: `ac38c9ffca9d4a428cee97606a92f93fb5ff8d82`, tree
+  `07900590456acb6e523f7d815f969dccc11ae226`; source worktree remained clean
+- canonical dataset root: `/home/khwang/datasets/nuscenes/data`; metadata, samples, sweeps, maps and
+  CAN roots plus their parent chains are not symlinks
+- the DiffusionDrive data path is a symlink alias to the canonical root and is forbidden as an
+  evidence root
+- installed nuScenes devkit package, `1.1.10` distribution metadata and official split-source
+  candidate were identified but not read or accepted as upstream provenance
+- neither expected trainval metadata archive exists; the extracted metadata directory has no
+  accepted upstream-origin receipt
+- samples and sweeps may contain sealed-test files; future inventory must be token-reachable from
+  explicitly addressed trainval tables, never directory-wide
+
+Decision: **PASS FOR ROOT IDENTITY INVENTORY ONLY; DATA REMAINS UNREAD.** The canonical roots may be
+named in a later controller authorization, but no real input specification or N0 scan is authorized.
+A deterministic synthetic/source-only input builder must first be reviewed. Real N0 evidence,
+session-atomic manifest generation, publication/transfer, 06G source replay, cache, model, T0,
+CUDA/GPU, training, evaluation, final-test access and claims remain stopped.
+
+## nuScenes N0 input-builder source-v1 authorization
+
+- controller parent: `9564d3043b3c7aef7d096d375ebaf390bc788698`, tree
+  `71f2fd1a641b7db5739237a6d395564ebbd83d3c`
+- exact forward base: accepted N0 provenance source commit
+  `ac38c9ffca9d4a428cee97606a92f93fb5ff8d82`, tree
+  `07900590456acb6e523f7d815f969dccc11ae226`
+- authorized branch: `codex/iclr2027-drive-opd-07g-nuscenes-n0-input-builder-source-v1`
+- changed-path budget: four exact source/test/paper paths
+- phase boundary: source and synthetic CPU fixtures only
+
+Decision: **FORWARD-ONLY INPUT-BUILDER SOURCE AUTHORIZED; REAL DATA ACCESS STOPPED.** The builder
+must create the exact explicit input specification consumed by frozen script 60, require independent
+upstream release provenance, bind devkit and official splits, derive registered paths only from
+trainval-reachable tokens, and forbid root discovery or shared-tree inventory. This phase must not
+read or hash real nuScenes/NAVSIM contents or generate a real input specification, N0 output or
+manifest. Publication/transfer, 06G source replay, cache, model, T0, CUDA/GPU, training, evaluation,
+final-test access and claims remain stopped.
+
+## nuScenes N0 input-builder source-v1 candidate controller audit
+
+- exact candidate: `2734b602e6ed92b6c1111bb36b4a9c02eacd471a`, sole parent
+  `ac38c9ffca9d4a428cee97606a92f93fb5ff8d82`, tree
+  `cc8780eabb763ee8d05f355e96df55d71ecf4d82`; one non-merge commit, four authorized paths, clean
+- source executor: 185/185 tests passed in 126.44 seconds; output SHA256
+  `9a6232f44a5aa8307e1fdaf042ac4c74b1f2c4ae9faf601724ef76921ee7ea0f`
+- independent controller detached replay: 185/185 passed in 127.01 seconds; output SHA256
+  `86ad1b018c4c3370475dce65b5f254e5a1b1fa01c5a74bd967c9ffd604c3f264`
+- addressed real-mode authorization binds the canonical request subject; reuse after any other
+  request/root/source/address mutation rejects
+- no shared-root discovery, recursive walk, model/torch/CUDA import, bytecode/cache residue or
+  worktree drift was observed
+
+Decision: **SOURCE IDENTITY FROZEN WITH DOCUMENTATION-SCOPE CORRECTIONS REQUIRED.** The accepted
+source supports an extracted metadata directory, not an archive. In real mode it derives explicit
+registered-file expectations but does not replace script 60's later complete all-table-closure gate.
+Those two paper statements must be narrowed before paper/publication promotion. Independent upstream
+origin remains absent and no real input-specification construction is authorized. Real nuScenes/N0,
+session-atomic manifest generation, publication/transfer, 06G source replay, cache, model, T0,
+CUDA/GPU, training, evaluation, final-test access and claims remain stopped.
+
+## nuScenes N0 input-builder documentation-scope v2 authorization
+
+- controller parent: `6fbda507b92815fa0009049f2d6ad1be02df85af`, tree
+  `d2017bc7a844394e55839547f561173c1ebd3f1d`
+- exact forward base: accepted input-builder source-v1 commit
+  `2734b602e6ed92b6c1111bb36b4a9c02eacd471a`, tree
+  `cc8780eabb763ee8d05f355e96df55d71ecf4d82`
+- authorized branch: `codex/iclr2027-drive-opd-07g-nuscenes-n0-input-builder-doc-scope-v2`
+- changed-path budget: the input-builder paper document only
+
+Decision: **FORWARD-ONLY DOCUMENTATION CORRECTION AUTHORIZED; ALL EVIDENCE AND EXECUTION GATES
+UNCHANGED.** The child must state extracted-directory-only input and leave complete all-table closure
+to frozen script 60. Source/config/test changes, archive implementation, real-data access, real input
+construction, paper promotion, publication/transfer and 06G dispatch are not authorized. Cache,
+model, T0, CUDA/GPU, training, evaluation, final-test access and claims remain stopped.
+
+## nuScenes upstream-origin human audit request
+
+- canonical extracted metadata root:
+  `/home/khwang/datasets/nuscenes/data/v1.0-trainval`
+- original metadata archive: absent
+- accepted public immutable archive digest: absent
+- official distribution path: account- and terms-gated nuScenes download page
+- frozen safe route: authenticated human acquisition into a fresh isolated path, credential/signed
+  URL redaction, streaming archive hash, safe fresh extraction, then exact thirteen-table comparison
+  only under a later controller authorization
+
+Decision: **HUMAN ACQUISITION CHOICE REQUIRED; NO DATA ACTION AUTHORIZED.** The human must approve an
+isolated official re-download, provide the original official archive/receipt, or decline real
+nuScenes evidence. This request itself permits no login, download, metadata/table read, N0 or
+manifest construction. Publication/transfer, 06G source replay, cache, model, T0, CUDA/GPU,
+training, evaluation, final-test access and claims remain stopped.
+
+## nuScenes N0 input-builder documentation-scope v2 candidate audit
+
+- exact candidate: `b4c3ffd8b197c6fdd4a7ef7416cc8852714a5717`, sole parent
+  `2734b602e6ed92b6c1111bb36b4a9c02eacd471a`, tree
+  `068b319424359eb43bb35fc24948ea52df3c5c51`
+- exact change: one authorized paper document only; CLI/library/test Git blobs match the base
+- independent controller detached replay: 185/185 passed in 127.15 seconds; output SHA256
+  `f138d3d94dac3e51e779c3b8da1ac88c0ec91e4e89f68bb3c90032b8857a437e`
+- corrected boundary: extracted metadata directory only; real-mode graph derivation is not complete
+  all-table closure; synthetic script-60 replay is interface compatibility only
+
+Decision: **DOCUMENTATION CORRECTION PASSED; NO EVIDENCE OR EXECUTION PROMOTION.** Source identity is
+unchanged and the two recorded wording discrepancies are closed. Independent upstream origin,
+exact-RC4 zero-P0 review, complete frozen session-atomic manifests and a later controller gate remain
+mandatory. Real data/N0, publication/transfer, 06G source replay, cache, model, T0, CUDA/GPU,
+training, evaluation, final-test access and claims remain stopped.
+
+## NAVSIM scene/log semantic source audit
+
+- official `v1.1` tag: `0811876c274e8b058ab2be9b3dcd4d37bd23f177`
+- official `v1.1` branch head: `3e8291bfa89ff247231e0227778840cd0a036896`
+- both identities contain the same dataloader and dataclass blobs
+- the loader keys filtered scene windows by frame token and separately groups them by `log_name`
+- `SceneMetadata` stores `log_name`, `scene_token` and `initial_token` as distinct source fields
+
+Decision: **SILENT LOG-TO-SCENE ALIAS REJECTED; EXACT R1 MAPPING REQUIRED.** The current equal
+scene/log counts are unproven because the accepted R1 session ledger contains no independent
+`scene_token`. A future intake must bind every accepted token to its exact segmented log and source
+scene token, then independently replay unique-set counts, hashes, partitions and session closure.
+No frozen producer or requirements byte is changed here. NAVSIM/nuScenes manifests, 06G source
+replay and all dataset/cache/model/T0/CUDA/GPU/training/evaluation/final-test/claim gates remain
+stopped.

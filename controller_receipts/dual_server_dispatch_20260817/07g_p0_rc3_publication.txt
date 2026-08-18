@@ -1,0 +1,77 @@
+Drive-OPD 07G P0 RC3 source publication receipt
+Recorded: 2026-08-18 Asia/Shanghai
+Decision boundary: EXACT SOURCE/CONTROLLER RECEIPT PUBLICATION ONLY; NOT AN EXECUTION UNLOCK
+
+Accepted local RC3 identity
+- branch: codex/iclr2027-drive-opd-07g-p0-rc3
+- commit: 79a2c529f35fb18049b4f30b46a2fe9926bf7e5a
+- sole parent: d527274d368b6d6def5809b002324b31e88ae1bd
+- whole source-worktree tree: 3ec47127a6d7c85326bbcf1d72ef76e2971f100d
+- controller acceptance commit: d026fd762b2472d5f3d01981dfbfd5d2da6bc28c
+- controller transfer-freeze commit: 26292007b1fc2782b0d10189721381563b0556e0
+
+Local publication snapshot
+- branch: codex/iclr2027-dual-server-dispatch-publication
+- prior commit: 0bc3e4521534a55a370293a6ff34aaca2f752ca5
+- commit: 1c532e43fcb4b3c071c9fb55433cc0769dbf9032
+- sole parent: 0bc3e4521534a55a370293a6ff34aaca2f752ca5
+- tree: 1090673c5e8f148f2ec1b127044fa306b51b19cd
+- update: compare-and-swap fast-forward of an unvisited local publication ref
+
+Public publication
+- repository: J1xiaoFu/DiffusionDrive-nuScenes-based-domain-specific-selector-design
+- branch: codex/iclr2027-dual-server-dispatch-publication
+- prior public head / sole parent: 7892cbcd06b99f44dc593813459b12e5eb84f902
+- commit: b1e1991afe7b9b14fd83f7510394c0ffb77ad700
+- tree: 1090673c5e8f148f2ec1b127044fa306b51b19cd
+- update: one non-force ref update (force=false)
+- pull request: none
+
+Exact changed path set (28)
+- controller receipt paths (5):
+  controller_receipts/dual_server_dispatch_20260817/07g_p0_rc3_acceptance.json;
+  controller_receipts/dual_server_dispatch_20260817/07g_p0_rc3_transfer_freeze.txt;
+  controller_receipts/dual_server_dispatch_20260817/07g_p0_rc3_transfer_manifest.json;
+  controller_receipts/dual_server_dispatch_20260817/AUDIT.md;
+  controller_receipts/dual_server_dispatch_20260817/SHA256SUMS
+- source paths (23): selector_bench/configs/drive_cl_global_holm_family.example.json;
+  selector_bench/scripts/40_build_drive_cl_protocol.py through
+  selector_bench/scripts/58_register_drive_cl_run.py inclusive;
+  selector_bench/selector_bench/continual/claim_protocol.py;
+  selector_bench/selector_bench/continual/seed_design.py;
+  selector_bench/tests/test_drive_cl_claim_protocol.py
+- name-status inventory SHA256: 4f74ae78a850a8388e0487d522ec28e8e53c593bb11ada00f2686186fe1691c0
+- binary-safe full-index diff SHA256: fe0d39a861164373e6b94da10a775ad258bd05c1d00d09ec7ba3a2c7b98b05d2
+
+Transfer identity
+- manifest bytes: 7,434
+- manifest SHA256: ff8ca94ebd3dd39abb048dabe8c8a87eaa383465b5cdb899d74cc6fbe2bcd437
+- manifest source_commit: 79a2c529f35fb18049b4f30b46a2fe9926bf7e5a
+- declared and independently recomputed source-file count: 41
+- missing source files: 0
+- mismatched source files: 0
+- declared and recomputed logical bundle SHA256:
+  68259f07dc97db312c00c71dcd18a899502588b4eb303ee12cce585e1cc894b1
+- the public/local publication tree is intentionally different from the whole RC3 worktree tree because
+  the publication branch has its own parent and controller-receipt layout; exactness is established by
+  the 41 source blob SHA256 values, logical bundle and source identity, not whole-tree equality
+
+Independent ordinary-HTTPS replay
+- isolated audit root: /tmp/drive-opd-rc3-public-fetch.6W7IH0
+- fetched public commit, sole parent and tree all matched
+- changed path count and exact inventory matched 28/28
+- manifest parsed and all 41 source files matched their declared SHA256 values
+- logical bundle recomputation matched the manifest
+- git show --check: PASS
+- git show --check output SHA256:
+  815b47ae8e7beea5d22ece235052cd42513567383b69a058f8d402e4c7546307
+- local publication tree and public publication tree matched exactly
+- no checkout, merge, rebase, force update or remote-configuration change was performed
+
+Boundary
+This receipt establishes public reachability and byte identity for the exact RC3 source bundle and
+controller receipts only. It authorizes a fresh context-free exact-RC3 source/CPU blind review. It does
+not authorize 06G dispatch, dataset/raw-data access, provenance/adapter execution, session-atomic CL
+manifests, cache work, real-model preflight, T0, model/checkpoint access, CUDA/GPU activity, training,
+evaluation, final-test unsealing or performance claims.
+

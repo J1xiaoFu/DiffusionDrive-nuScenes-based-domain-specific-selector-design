@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "request_id": "P001-DRIVE-OPD-NUSCENES-UPSTREAM-ORIGIN-HUMAN-AUDIT",
+  "recorded_date": "2026-08-18",
+  "status": "HUMAN_DECISION_AND_AUTHENTICATED_ACQUISITION_REQUIRED",
+  "controller_parent": {
+    "branch": "codex/iclr2027-dual-server-controller",
+    "commit": "88e9c33f6444b08d0367dd96f5be5d623f4717ef",
+    "tree": "86ce0c33c535d78b4fde96e4a90fd45aaaf113dd"
+  },
+  "accepted_source_prerequisites": {
+    "n0_provenance_source_commit": "ac38c9ffca9d4a428cee97606a92f93fb5ff8d82",
+    "input_builder_source_commit": "2734b602e6ed92b6c1111bb36b4a9c02eacd471a",
+    "input_builder_audit_sha256": "39221d13770aa7c423c497715d567640cb434178d68bb06b729dfce412edcd18"
+  },
+  "official_primary_sources": [
+    {
+      "url": "https://www.nuscenes.org/download",
+      "role": "authenticated official dataset download page",
+      "observation": "The page requires a nuScenes account; no unauthenticated immutable archive digest was available to this controller."
+    },
+    {
+      "url": "https://www.nuscenes.org/terms-of-use",
+      "role": "official dataset terms",
+      "observation": "Dataset acquisition and use are subject to the nuScenes terms and applicable non-commercial license."
+    },
+    {
+      "url": "https://github.com/nutonomy/nuscenes-devkit#nuscenes-setup",
+      "role": "official devkit setup documentation",
+      "observation": "The official instructions require account login and terms acceptance, describe multiple archives, and direct users to unpack them into one nuScenes root."
+    }
+  ],
+  "current_evidence_gap": {
+    "canonical_metadata_root": "/home/khwang/datasets/nuscenes/data/v1.0-trainval",
+    "original_metadata_archive_present": false,
+    "unread_sidecar_accepted": false,
+    "public_official_archive_sha256_available": false,
+    "existing_extracted_directory_upstream_origin_proven": false,
+    "reason": "A pathname, inode, release label or local sidecar cannot establish that the thirteen installed table bytes came from the authenticated official distribution."
+  },
+  "requested_human_choice": {
+    "option_a": "Approve a later separately authorized, isolated authenticated re-download of the exact official v1.0-trainval metadata archive and byte-for-byte comparison against the existing extracted directory.",
+    "option_b": "Provide an existing original official metadata archive plus its acquisition receipt for an isolated, separately authorized verification.",
+    "option_c": "Decline real nuScenes evidence generation; keep the nuScenes manifest and all downstream execution gates stopped."
+  },
+  "required_future_acquisition_receipt": {
+    "authenticated_human_action": true,
+    "official_source_only": true,
+    "credential_or_signed_url_redaction_required": true,
+    "record": [
+      "visible official archive filename and release label",
+      "sanitized effective official source URL without credentials, tokens or signatures",
+      "UTC acquisition start and completion timestamps",
+      "download client/tool identity and version",
+      "HTTP content length plus ETag and Last-Modified when the official server supplies them",
+      "streaming SHA256 and byte count of the downloaded archive",
+      "license/terms acknowledgement without account secrets"
+    ]
+  },
+  "required_future_comparison": {
+    "fresh_isolated_archive_path": true,
+    "fresh_isolated_extraction_root": true,
+    "overwrite_existing_dataset_forbidden": true,
+    "safe_archive_member_validation_required": true,
+    "exact_required_table_count": 13,
+    "table_bytes_and_sha256_match_existing_metadata_root": true,
+    "extra_or_missing_table_rejected": true,
+    "controller_authorization_required_before_any_read_or_download": true
+  },
+  "not_authorized_by_this_request": [
+    "sign-in, credential use or dataset download",
+    "reading or hashing the existing metadata tables, sensor data, maps, CAN data or sealed-test files",
+    "creating a real input specification, N0 receipt, registered-file inventory or session manifest",
+    "overwriting, moving, deleting or modifying any existing dataset path",
+    "publication, transfer or 06G source replay",
+    "cache, model, checkpoint, T0, CUDA, GPU, training, evaluation or final-test access"
+  ],
+  "next_gate": "human chooses an acquisition path; controller then issues a separate content-addressed, least-read authorization before any authenticated download or real dataset read"
+}

@@ -1,0 +1,130 @@
+{
+  "schema_version": 1,
+  "audit_id": "P001-DRIVE-OPD-07G-NAVSIM-MANIFEST-SOURCE-V1-CANDIDATE",
+  "recorded_date": "2026-08-18",
+  "status": "passed_for_separate_approved_producer_identity_freeze_only",
+  "candidate": {
+    "branch": "codex/iclr2027-drive-opd-07g-navsim-manifest-source-v1",
+    "commit": "64447d3a9cc60f61b8596aed41086b5b4311c889",
+    "parent": "653e797a2381cdf017466ef95aefcc41961f6715",
+    "tree": "5ce81ef06d71189d1ff46676ecc1b4d01e415728",
+    "commit_count_from_rc4": 1,
+    "non_merge": true,
+    "changed_path_count": 12,
+    "changed_path_inventory_sha256": "e41470c216e463dec5c3dffa6032851d31a9cd3a584b320b4af71d08608c2fcd",
+    "changed_path_content_inventory_sha256": "5fefb82cb181a586211d3fbc3b026db71cdba69b66708486929513f22be10348",
+    "worktree_clean": true,
+    "published_or_pushed": false
+  },
+  "normative_contract": {
+    "source_controller_commit": "2c0694213b1db0289dd3fec9094d3f1531ee9a23",
+    "source_controller_tree": "f9a929e5530b342dd3779ac1bea63b8c0f4e39b2",
+    "file_count": 7,
+    "byte_identity_passed": true,
+    "manifest_contract_sha256": "d9034a7d8829fcc7cfc98b409ca41ba08d482bb518f2e5c2fafdc2b194e7ac87",
+    "requirements_sha256": "bf2e6cbf385892bf1aa8316d0ebd12957c3bf5367948899de6d51acfc42f5cbb",
+    "validator_sha256": "70b53893c3bc0704fbf09945a677412effdf4a2b0258ac56c2f8084798805ba3"
+  },
+  "approved_identity_candidate": {
+    "source_commit": "64447d3a9cc60f61b8596aed41086b5b4311c889",
+    "source_tree": "5ce81ef06d71189d1ff46676ecc1b4d01e415728",
+    "producer_source_path": "selector_bench/selector_bench/continual/navsim_protocol.py",
+    "producer_source_sha256": "75f683cb8a7931783f1342a9b479d37470bc215b297efc421b003e3a2ab6cfae",
+    "validator_source_path": "controller_protocols/drive_opd_session_atomic_v1/validate_session_atomic_manifest.py",
+    "validator_source_sha256": "70b53893c3bc0704fbf09945a677412effdf4a2b0258ac56c2f8084798805ba3"
+  },
+  "independent_controller_replay": {
+    "detached_exact_commit": "64447d3a9cc60f61b8596aed41086b5b4311c889",
+    "cuda_visible_devices": "",
+    "python_dont_write_bytecode": "1",
+    "pytest_cache_provider_disabled": true,
+    "producer_suite": {
+      "passed": 44,
+      "failed": 0,
+      "duration_seconds": 4.64,
+      "stdout_sha256": "ab022635f1110d3ff024e7942a0a37f47789bfc432a943d9d2571c327175c9cf"
+    },
+    "controller_contract_suite": {
+      "passed": 19,
+      "failed": 0,
+      "duration_seconds": 0.56,
+      "stdout_sha256": "d0654e6b420aef5ffb33b81c839cd73cd87307576aa967d1be275e3ca8fe8bce"
+    },
+    "full_repository_suite": {
+      "passed": 143,
+      "subtests_passed": 132,
+      "failed": 0,
+      "duration_seconds": 304.57,
+      "output_persisted": false
+    }
+  },
+  "source_executor_receipt": {
+    "producer_suite_output_sha256": "755e3d656218977658cc9b3e7a727d127877f7ce606dfc17cc134cffdd8bd233",
+    "controller_validator_suite_output_sha256": "e6cc450e7d552afda7935b8f7c79b1aab622e6bdcf96967f8435babab55bcae8",
+    "full_repository_suite_output_sha256": "ecb0124284a7c254037d7a5c7ad1238f249ea4a87bbc7beff13823d4967445f1"
+  },
+  "static_verification": {
+    "git_show_check_passed": true,
+    "git_show_check_output_sha256": "416131f46e212e832cd06c207e6529818983d721e71c382f395e5fe3126e5a0c",
+    "changed_python_ast_parse_passed": true,
+    "changed_json_parse_passed": true,
+    "candidate_bytecode_or_pytest_cache_path_count": 0,
+    "temporary_detached_audit_worktree_removed": true
+  },
+  "p0_closure_on_synthetic_source_surface": [
+    {
+      "id": "NAVSIM-P0-01",
+      "status": "closed",
+      "description": "The producer consumes only explicit content-addressed R1 session-ledger and receipt objects; historical cache, pickle, filename-derived population and generic metrics-CSV interfaces fail closed."
+    },
+    {
+      "id": "NAVSIM-P0-02",
+      "status": "closed",
+      "description": "session_key is the only atomic unit; logs and tokens are exact descendants, duplicate or cross-session descendants are rejected, and official-validation units are sealed from protocol assignments."
+    },
+    {
+      "id": "NAVSIM-P0-03",
+      "status": "closed",
+      "description": "The R1 ledger has no independent scene token, so the producer rejects silent aliasing and requires either an exact controller-authorized semantic proof or a complete unique log-to-scene mapping."
+    },
+    {
+      "id": "NAVSIM-P0-04",
+      "status": "closed",
+      "description": "Failure-Patch inputs are bound to controller-frozen stream, receipt, access ledger, evaluator, registry and canonical selection-input hashes before stage computation; production requirements remain blocked until that external authority exists."
+    },
+    {
+      "id": "NAVSIM-P0-05",
+      "status": "closed",
+      "description": "Output is written to a private staging directory, controller-validated, re-read for post-validation mutation, sealed by exact file inventory, and published with atomic no-replace semantics; failed paths leave no accepted output."
+    }
+  ],
+  "remaining_external_prerequisites": [
+    "a separate controller commit must freeze the exact approved producer identity",
+    "controller-authorized scene identity evidence must bind the exact R1 session ledger",
+    "controller-authenticated development-only Failure-Patch stream, access ledger, evaluator and registries must be frozen",
+    "real R1 input objects must be transferred content-addressedly before manifest generation",
+    "a complete real manifest must pass controller validation and independent destination replay",
+    "the exact RC4 gpt-5.6-sol xhigh blind review still lacks a valid zero-P0 verdict"
+  ],
+  "decision": {
+    "source_candidate_approved_for_separate_identity_freeze": true,
+    "approved_producer_identity": "separate_forward_controller_commit_required",
+    "scene_identity_evidence": "stopped",
+    "failure_patch_authoritative_evidence": "stopped",
+    "real_manifest_generation": "stopped",
+    "publication_or_transfer": "stopped",
+    "six_g_source_replay": "stopped",
+    "cache_model_t0_gpu_training_evaluation": "stopped"
+  },
+  "artifact_boundary": {
+    "raw_nuscenes_or_navsim_accessed": false,
+    "real_r1_input_opened_by_source_executor": false,
+    "real_manifest_or_membership_generated": false,
+    "cache_read_or_built": false,
+    "model_or_checkpoint_loaded": false,
+    "cuda_or_gpu_used": false,
+    "training_or_evaluation_performed": false,
+    "final_test_accessed": false,
+    "publication_or_push_performed": false
+  }
+}

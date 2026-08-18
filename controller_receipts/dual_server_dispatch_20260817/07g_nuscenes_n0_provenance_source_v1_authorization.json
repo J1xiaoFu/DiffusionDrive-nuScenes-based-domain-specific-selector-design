@@ -1,0 +1,111 @@
+{
+  "schema_version": 1,
+  "authorization_id": "P001-DRIVE-OPD-07G-NUSCENES-N0-PROVENANCE-SOURCE-V1",
+  "recorded_date": "2026-08-18",
+  "status": "AUTHORIZED_FORWARD_ONLY_SOURCE_AND_SYNTHETIC_CPU_TESTS",
+  "controller_parent": {
+    "branch": "codex/iclr2027-dual-server-controller",
+    "commit": "702d50280a69c98951c985b9935f460a4aea4e87",
+    "tree": "bebfd54dece7a87caf01d494ca8e22c8c09335da"
+  },
+  "candidate_base": {
+    "branch": "codex/iclr2027-drive-opd-07g-nuscenes-manifest-source-v2",
+    "commit": "495bac670073fc3f46f0f773ca51033331078509",
+    "tree": "a7c86fbafea77ec647197c6d24d65edff83c95a8",
+    "worktree_status_short": ""
+  },
+  "frozen_inputs": {
+    "manifest_contract_path": "controller_protocols/drive_opd_session_atomic_v1/MANIFEST_CONTRACT.md",
+    "manifest_contract_sha256": "d9034a7d8829fcc7cfc98b409ca41ba08d482bb518f2e5c2fafdc2b194e7ac87",
+    "nuscenes_requirements_path": "controller_protocols/drive_opd_session_atomic_v1/nuscenes_manifest_requirements.v1.json",
+    "nuscenes_requirements_sha256": "08968b1af352210fb57bfdc7db0946f4f75191ba865b2889e476fb5fc8409507",
+    "approved_manifest_producer_path": "selector_bench/selector_bench/continual/nuscenes_protocol.py",
+    "approved_manifest_producer_sha256": "a5e509d9fb33e5bbc00bdea71ecc51521eeeee39335f18e8667bea124ac2d773",
+    "approved_manifest_producer_commit": "495bac670073fc3f46f0f773ca51033331078509",
+    "producer_freeze_receipt_path": "controller_receipts/dual_server_dispatch_20260817/07g_nuscenes_manifest_source_v2_producer_freeze.json",
+    "producer_freeze_receipt_sha256": "aae822394566482d162da265c3b190b89d9744088aacb62b934ff9799879894d",
+    "atomic_unit": "complete_nuscenes_log_token",
+    "scene_level_assignment_authorized": false,
+    "fallback_split_authorized": false
+  },
+  "authorized_branch": "codex/iclr2027-drive-opd-07g-nuscenes-n0-provenance-source-v1",
+  "authorized_worktree": "/home/khwang/domain-selector-nuscenes-n0-provenance-source-v1",
+  "authorized_changed_paths": [
+    "paper_iterations/P001_scheduler_session_contract/NUSCENES_N0_PROVENANCE_SOURCE_V1.md",
+    "selector_bench/scripts/60_audit_nuscenes_n0_provenance.py",
+    "selector_bench/selector_bench/continual/nuscenes_provenance.py",
+    "selector_bench/tests/test_nuscenes_provenance.py"
+  ],
+  "required_source_behavior": {
+    "input_discovery": "forbidden; every root, metadata table, official split source, devkit identity, map source, CAN source and expected content address must be explicit",
+    "release_identity": "bind v1.0-trainval release, devkit version/package/source commit, metadata archive or directory identity, every required table byte SHA256 and row count, and one canonical metadata digest",
+    "required_tables": [
+      "attribute",
+      "calibrated_sensor",
+      "category",
+      "ego_pose",
+      "instance",
+      "log",
+      "map",
+      "sample_annotation",
+      "scene",
+      "sample",
+      "sample_data",
+      "sensor",
+      "visibility"
+    ],
+    "foreign_key_and_chain_closure": "recompute every required token reference and reciprocal prev/next chain from log through scene, sample, sample_data, calibrated_sensor, ego_pose, sensor, annotation, instance, category, attribute, visibility, map and CAN linkage",
+    "official_split": "derive only from an explicitly addressed official devkit split source; forbid missing-source fallback and prove every complete log is wholly contained in one official partition",
+    "population_ledger": "emit one canonical row per complete log_token binding ordered scene, sample and all sample_data tokens, first/last UTC timestamps, location, official partition, descendant counts and source-row hashes",
+    "registered_files": "stream-hash every registered sample_data file for the six cameras and LIDAR_TOP, including all selected-channel sweep/frame records; reject missing, duplicate, symlinked, escaping, non-regular or changed-during-read paths",
+    "map_and_can": "content-address map and CAN source identities and files, prove explicit complete-log linkage, and reject missing, duplicate, unknown or cross-log associations",
+    "canonical_outputs": [
+      "nuscenes_n0_source_receipt.json",
+      "nuscenes_n0_population_ledger.jsonl",
+      "nuscenes_n0_sensor_file_inventory.jsonl",
+      "nuscenes_n0_map_file_inventory.jsonl",
+      "nuscenes_n0_can_file_inventory.jsonl",
+      "nuscenes_n0_provenance_receipt.json"
+    ],
+    "validation": "provide a deterministic pure semantic validator that reopens the staged bundle, recomputes canonical hashes/counts/coverage/closure and rejects unknown fields, duplicate JSON keys, Booleans as integers, non-finite values and noncanonical JSON/JSONL",
+    "publication": "write only to a private staging directory, validate before publication, recheck staged bytes after validation, and use atomic no-replace publication; failure leaves no accepted output",
+    "resource_boundary": "stream file hashing and bounded per-table/per-log state only; no persistent cache, derived model artifact, checkpoint or accelerator dependency"
+  },
+  "required_synthetic_attacks": [
+    "duplicate metadata keys or tokens",
+    "broken or nonreciprocal scene/sample/sample_data chains",
+    "foreign-key escape or incomplete all-table closure",
+    "one log_token crossing official train and validation partitions",
+    "missing official split source or fallback_sorted_scene_80_20 substitution",
+    "asserted counts substituted for observed counts",
+    "metadata table byte or canonical digest substitution",
+    "missing, duplicate, symlinked, path-escaping or changed-during-read sensor file",
+    "omitted camera, LIDAR_TOP or required sweep/frame record",
+    "missing or incorrect map-to-log or CAN-to-log linkage",
+    "partial log, scene, sample or all-sample_data population ledger",
+    "unknown output field, duplicate JSON key, Boolean integer or non-finite value",
+    "pre-existing output directory, post-validation byte change and partial publication"
+  ],
+  "verification_required_before_intake": {
+    "one_non_merge_child_commit_from_exact_base": true,
+    "exact_changed_path_set": true,
+    "clean_source_and_detached_verification_worktrees": true,
+    "all_changed_path_sha256_inventory": true,
+    "changed_python_compile": true,
+    "focused_synthetic_tests": true,
+    "adjacent_nuscenes_manifest_and_controller_contract_regression": true,
+    "git_show_check": true,
+    "no_untracked_source_or_config": true
+  },
+  "explicitly_not_authorized": [
+    "real nuScenes or NAVSIM metadata, sensor, map, CAN, info-PKL or raw-data access",
+    "real N0 provenance receipt or population ledger generation",
+    "real session-atomic manifest or membership generation",
+    "Failure-Patch evidence creation or authorization",
+    "dataset materialization, info-PKL generation, anchor fitting or cache creation",
+    "model import, checkpoint access, T0, CUDA, GPU, training, evaluation or final-test access",
+    "performance claim, controller promotion, publication, push or 06G dispatch",
+    "movement, rewrite, amendment, reset or rebase of RC4, RC3, RC2, RC1, research, recovery, controller or public refs"
+  ],
+  "next_gate": "controller audit of the exact one-commit provenance-source candidate; only a later separate controller authorization may permit a real N0 scan"
+}

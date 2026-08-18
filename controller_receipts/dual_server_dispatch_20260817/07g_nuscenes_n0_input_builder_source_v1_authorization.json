@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "authorization_id": "P001-DRIVE-OPD-07G-NUSCENES-N0-INPUT-BUILDER-SOURCE-V1",
+  "recorded_date": "2026-08-18",
+  "status": "AUTHORIZED_FORWARD_ONLY_SOURCE_AND_SYNTHETIC_CPU_TESTS",
+  "controller_parent": {
+    "branch": "codex/iclr2027-dual-server-controller",
+    "commit": "9564d3043b3c7aef7d096d375ebaf390bc788698",
+    "tree": "71f2fd1a641b7db5739237a6d395564ebbd83d3c"
+  },
+  "candidate_base": {
+    "branch": "codex/iclr2027-drive-opd-07g-nuscenes-n0-provenance-source-v1",
+    "commit": "ac38c9ffca9d4a428cee97606a92f93fb5ff8d82",
+    "tree": "07900590456acb6e523f7d815f969dccc11ae226",
+    "worktree_status_short": ""
+  },
+  "frozen_inputs": {
+    "provenance_library_path": "selector_bench/selector_bench/continual/nuscenes_provenance.py",
+    "provenance_library_sha256": "e1f0ce3f704b003d4e61a484c2417a0c1d0bdee7ffcd4df34632fe83a578bc09",
+    "provenance_cli_path": "selector_bench/scripts/60_audit_nuscenes_n0_provenance.py",
+    "provenance_cli_sha256": "83f7be72572ba12116fa549ac8924234d40f1d24c4eadefcf8d3bb86abe8c7e3",
+    "root_identity_intake_path": "controller_receipts/dual_server_dispatch_20260817/07g_nuscenes_n0_real_root_identity_intake.json",
+    "root_identity_intake_sha256": "4e4cc58c27abf24b22304be6436ac1d6296a466eddb2e03af2525f0d7aef84a6",
+    "atomic_unit": "complete_nuscenes_log_token",
+    "scene_level_assignment_authorized": false,
+    "fallback_split_authorized": false
+  },
+  "authorized_branch": "codex/iclr2027-drive-opd-07g-nuscenes-n0-input-builder-source-v1",
+  "authorized_worktree": "/home/khwang/domain-selector-nuscenes-n0-input-builder-source-v1",
+  "authorized_changed_paths": [
+    "paper_iterations/P001_scheduler_session_contract/NUSCENES_N0_INPUT_BUILDER_SOURCE_V1.md",
+    "selector_bench/scripts/61_build_nuscenes_n0_input.py",
+    "selector_bench/selector_bench/continual/nuscenes_input_builder.py",
+    "selector_bench/tests/test_nuscenes_input_builder.py"
+  ],
+  "required_source_behavior": {
+    "purpose": "deterministically construct the complete explicit content-addressed input specification consumed by the frozen N0 provenance source; do not produce an N0 receipt, population ledger, registered-file inventory or session manifest",
+    "root_policy": "accept every root and source path explicitly; resolve canonical absolute paths descriptor-safely; reject symlinked or aliased roots and path changes; never discover an input root",
+    "metadata_tables": "require exactly the 13 frozen v1.0-trainval table paths; reject extra, missing, duplicate or noncanonical tables; record byte SHA256, size, row count and canonical aggregate digest",
+    "upstream_release_receipt": "require a separate explicitly addressed machine-readable upstream-origin receipt that binds release name, acquisition source, archive or extracted-directory identity and all metadata table content addresses; an unverified sidecar, pathname or asserted release label is insufficient",
+    "devkit_identity": "bind explicit package version, distribution metadata, official splits.py bytes and a credential-free upstream repository/ref or immutable source receipt; hash only the explicitly enumerated required package files and forbid ambient package discovery",
+    "official_split": "parse and normalize only the explicitly addressed official split source; bind its byte hash and resulting ordered train/val scene-name sets; forbid fallback or locally invented split lists",
+    "token_reachability": "derive every candidate sensor, map and CAN path only by traversing the explicitly addressed trainval metadata graph from trainval log/scene/sample tokens; never walk or list shared samples, sweeps, maps or CAN directories",
+    "sealed_test": "reject metadata tokens, scene names, paths or source rows outside the explicitly frozen trainval release; do not open a path until trainval reachability and channel/linkage are proven",
+    "registered_files": "emit an ordered explicit path/address expectation for every reachable six-camera and LIDAR_TOP sample_data frame/sweep plus reachable map and CAN file; record expected type, size and SHA256 using streaming descriptor-safe reads",
+    "input_specification": "emit one canonical strict JSON object containing all explicit roots, source identities, expected content addresses, table counts/digests, split identity and ordered file expectations required by script 60",
+    "self_validation": "round-trip the staged input specification through the frozen strict input loader and reject unknown fields, duplicate keys, Boolean integers, non-finite values, noncanonical JSON or any omission/substitution",
+    "publication": "write only to a caller-selected absent private staging/output directory, validate and re-read all staged bytes, then atomically publish without replacement; failure leaves no accepted output",
+    "resource_boundary": "stream hashes and use bounded table/token indices; no persistent cache, model artifact, checkpoint, accelerator dependency or data copy/materialization"
+  },
+  "required_synthetic_attacks": [
+    "ambient directory discovery, glob, recursive walk or shared-root listing",
+    "canonical root replaced by the DiffusionDrive symlink alias",
+    "missing or unverified upstream release receipt and sidecar-only substitution",
+    "missing, extra, duplicate, renamed, swapped or changed-during-read metadata table",
+    "installed devkit version, RECORD, METADATA, splits.py or repository identity substitution",
+    "fallback_sorted_scene_80_20 or handwritten split-list substitution",
+    "test-release scene, token or file injected into trainval reachability",
+    "unreachable sensor, map or CAN path and directory-wide inventory substitution",
+    "missing camera, LIDAR_TOP frame/sweep, map or CAN expectation",
+    "symlinked, escaping, non-regular, duplicate or changed-during-read registered file",
+    "asserted size, count, digest or path substituted for an observed value",
+    "unknown field, duplicate JSON key, Boolean integer, non-finite value or noncanonical output",
+    "input specification accepted without frozen script-60 round-trip",
+    "pre-existing output, partial write, staged mutation and post-validation mutation"
+  ],
+  "verification_required_before_intake": {
+    "one_non_merge_child_commit_from_exact_base": true,
+    "exact_changed_path_set": true,
+    "clean_source_and_detached_verification_worktrees": true,
+    "all_changed_path_sha256_inventory": true,
+    "changed_python_compile": true,
+    "focused_synthetic_tests": true,
+    "frozen_n0_provenance_adjacent_tests": true,
+    "nuscenes_manifest_and_controller_contract_regression": true,
+    "git_show_check": true,
+    "no_untracked_source_or_config": true
+  },
+  "explicitly_not_authorized": [
+    "reading any real nuScenes or NAVSIM metadata table, archive, sidecar, sensor, map, CAN, info-PKL or raw-data content",
+    "creating a real input specification, hashing real dataset/devkit contents or selecting a real input/output artifact root",
+    "real N0 provenance receipt, population ledger or registered-file inventory generation",
+    "real session-atomic manifest or membership generation",
+    "dataset materialization, info-PKL generation, anchor fitting or cache creation",
+    "model import, checkpoint access, T0, CUDA, GPU, training, evaluation or final-test access",
+    "performance claim, controller promotion, publication, push or 06G dispatch",
+    "movement, rewrite, amendment, reset or rebase of any accepted, RC, research, recovery, controller or public ref"
+  ],
+  "next_gate": "controller audit of the exact one-commit synthetic/source-only input-builder candidate; only a later separate authorization may permit construction of one real content-addressed input specification"
+}

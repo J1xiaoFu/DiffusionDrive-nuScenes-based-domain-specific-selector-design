@@ -1,0 +1,150 @@
+{
+  "schema_version": 1,
+  "audit_id": "P001-DRIVE-OPD-07G-NUSCENES-N0-INPUT-BUILDER-SOURCE-V1-CANDIDATE",
+  "recorded_date": "2026-08-18",
+  "status": "passed_for_input_specification_builder_source_identity_only_with_documentation_scope_correction_required",
+  "candidate": {
+    "branch": "codex/iclr2027-drive-opd-07g-nuscenes-n0-input-builder-source-v1",
+    "commit": "2734b602e6ed92b6c1111bb36b4a9c02eacd471a",
+    "parent": "ac38c9ffca9d4a428cee97606a92f93fb5ff8d82",
+    "tree": "cc8780eabb763ee8d05f355e96df55d71ecf4d82",
+    "commit_count_from_base": 1,
+    "non_merge": true,
+    "changed_path_count": 4,
+    "changed_path_inventory_sha256": "6dc83d533fe3cdbf0e205c81fdc2a806f7130d7c99efdd0153b54a8ee1e6c11b",
+    "worktree_clean": true,
+    "published_or_pushed": false
+  },
+  "changed_paths": [
+    {
+      "path": "paper_iterations/P001_scheduler_session_contract/NUSCENES_N0_INPUT_BUILDER_SOURCE_V1.md",
+      "sha256": "c77556959b10ba5c7c474fdaaa45683512e8a75cf6ce781b7673f84095fac322"
+    },
+    {
+      "path": "selector_bench/scripts/61_build_nuscenes_n0_input.py",
+      "sha256": "5796fb4706dde879dcec3bafeec97ce6d60b9ec6125edc313c3e5a7544761242"
+    },
+    {
+      "path": "selector_bench/selector_bench/continual/nuscenes_input_builder.py",
+      "sha256": "d802e8543ce5e73368395ab31fb70f30d8df414f6c501489147e2afbdef60100"
+    },
+    {
+      "path": "selector_bench/tests/test_nuscenes_input_builder.py",
+      "sha256": "e65dadf612090222eb5100f5d264af14f86f6a29248d124815b5bd4e249a7169"
+    }
+  ],
+  "frozen_source_identity": {
+    "source_commit": "2734b602e6ed92b6c1111bb36b4a9c02eacd471a",
+    "source_tree": "cc8780eabb763ee8d05f355e96df55d71ecf4d82",
+    "library_source_path": "selector_bench/selector_bench/continual/nuscenes_input_builder.py",
+    "library_source_sha256": "d802e8543ce5e73368395ab31fb70f30d8df414f6c501489147e2afbdef60100",
+    "cli_source_path": "selector_bench/scripts/61_build_nuscenes_n0_input.py",
+    "cli_source_sha256": "5796fb4706dde879dcec3bafeec97ce6d60b9ec6125edc313c3e5a7544761242",
+    "frozen_n0_provenance_commit": "ac38c9ffca9d4a428cee97606a92f93fb5ff8d82",
+    "frozen_n0_provenance_library_sha256": "e1f0ce3f704b003d4e61a484c2417a0c1d0bdee7ffcd4df34632fe83a578bc09",
+    "frozen_n0_provenance_cli_sha256": "83f7be72572ba12116fa549ac8924234d40f1d24c4eadefcf8d3bb86abe8c7e3"
+  },
+  "evidence_mode_contract": {
+    "modes": [
+      "synthetic_fixture",
+      "controller_authorized_real"
+    ],
+    "real_mode_requires_addressed_controller_authorization": true,
+    "authorization_subject": "canonical request with only evidence_mode.authorization removed",
+    "authorization_subject_sha256_bound": true,
+    "authorization_reuse_after_request_root_source_or_address_mutation_rejected": true,
+    "root_count": 6,
+    "roots_distinct_and_nonnested": true
+  },
+  "source_executor_replay": {
+    "combined_exact_candidate_tests": {
+      "passed": 185,
+      "failed": 0,
+      "duration_seconds": 126.44,
+      "stdout_sha256": "9a6232f44a5aa8307e1fdaf042ac4c74b1f2c4ae9faf601724ef76921ee7ea0f"
+    },
+    "candidate_worktree_clean": true,
+    "real_nuscenes_or_navsim_accessed": false
+  },
+  "independent_controller_replay": {
+    "temporary_root": "/tmp/drive-opd-n0-input-controller-audit.eUcwzC",
+    "detached_exact_commit": "2734b602e6ed92b6c1111bb36b4a9c02eacd471a",
+    "combined_exact_candidate_tests": {
+      "passed": 185,
+      "failed": 0,
+      "duration_seconds": 127.01,
+      "stdout_path": "/tmp/drive-opd-n0-input-controller-audit.eUcwzC/combined_185.txt",
+      "stdout_sha256": "86ad1b018c4c3370475dce65b5f254e5a1b1fa01c5a74bd967c9ffd604c3f264"
+    },
+    "detached_worktree_clean": true,
+    "python_bytecode_or_pytest_cache_path_count": 0,
+    "cache_scan_output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "static_verification": {
+    "git_show_check_passed": true,
+    "git_and_static_output_sha256": "f16ce3ef7959efe7e36735182539e25bcfd586cb87ec506b3e0f964fec78369c",
+    "ast_check_output_sha256": "6019bb14786c20da5de96544ab1ec721ccdfed1421415e16c58d32e82804f351",
+    "surface_scan_output_sha256": "c5095be0dc5a093330054ddfb5c929328394d1813490ff9898217f3e5108ee09",
+    "exact_changed_path_set": true,
+    "shared_root_discovery_or_recursive_walk_present": false,
+    "model_torch_or_cuda_import_present": false,
+    "hardcoded_real_data_root_present": false,
+    "directory_listing_scope": "staged or published output verification and cleanup only"
+  },
+  "closed_source_surface_attacks": [
+    "controller authorization reused after a non-authorization request, root, source or address mutation",
+    "real evidence mode without an addressed controller authorization",
+    "aliased, nested, symlinked or nondistinct request, metadata, devkit-package, devkit-dist-info, data or source roots",
+    "missing required devkit RECORD target entry or substituted package, distribution, split-source or repository identity",
+    "fallback split, handwritten split, sealed-test or unreachable token/path substitution",
+    "ambient discovery, recursive shared-root inventory, path escape, duplicate path or changed-during-read input",
+    "unknown field, duplicate key, Boolean integer, non-finite value or noncanonical JSON",
+    "pre-existing output, staged semantic mutation, post-validation mutation or partial publication"
+  ],
+  "documentation_scope_corrections": [
+    {
+      "status": "required_before_paper_or_publication_promotion",
+      "current_overstatement": "The paper allows a metadata root or explicit archive.",
+      "accepted_source_behavior": "Source-v1 accepts one explicit extracted metadata directory; archive mode is not implemented or accepted."
+    },
+    {
+      "status": "required_before_paper_or_publication_promotion",
+      "current_overstatement": "The input builder itself validates the complete metadata graph.",
+      "accepted_source_behavior": "Real mode validates only the graph required to derive explicit sensor, map and CAN path expectations. Complete all-table closure remains the separate frozen script-60 real N0 gate. Synthetic mode replays script 60 for compatibility."
+    }
+  ],
+  "decision": {
+    "input_builder_source_identity_frozen": true,
+    "synthetic_source_surface_p0_open": false,
+    "paper_or_publication_promotion_allowed_before_documentation_correction": false,
+    "archive_input_supported": false,
+    "complete_all_table_graph_closure_delegated_to_frozen_script_60": true,
+    "real_input_specification_authorized": false,
+    "real_nuscenes_access": "stopped",
+    "real_n0_scan_or_receipt": "stopped",
+    "session_atomic_manifest_generation": "stopped",
+    "publication_or_transfer": "stopped",
+    "six_g_source_replay": "stopped",
+    "cache_model_t0_gpu_training_evaluation": "stopped"
+  },
+  "remaining_external_prerequisites": [
+    "an independent upstream-origin receipt for the extracted trainval release remains absent",
+    "the paper wording must be narrowed to the implemented extracted-directory and graph-derivation scope before publication promotion",
+    "a later separate controller authorization must bind one canonical real request and all six explicit roots before any real input-specification construction",
+    "the later real N0 source receipt must independently pass frozen script-60 all-table closure and registered-file verification",
+    "the exact-RC4 gpt-5.6-sol xhigh blind review still lacks a valid zero-P0 verdict",
+    "both complete session-atomic dataset manifests and a later explicit gate remain mandatory before any 06G source replay"
+  ],
+  "artifact_boundary": {
+    "raw_nuscenes_or_navsim_accessed": false,
+    "real_input_specification_generated": false,
+    "real_n0_input_or_output_generated": false,
+    "real_manifest_or_membership_generated": false,
+    "cache_read_or_built": false,
+    "model_or_checkpoint_loaded": false,
+    "cuda_or_gpu_used": false,
+    "training_or_evaluation_performed": false,
+    "final_test_accessed": false,
+    "publication_or_push_performed": false
+  }
+}
