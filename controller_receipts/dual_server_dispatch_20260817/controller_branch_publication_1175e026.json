@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "receipt_type": "controller_branch_publication_snapshot",
+  "recorded_at": "2026-08-18T12:00:20+08:00",
+  "repository": "J1xiaoFu/DiffusionDrive-nuScenes-based-domain-specific-selector-design",
+  "branch": "codex/iclr2027-dual-server-controller",
+  "local_identity": {
+    "branch": "codex/iclr2027-dual-server-controller",
+    "head": "1175e026c33c744891fd1ad22585fdacb7fd4c77",
+    "tree": "903b413ea358e39f2a222cfde6b855c16ca09c5c",
+    "status_short": ""
+  },
+  "publication_identity": {
+    "head": "05cbe17679f144a5b4effa7c27a6360f2de14376",
+    "parent": "f93e53868b322b391b8a43ce4ff96ffae823f3cb",
+    "tree": "825f3fca4d07ca230aeba13d5669b1e8a861c8ad",
+    "parent_count": 1,
+    "changed_file_count": 52,
+    "force_update": false
+  },
+  "snapshot_semantics": {
+    "local_whole_tree_equals_publication_whole_tree": false,
+    "reason": "The local controller base commit was not present in the publication repository; the public branch is a receipt-only snapshot on the existing public publication history.",
+    "local_receipt_subtree": "48d2581fee646f6a53f47c3ced2f370566e8fca7",
+    "publication_receipt_subtree": "48d2581fee646f6a53f47c3ced2f370566e8fca7",
+    "receipt_subtree_exact": true
+  },
+  "replay": {
+    "public_ref_resolved_head": "05cbe17679f144a5b4effa7c27a6360f2de14376",
+    "sha256sums_entry_count": 88,
+    "sha256sums_passed_count": 88,
+    "sha256sums_output_sha256": "44f88680354f7975d463db6c3634d2e42c89870bbb762057ea94e6b2360be009",
+    "status": "passed"
+  },
+  "boundary": {
+    "local_ref_changed": false,
+    "local_worktree_changed_by_publication": false,
+    "source_or_dataset_promoted": false,
+    "execution_unlocked": false,
+    "navsim_manifest": "stopped",
+    "nuscenes_manifest": "stopped",
+    "source_replay": "stopped",
+    "cache": "stopped",
+    "model": "stopped",
+    "t0": "stopped",
+    "gpu": "stopped",
+    "training": "stopped",
+    "evaluation": "stopped",
+    "final_test": "stopped",
+    "claims": "stopped"
+  }
+}

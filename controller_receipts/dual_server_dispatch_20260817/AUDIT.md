@@ -1070,3 +1070,20 @@ scene token, then independently replay unique-set counts, hashes, partitions and
 No frozen producer or requirements byte is changed here. NAVSIM/nuScenes manifests, 06G source
 replay and all dataset/cache/model/T0/CUDA/GPU/training/evaluation/final-test/claim gates remain
 stopped.
+
+## Controller branch publication replay
+
+- local controller: `1175e026c33c744891fd1ad22585fdacb7fd4c77`, tree
+  `903b413ea358e39f2a222cfde6b855c16ca09c5c`
+- public controller ref: `05cbe17679f144a5b4effa7c27a6360f2de14376`, sole parent
+  `f93e53868b322b391b8a43ce4ff96ffae823f3cb`, tree
+  `825f3fca4d07ca230aeba13d5669b1e8a861c8ad`
+- exact local/public controller receipt subtree:
+  `48d2581fee646f6a53f47c3ced2f370566e8fca7`
+- isolated public replay: 88/88 checksum entries passed; output SHA256
+  `44f88680354f7975d463db6c3634d2e42c89870bbb762057ea94e6b2360be009`
+
+Decision: **PUBLIC RECEIPT SNAPSHOT PASSED; NO EXECUTION PROMOTION.** The publication proves public
+reachability and exact receipt-subtree identity only. The local controller history was not rewritten,
+and the public ref was not force-updated. NAVSIM/nuScenes manifests, source replay, cache, model, T0,
+CUDA/GPU, training, evaluation, final-test access and claims remain stopped.
