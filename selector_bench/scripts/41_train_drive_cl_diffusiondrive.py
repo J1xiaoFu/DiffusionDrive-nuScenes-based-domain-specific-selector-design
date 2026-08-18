@@ -42,6 +42,7 @@ ARMS = (
     "ema099_opd",
     "perception_only",
     "planning_only",
+    "ftf_opd",
 )
 CHECKPOINT_SCHEMA = "selector_bench.drive_cl_diffusiondrive_checkpoint.v1"
 TRAINING_PROTOCOL_SCHEMA = "selector_bench.drive_cl_diffusiondrive_run.v3"
@@ -59,6 +60,7 @@ METHOD_BY_ARM = {
     "ema099_opd": "drive_opd_ema099",
     "perception_only": "drive_perception_only",
     "planning_only": "drive_planning_only",
+    "ftf_opd": "drive_ftf_opd",
 }
 
 
@@ -77,6 +79,31 @@ def sha256_file(path: Path) -> str:
         for block in iter(lambda: stream.read(1024 * 1024), b""):
             digest.update(block)
     return digest.hexdigest()
+
+
+def load_ftf_trigger_decision(path: Path) -> dict[str, Any]:
+    payload = json.loads(path.read_text())
+    if payload.get("schema") != "selector_bench.ftf_opd_trigger_decision.v1":
+        raise RunnerError("unsupported FTF-OPD trigger-decision schema")
+    switches = payload.get("loss_switches")
+    expected_keys = {
+        "lambda_perception_switch",
+        "lambda_planning_switch",
+        "mode_kl_switch",
+    }
+    if not isinstance(switches, dict) or set(switches) != expected_keys:
+        raise RunnerError("FTF-OPD trigger decision lacks exact factor switches")
+    for key in ("perception_drift", "planning_drift", "mode_harm"):
+        if type(payload.get(key)) is not bool:
+            raise RunnerError(f"FTF-OPD decision {key} must be boolean")
+    expected = {
+        "lambda_perception_switch": float(payload["perception_drift"]),
+        "lambda_planning_switch": float(payload["planning_drift"]),
+        "mode_kl_switch": float(payload["planning_drift"] and payload["mode_harm"]),
+    }
+    if switches != expected:
+        raise RunnerError("FTF-OPD factor switches disagree with the functional decision")
+    return payload
 
 
 def git_text(repository: Path, *arguments: str) -> str:
@@ -447,6 +474,26 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--protocol-manifest", type=Path, required=True)
     parser.add_argument("--stage-index", type=int, choices=(1, 2, 3), required=True)
     parser.add_argument("--source-checkpoint", type=Path)
+    parser.add_argument(
+        "--teacher-checkpoint",
+        type=Path,
+        help="fixed preceding-stage endpoint; may differ from a resumed student checkpoint",
+    )
+    parser.add_argument(
+        "--ftf-trigger-decision",
+        type=Path,
+        help="functional decision produced after the preceding 0.25-epoch sentinel audit",
+    )
+    parser.add_argument(
+        "--ftf-online-control-dir",
+        type=Path,
+        help=(
+            "optional sidecar handshake directory; the trainer pauses every audit fraction, "
+            "publishes a student checkpoint/request, and waits for decision_NNNN.json"
+        ),
+    )
+    parser.add_argument("--ftf-audit-fraction", type=float, default=0.25)
+    parser.add_argument("--ftf-audit-timeout-seconds", type=float, default=7200.0)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--rap-root", type=Path, default=Path("/home/rguo/RAP-main/RAP-main"))
     parser.add_argument(
@@ -488,6 +535,21 @@ def parse_args() -> argparse.Namespace:
             parser.error(f"{label} is missing: {path}")
     if args.source_checkpoint is not None and not args.source_checkpoint.is_file():
         parser.error(f"source checkpoint is missing: {args.source_checkpoint}")
+    if args.teacher_checkpoint is not None and not args.teacher_checkpoint.is_file():
+        parser.error(f"teacher checkpoint is missing: {args.teacher_checkpoint}")
+    if args.arm == "ftf_opd":
+        if args.ftf_trigger_decision is None or not args.ftf_trigger_decision.is_file():
+            parser.error("FTF-OPD requires --ftf-trigger-decision for this audit window")
+        if args.stage_index > 1 and args.teacher_checkpoint is None:
+            parser.error("FTF-OPD stage 2/3 requires the fixed preceding-stage teacher")
+        if args.stage_index == 1 and args.ftf_online_control_dir is not None:
+            parser.error("stage 1 has no old-domain sentinel and needs no online FTF audit")
+        if args.ftf_online_control_dir is not None and args.no_save:
+            parser.error("online FTF audits require read-only student audit checkpoints")
+    elif args.ftf_trigger_decision is not None:
+        parser.error("--ftf-trigger-decision is valid only for the FTF-OPD arm")
+    elif args.ftf_online_control_dir is not None:
+        parser.error("--ftf-online-control-dir is valid only for the FTF-OPD arm")
     if args.epochs <= 0 or args.batch_size <= 0 or args.opd_microbatch <= 0:
         parser.error("epochs and batch sizes must be positive")
     if args.max_steps < 0 or args.workers < 0:
@@ -531,6 +593,11 @@ def main() -> None:
         TRANSIENT_STORAGE_SEMANTICS,
         TransientStorageCounter,
     )
+    from selector_bench.continual.online_audit import (
+        FractionalEpochAuditSchedule,
+        OnlineAuditError,
+        wait_for_sidecar_decision,
+    )
 
     if not torch.cuda.is_available() or torch.cuda.device_count() != 1:
         raise RunnerError("bind exactly one idle GPU through /home/rguo/bin/gpu-run")
@@ -561,6 +628,17 @@ def main() -> None:
         or len(registered_methods) != len(METHOD_BY_ARM)
     ):
         raise RunnerError("method registry does not bind this paper method to its arm")
+    ftf_decision = (
+        load_ftf_trigger_decision(args.ftf_trigger_decision)
+        if args.arm == "ftf_opd"
+        else None
+    )
+    ftf_perception = bool(ftf_decision and ftf_decision["perception_drift"])
+    ftf_planning = bool(ftf_decision and ftf_decision["planning_drift"])
+    ftf_mode = bool(ftf_decision and ftf_decision["mode_harm"] and ftf_planning)
+    ftf_online = args.ftf_online_control_dir is not None
+    if args.stage_index == 1 and (ftf_perception or ftf_planning or ftf_mode):
+        raise RunnerError("FTF-OPD cannot repair before a preceding-stage teacher exists")
     dataset_identity = manifest.get("dataset_identity")
     if not isinstance(dataset_identity, dict) or set(dataset_identity) != {
         "dataset",
@@ -698,13 +776,22 @@ def main() -> None:
         "perception_only",
         "planning_only",
         "aler_drive",
+        "ftf_opd",
     }
     adapter = None
     teacher = None
-    if args.arm in distillation_arms:
+    ftf_factor_active = ftf_perception or ftf_planning
+    if args.arm in distillation_arms and (
+        args.arm != "ftf_opd" or ftf_factor_active or ftf_online
+    ):
         if args.source_checkpoint is None:
             raise RunnerError("distillation requires a qualified stage-start teacher")
         teacher = clone_frozen_teacher(agent)
+        if args.teacher_checkpoint is not None:
+            teacher_payload = torch.load(args.teacher_checkpoint, map_location="cpu")
+            incompatible = teacher.load_state_dict(_agent_state(teacher_payload), strict=True)
+            if incompatible.missing_keys or incompatible.unexpected_keys:
+                raise RunnerError(f"teacher checkpoint state mismatch: {incompatible}")
         adapter = DiffusionDriveOPDAdapter(agent, teacher)
 
     full_dataset = CacheOnlyDataset(
@@ -744,10 +831,22 @@ def main() -> None:
         old_identities=frozenset(old_identities),
     )
     updates_per_epoch = math.ceil(len(tokens) / args.batch_size)
+    ftf_audit_schedule = None
+    if ftf_online:
+        try:
+            ftf_audit_schedule = FractionalEpochAuditSchedule(
+                updates_per_epoch=updates_per_epoch,
+                fraction=args.ftf_audit_fraction,
+            )
+        except OnlineAuditError as exc:
+            raise RunnerError(str(exc)) from exc
+        args.ftf_online_control_dir.mkdir(parents=True, exist_ok=True)
     target_updates = updates_per_epoch * args.epochs
     query_per_update = 0
     if args.arm == "aler_drive":
         query_per_update = 2
+    elif args.arm == "ftf_opd":
+        query_per_update = len(declared_timesteps) if ftf_planning else 0
     elif args.arm in distillation_arms and args.arm != "perception_only":
         query_per_update = len(declared_timesteps)
     target_budget = {
@@ -830,6 +929,10 @@ def main() -> None:
         ),
         "distillation_support": "exogenous_gt_noise" if args.arm == "lwf" else "adversarial_exogenous_latent"
         if args.arm == "aler_drive"
+        else "functional_clear_no_distillation"
+        if args.arm == "ftf_opd" and not ftf_factor_active
+        else "current_data_teacher_confident_regions"
+        if args.arm == "ftf_opd" and ftf_perception and not ftf_planning
         else "student_rollout"
         if args.arm in distillation_arms
         else None,
@@ -845,8 +948,58 @@ def main() -> None:
         "schedule_epochs": args.schedule_epochs,
         "warmup_epochs": args.warmup_epochs,
         "opd_microbatch": args.opd_microbatch,
-        "lambda_perception": args.lambda_perception,
-        "lambda_planning": args.lambda_planning,
+        "lambda_perception": (
+            args.lambda_perception * float(ftf_perception)
+            if args.arm == "ftf_opd"
+            else args.lambda_perception
+        ),
+        "lambda_planning": (
+            args.lambda_planning * float(ftf_planning)
+            if args.arm == "ftf_opd"
+            else args.lambda_planning
+        ),
+        "ftf_trigger_decision": (
+            str(args.ftf_trigger_decision.resolve())
+            if args.ftf_trigger_decision is not None
+            else None
+        ),
+        "ftf_trigger_decision_sha256": (
+            sha256_file(args.ftf_trigger_decision)
+            if args.ftf_trigger_decision is not None
+            else None
+        ),
+        "ftf_functional_state": (
+            {
+                "perception_drift": ftf_perception,
+                "planning_drift": ftf_planning,
+                "mode_harm": ftf_mode,
+                "sentinel_used_for_backpropagation": False,
+            }
+            if args.arm == "ftf_opd"
+            else None
+        ),
+        "ftf_online_audit": (
+            {
+                "control_dir": str(args.ftf_online_control_dir.resolve()),
+                "fractional_epoch_cadence": args.ftf_audit_fraction,
+                "updates_per_epoch": updates_per_epoch,
+                "update_boundaries": list(ftf_audit_schedule.boundaries()),
+                "sidecar_timeout_seconds": args.ftf_audit_timeout_seconds,
+                "sentinel_used_for_backpropagation": False,
+            }
+            if ftf_online
+            else None
+        ),
+        "teacher_checkpoint": (
+            str(args.teacher_checkpoint.resolve())
+            if args.teacher_checkpoint is not None
+            else None
+        ),
+        "teacher_checkpoint_sha256": (
+            sha256_file(args.teacher_checkpoint)
+            if args.teacher_checkpoint is not None
+            else None
+        ),
         "seed": args.seed,
         "max_steps": args.max_steps,
         "target_budget": target_budget,
@@ -868,24 +1021,32 @@ def main() -> None:
         flush=True,
     )
 
-    distill_config = DriveOPDConfig(
-        lambda_perception=(
-            0.0 if args.arm == "planning_only" else args.lambda_perception
-        ),
-        lambda_planning=(
-            0.0 if args.arm == "perception_only" else args.lambda_planning
-        ),
-        perception=PerceptionDistillationConfig(
-            agent_confidence=args.agent_confidence,
-            bev_confidence=args.bev_confidence,
-        ),
-        planning=PlanningDistillationConfig(
-            rollout_timesteps=declared_timesteps,
-            initial_noise_timestep=int(
-                distillation_contract["initial_noise_timestep"]
+    def current_distill_config() -> DriveOPDConfig:
+        return DriveOPDConfig(
+            lambda_perception=(
+                args.lambda_perception * float(ftf_perception)
+                if args.arm == "ftf_opd"
+                else 0.0 if args.arm == "planning_only" else args.lambda_perception
             ),
-        ),
-    )
+            lambda_planning=(
+                args.lambda_planning * float(ftf_planning)
+                if args.arm == "ftf_opd"
+                else 0.0 if args.arm == "perception_only" else args.lambda_planning
+            ),
+            perception=PerceptionDistillationConfig(
+                agent_confidence=args.agent_confidence,
+                bev_confidence=args.bev_confidence,
+            ),
+            planning=PlanningDistillationConfig(
+                mode_kl_weight=(1.0 if args.arm != "ftf_opd" or ftf_mode else 0.0),
+                rollout_timesteps=declared_timesteps,
+                initial_noise_timestep=int(
+                    distillation_contract["initial_noise_timestep"]
+                ),
+            ),
+        )
+
+    distill_config = current_distill_config()
     step_log = args.output_dir / "steps.jsonl"
     epoch_log = args.output_dir / "epochs.jsonl"
     run_started = time.monotonic()
@@ -950,7 +1111,9 @@ def main() -> None:
             step_backward_calls = 0
             distill_metrics: dict[str, float] = {}
             distillation = None
-            if adapter is not None:
+            if adapter is not None and (
+                args.arm != "ftf_opd" or ftf_perception or ftf_planning
+            ):
                 micro = min(args.opd_microbatch, int(next(iter(features.values())).shape[0]))
                 opd_generator = torch.Generator(device=device)
                 opd_generator.manual_seed(
@@ -958,7 +1121,22 @@ def main() -> None:
                 )
                 distill_features = slice_batch(features, micro)
                 distill_targets = slice_batch(targets, micro)
-                if args.arm == "aler_drive":
+                if args.arm == "ftf_opd" and ftf_perception and not ftf_planning:
+                    student_context, teacher_context = adapter.deterministic_contexts(
+                        distill_features
+                    )
+                    perception, perception_metrics = perception_distillation_loss(
+                        student_context, teacher_context, distill_config.perception
+                    )
+                    distillation = distill_config.lambda_perception * perception
+                    distill_metrics = {
+                        "distillation_total": float(distillation.detach().item()),
+                        "distillation_support_student": 0.0,
+                        "student_denoiser_queries": 0.0,
+                        "teacher_denoiser_queries": 0.0,
+                        **perception_metrics,
+                    }
+                elif args.arm == "aler_drive":
                     student_context, teacher_context = adapter.deterministic_contexts(
                         distill_features
                     )
@@ -1184,6 +1362,101 @@ def main() -> None:
             if batch_index % args.log_every == 0:
                 print(json.dumps(row, sort_keys=True, allow_nan=False), flush=True)
             append_jsonl(step_log, row)
+            if ftf_audit_schedule is not None:
+                boundary_position = ftf_audit_schedule.boundary_index(batch_index + 1)
+                if boundary_position is not None:
+                    audit_index = (
+                        (epoch - start_epoch) * ftf_audit_schedule.audits_per_epoch
+                        + boundary_position
+                    )
+                    audit_dir = args.output_dir / "ftf_audits"
+                    audit_dir.mkdir(parents=True, exist_ok=True)
+                    audit_checkpoint = audit_dir / f"student_{audit_index:04d}.ckpt"
+                    audit_checkpoint_digest = atomic_checkpoint(
+                        checkpoint_payload(
+                            agent,
+                            optimizer,
+                            scheduler,
+                            completed_epoch=epoch - 1,
+                            global_step=global_step,
+                            protocol=protocol,
+                        ),
+                        audit_checkpoint,
+                        storage_counter,
+                    )
+                    request_path = (
+                        args.ftf_online_control_dir / f"request_{audit_index:04d}.json"
+                    )
+                    decision_path = (
+                        args.ftf_online_control_dir / f"decision_{audit_index:04d}.json"
+                    )
+                    if request_path.exists() or decision_path.exists():
+                        raise RunnerError(
+                            "online FTF audit control paths must be fresh for every run"
+                        )
+                    atomic_json(
+                        request_path,
+                        {
+                            "schema": "selector_bench.ftf_opd_audit_request.v1",
+                            "audit_index": audit_index,
+                            "epoch": epoch,
+                            "fraction_within_epoch": (
+                                boundary_position
+                                / ftf_audit_schedule.audits_per_epoch
+                            ),
+                            "global_step": global_step,
+                            "student_checkpoint": str(audit_checkpoint.resolve()),
+                            "student_checkpoint_sha256": audit_checkpoint_digest,
+                            "teacher_checkpoint": str(args.teacher_checkpoint.resolve()),
+                            "decision_output": str(decision_path.resolve()),
+                            "sentinel_used_for_backpropagation": False,
+                        },
+                        storage_counter,
+                    )
+                    print(
+                        json.dumps(
+                            {
+                                "event": "ftf_audit_requested",
+                                "audit_index": audit_index,
+                                "request": str(request_path.resolve()),
+                            },
+                            sort_keys=True,
+                        ),
+                        flush=True,
+                    )
+                    try:
+                        ftf_decision = wait_for_sidecar_decision(
+                            decision_path,
+                            timeout_seconds=args.ftf_audit_timeout_seconds,
+                            loader=load_ftf_trigger_decision,
+                        )
+                    except OnlineAuditError as exc:
+                        raise RunnerError(str(exc)) from exc
+                    if ftf_decision.get("audit_index") != audit_index:
+                        raise RunnerError(
+                            "functional sidecar decision audit index does not match request"
+                        )
+                    ftf_perception = bool(ftf_decision["perception_drift"])
+                    ftf_planning = bool(ftf_decision["planning_drift"])
+                    ftf_mode = bool(ftf_decision["mode_harm"] and ftf_planning)
+                    distill_config = current_distill_config()
+                    audit_row = {
+                        "event": "ftf_audit_decision",
+                        "audit_index": audit_index,
+                        "epoch": epoch,
+                        "global_step": global_step,
+                        "perception_drift": ftf_perception,
+                        "planning_drift": ftf_planning,
+                        "mode_harm": ftf_mode,
+                        "lambda_perception": distill_config.lambda_perception,
+                        "lambda_planning": distill_config.lambda_planning,
+                        "mode_kl_weight": distill_config.planning.mode_kl_weight,
+                    }
+                    append_jsonl(step_log, audit_row)
+                    print(
+                        json.dumps(audit_row, sort_keys=True, allow_nan=False),
+                        flush=True,
+                    )
         if stopped_early:
             break
         scheduler.step()

@@ -1,0 +1,123 @@
+{
+  "schema": "selector_bench.ftf_opd_research_plan.v1",
+  "paper": {
+    "working_title": "When Can a Checkpoint Replace Replay? Function-Triggered Factorized Distillation for Continual End-to-End Driving",
+    "primary_claim": "Functional degradation, rather than representation movement, should decide whether continual driving adapts freely or selectively repairs perception and planning from a frozen checkpoint.",
+    "boundary_claim": "Checkpoint repair is tested as a conditional substitute for replay under high support coverage and low gradient conflict, not as a universally superior method."
+  },
+  "method": {
+    "method_id": "drive_ftf_opd",
+    "training_arm": "ftf_opd",
+    "teacher": "frozen preceding-stage endpoint",
+    "sentinel": {
+      "main_fraction": 0.02,
+      "fraction_ablation": [0.005, 0.01, 0.02, 0.05],
+      "sampling_unit": "complete driving session",
+      "strata": ["old_stage", "location", "risk"],
+      "audit_fraction_epoch": 0.25,
+      "used_for_backpropagation": false
+    },
+    "trigger": {
+      "evidence": ["planning_loss", "collision", "perception_metric"],
+      "forbidden_evidence": ["feature_l2", "raw_output_change"],
+      "consecutive_breaches": 2,
+      "consecutive_releases": 2,
+      "release_threshold_fraction": 0.5,
+      "one_sided_bootstrap_confidence": 0.95
+    },
+    "lambda_grid": [0.1, 0.3, 1.0],
+    "factor_switches": ["perception_drift", "planning_drift", "mode_harm"],
+    "explanatory_only": ["knn_support_coverage", "rbf_mmd_squared", "gradient_angle_degrees"]
+  },
+  "screening": {
+    "server": "07G",
+    "dataset": "nuScenes",
+    "stream": "natural_mixed",
+    "seed": 0,
+    "fidelity": "single-seed short run",
+    "variants": [
+      {"variant_id": "sequential", "training_arm": "sequential"},
+      {"variant_id": "lwf_same_queries", "training_arm": "lwf"},
+      {"variant_id": "always_on_student_opd", "training_arm": "fixed_opd"},
+      {"variant_id": "ftf_opd", "training_arm": "ftf_opd"},
+      {"variant_id": "perception_repair_only", "training_arm": "perception_only"},
+      {"variant_id": "planning_repair_only", "training_arm": "planning_only"},
+      {"variant_id": "ftf_without_mode_kl", "training_arm": "ftf_opd", "mode_policy": "off"},
+      {"variant_id": "tiny_replay_2pct", "training_arm": "step_matched_replay", "replay_fraction": 0.02}
+    ]
+  },
+  "navsim": {
+    "server": "06G",
+    "streams": ["chronological", "failure_patch"],
+    "seed0_methods": [
+      "sequential",
+      "lwf",
+      "drive_opd_fixed",
+      "step_matched_replay",
+      "full_exposure_replay",
+      "drive_ftf_opd"
+    ],
+    "main_methods": [
+      "sequential",
+      "lwf",
+      "drive_opd_fixed",
+      "ewc",
+      "tiny_replay_2pct",
+      "step_matched_replay",
+      "full_exposure_replay",
+      "drive_ftf_opd",
+      "joint_offline"
+    ],
+    "main_seeds": [0, 1, 2, 3, 4],
+    "primary_metrics": [
+      "final_average_performance",
+      "worst_old_stage_performance",
+      "backward_transfer",
+      "forward_transfer",
+      "new_stage_plasticity",
+      "collision_and_safety_components",
+      "stability_plasticity_pareto"
+    ]
+  },
+  "nuscenes": {
+    "server": "07G",
+    "atomic_unit": "complete_nuscenes_log_token",
+    "streams": ["time_only", "geography_only", "natural_mixed"],
+    "methods": [
+      "sequential",
+      "lwf",
+      "drive_opd_fixed",
+      "step_matched_replay",
+      "tiny_replay_2pct",
+      "drive_ftf_opd"
+    ],
+    "seeds": [0, 1, 2],
+    "mechanism_questions": [
+      "whether perception degradation precedes planning degradation",
+      "independent effects of perception repair and planning OPD",
+      "trigger frequency under time versus geography shift",
+      "checkpoint-replay gap versus support coverage"
+    ]
+  },
+  "ablations": {
+    "screen_one_seed_then_confirm_three": true,
+    "families": [
+      "functional versus feature-drift versus always-on trigger",
+      "perception versus planning versus combined repair",
+      "student-state OPD versus same-query LwF",
+      "no versus always versus function-protective mode KL",
+      "sentinel fraction curve",
+      "full old-domain oracle trigger precision recall delay",
+      "full versus compute-matched versus replay fraction curve"
+    ]
+  },
+  "success_criteria": {
+    "plasticity_loss_normalized_points_max": 3.0,
+    "checkpoint_vs_compute_matched_replay_noninferiority_points": 2.0,
+    "noninferiority_scope": "high-support-coverage strata",
+    "trigger_precision_min": 0.8,
+    "trigger_recall_min": 0.8,
+    "mean_trigger_delay_epoch_max": 0.5,
+    "fallback_conclusion": "Report the empirical condition map when non-inferiority holds only in part of the support-conflict space."
+  }
+}

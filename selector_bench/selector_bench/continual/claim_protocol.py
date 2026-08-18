@@ -225,6 +225,7 @@ REGISTERED_METHOD_ARMS: Mapping[str, str] = {
     "drive_opd_ema099": "ema099_opd",
     "drive_perception_only": "perception_only",
     "drive_planning_only": "planning_only",
+    "drive_ftf_opd": "ftf_opd",
 }
 
 

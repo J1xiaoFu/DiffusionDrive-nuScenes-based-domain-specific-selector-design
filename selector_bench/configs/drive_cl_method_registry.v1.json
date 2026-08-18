@@ -13,6 +13,7 @@
     {"method_id": "drive_opd_fixed", "training_arm": "fixed_opd"},
     {"method_id": "drive_opd_ema099", "training_arm": "ema099_opd"},
     {"method_id": "drive_perception_only", "training_arm": "perception_only"},
-    {"method_id": "drive_planning_only", "training_arm": "planning_only"}
+    {"method_id": "drive_planning_only", "training_arm": "planning_only"},
+    {"method_id": "drive_ftf_opd", "training_arm": "ftf_opd"}
   ]
 }
