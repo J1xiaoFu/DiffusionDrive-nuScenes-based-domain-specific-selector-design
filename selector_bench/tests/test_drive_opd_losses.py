@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import unittest
 from types import SimpleNamespace
 
@@ -63,7 +64,147 @@ class _FrozenStateScheduler(_IdentityScheduler):
         return SimpleNamespace(prev_sample=sample)
 
 
+class _LidarRequiredBackbone(torch.nn.Module):
+    """Pristine-like backbone contract: LiDAR is mandatory, never synthesized."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.scale = torch.nn.Parameter(torch.tensor(1.0))
+        self.received_lidar: list[torch.Tensor] = []
+
+    def forward(self, camera: torch.Tensor, lidar: torch.Tensor | None):
+        if lidar is None:
+            raise RuntimeError("pristine backbone requires lidar tensor")
+        self.received_lidar.append(lidar)
+        batch = camera.shape[0]
+        feature = self.scale * torch.ones(batch, 2, 2, 2, dtype=camera.dtype)
+        return feature, feature, None
+
+
+class _AgentHead(torch.nn.Module):
+    def forward(self, agents_query: torch.Tensor) -> dict[str, torch.Tensor]:
+        base = agents_query.mean(-1)
+        return {
+            "agent_states": base.unsqueeze(-1).repeat(1, 1, 5),
+            "agent_labels": base,
+        }
+
+
+class _Decoder(torch.nn.Module):
+    def forward(
+        self, query: torch.Tensor, keyval: torch.Tensor
+    ) -> torch.Tensor:
+        return query + keyval.mean(dim=1, keepdim=True)
+
+
+class _SyntheticPristineModel(torch.nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+        self._backbone = _LidarRequiredBackbone()
+        self._bev_downscale = torch.nn.Identity()
+        self._status_encoding = torch.nn.Linear(2, 2)
+        self._keyval_embedding = torch.nn.Embedding(5, 2)
+        self._query_embedding = torch.nn.Embedding(3, 2)
+        self._tf_decoder = _Decoder()
+        self._bev_semantic_head = torch.nn.Conv2d(2, 4, 1)
+        self._trajectory_head = SimpleNamespace(
+            plan_anchor=torch.zeros(2, 3, 2),
+            norm_odo=lambda value: value,
+            diffusion_scheduler=_FrozenStateScheduler(),
+        )
+        self._agent_head = _AgentHead()
+        self.bev_proj = torch.nn.Linear(4, 2)
+        self._query_splits = (1, 2)
+
+    def official_sequential_forward(self, features: dict[str, torch.Tensor]) -> torch.Tensor:
+        """Minimal official-path control; it does not call the OPD adapter."""
+
+        bev, _, _ = self._backbone(
+            features["camera_feature"], features["lidar_feature"]
+        )
+        return bev.mean()
+
+
 class DriveOPDLossTest(unittest.TestCase):
+    @staticmethod
+    def _pristine_adapter_fixture():
+        student = _SyntheticPristineModel()
+        teacher = copy.deepcopy(student)
+        adapter = DiffusionDriveOPDAdapter(student, teacher)
+
+        def query_impl(planner, context, state, time):
+            del context, time
+            scale = planner._backbone.scale
+            logits = torch.stack(
+                [scale.expand(state.shape[0]), -scale.expand(state.shape[0])],
+                dim=-1,
+            )
+            return state * scale, logits
+
+        adapter._query_impl = query_impl
+        features = {
+            "camera_feature": torch.zeros(1, 3, 4, 4),
+            # Matches the real 06G pristine-batch API (the synthetic spatial
+            # size is intentionally smaller for a CPU unit fixture).
+            "lidar_feature": torch.zeros(1, 1, 4, 4),
+            "status_feature": torch.zeros(1, 2),
+        }
+        targets = {"trajectory": torch.zeros(1, 3, 3)}
+        config = DriveOPDConfig(lambda_perception=0.0, lambda_planning=1.0)
+        return adapter, features, targets, config
+
+    def test_pristine_lidar_is_shared_by_lwf_and_student_state_opd(self) -> None:
+        adapter, features, targets, config = self._pristine_adapter_fixture()
+        for support in ("exogenous", "student"):
+            adapter.student.zero_grad(set_to_none=True)
+            with adapter.capture_query_audit() as audit:
+                loss, metrics = adapter.distillation_loss(
+                    features,
+                    targets,
+                    config,
+                    support=support,
+                    generator=torch.Generator().manual_seed(17),
+                )
+            loss.backward()
+            audit.assert_budget(student=2, teacher=2)
+            self.assertTrue(torch.isfinite(loss))
+            self.assertEqual(metrics["distillation_support_student"], float(support == "student"))
+
+        lidar = features["lidar_feature"]
+        received = (
+            adapter.student._backbone.received_lidar
+            + adapter.teacher._backbone.received_lidar
+        )
+        self.assertEqual(len(received), 4)
+        self.assertTrue(all(item is lidar for item in received))
+
+    def test_missing_lidar_fails_before_lwf_or_opd_query(self) -> None:
+        adapter, features, targets, config = self._pristine_adapter_fixture()
+        del features["lidar_feature"]
+        for support in ("exogenous", "student"):
+            with self.assertRaisesRegex(
+                DriveOPDError, r"features\['lidar_feature'\]"
+            ):
+                adapter.distillation_loss(
+                    features,
+                    targets,
+                    config,
+                    support=support,
+                    generator=torch.Generator().manual_seed(19),
+                )
+
+    def test_sequential_official_forward_still_receives_lidar_directly(self) -> None:
+        model = _SyntheticPristineModel()
+        features = {
+            "camera_feature": torch.zeros(1, 3, 4, 4),
+            "lidar_feature": torch.ones(1, 1, 4, 4),
+            "status_feature": torch.zeros(1, 2),
+        }
+        loss = model.official_sequential_forward(features)
+        loss.backward()
+        self.assertTrue(torch.isfinite(loss))
+        self.assertIs(model._backbone.received_lidar[0], features["lidar_feature"])
+
     def test_agent_matching_is_permutation_invariant_and_differentiable(self) -> None:
         teacher_states = torch.tensor(
             [[[1.0, 2.0, 0.1, 4.0, 2.0], [9.0, 3.0, -0.2, 3.0, 1.0]]]

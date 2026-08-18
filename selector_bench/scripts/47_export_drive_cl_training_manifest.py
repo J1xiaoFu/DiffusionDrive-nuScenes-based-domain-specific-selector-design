@@ -33,27 +33,65 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-def main() -> None:
-    args = parse_args()
-    source = json.loads(args.manifest.read_text())
+def _membership_counts(cell: dict[str, object], label: str) -> dict[str, int]:
+    arrays = {}
+    for name in ("sessions", "logs", "tokens"):
+        values = cell.get(name)
+        if not isinstance(values, list) or len(values) != len(set(values)):
+            raise RuntimeError(f"{label} {name} membership must be a unique list")
+        arrays[name] = values
+    token_to_log = cell.get("token_to_log")
+    if not isinstance(token_to_log, dict) or set(token_to_log) != set(arrays["tokens"]):
+        raise RuntimeError(f"{label} token_to_log must exactly cover tokens")
+    counts = {
+        "session_count": len(arrays["sessions"]),
+        "log_count": len(arrays["logs"]),
+        "token_count": len(arrays["tokens"]),
+    }
+    if any(cell.get(name) != value for name, value in counts.items()):
+        raise RuntimeError(f"{label} declared membership counts are inconsistent")
+    return counts
+
+
+def build_training_derivative(
+    source: dict[str, object], *, source_manifest_sha256: str
+) -> dict[str, object]:
+    """Remove every non-training identity while retaining only count summaries."""
+
     portable = copy.deepcopy(source)
     portable["source_schema"] = portable["schema"]
     portable["schema"] = "selector_bench.drive_cl_training_manifest.v1"
-    portable["source_manifest_sha256"] = sha256(args.manifest)
+    portable["source_manifest_sha256"] = source_manifest_sha256
     portable["portable_derivative"] = True
 
     training_tokens: list[str] = []
     stage_counts: dict[str, int] = {}
+    excluded_counts: dict[str, dict[str, dict[str, int]]] = {}
     for stage in portable["stages"]:
         stage_index = str(stage["stage_index"])
-        current = list(stage["splits"]["train"]["tokens"])
+        splits = stage.get("splits")
+        if not isinstance(splits, dict) or set(splits) != {"train", "audit", "test"}:
+            raise RuntimeError(f"stage {stage_index} requires exact train/audit/test splits")
+        current = list(splits["train"]["tokens"])
+        _membership_counts(splits["train"], f"stage {stage_index} train")
         training_tokens.extend(current)
         stage_counts[stage_index] = len(current)
-        for cell in stage["splits"].values():
-            # Training needs only token/log membership.  Cluster maps and session
-            # lists remain in the authoritative full manifest used for statistics.
-            cell.pop("token_to_log", None)
-            cell.pop("sessions", None)
+        excluded_counts[stage_index] = {}
+        for split in ("audit", "test"):
+            cell = splits[split]
+            excluded_counts[stage_index][split] = _membership_counts(
+                cell, f"stage {stage_index} {split}"
+            )
+            cell["sessions"] = []
+            cell["logs"] = []
+            cell["tokens"] = []
+            cell["token_to_log"] = {}
+            cell["session_count"] = 0
+            cell["log_count"] = 0
+            cell["token_count"] = 0
+        # Failure-Patch selection metrics are session-addressed development
+        # evidence and are not needed by a training-only derivative.
+        stage.pop("selection_metrics", None)
 
     if len(training_tokens) != len(set(training_tokens)):
         raise RuntimeError("training tokens overlap across stages")
@@ -62,9 +100,19 @@ def main() -> None:
         "cache_only_train_splits": True,
         "audit_and_test_excluded": True,
         "stage_token_counts": stage_counts,
+        "excluded_membership_count_summary": excluded_counts,
         "total_token_count": len(training_tokens),
         "sorted_token_sha256": tokens_sha256(training_tokens),
     }
+    return portable
+
+
+def main() -> None:
+    args = parse_args()
+    source = json.loads(args.manifest.read_text())
+    portable = build_training_derivative(
+        source, source_manifest_sha256=sha256(args.manifest)
+    )
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
     temporary = args.output.with_suffix(args.output.suffix + ".tmp")

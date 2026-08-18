@@ -406,9 +406,14 @@ class DiffusionDriveOPDAdapter:
     @staticmethod
     def encode_context(model: torch.nn.Module, features: TensorMap) -> DiffusionContext:
         camera = features["camera_feature"]
+        lidar = features.get("lidar_feature")
+        if lidar is None:
+            raise DriveOPDError(
+                "DiffusionDrive context encoding requires features['lidar_feature']"
+            )
         status = features["status_feature"]
         batch_size = status.shape[0]
-        bev_up, bev_raw, _ = model._backbone(camera, None)
+        bev_up, bev_raw, _ = model._backbone(camera, lidar)
         spatial_shape = tuple(int(value) for value in bev_up.shape[2:])
         raw_shape = bev_raw.shape[2:]
         bev_tokens = model._bev_downscale(bev_raw).flatten(-2, -1).permute(0, 2, 1)
