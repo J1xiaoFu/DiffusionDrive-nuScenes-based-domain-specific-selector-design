@@ -14,7 +14,6 @@ from typing import Any, Mapping
 
 import numpy as np
 import torch
-import torch.nn.functional as F
 from torch.utils.data import DataLoader, Dataset
 
 
@@ -96,15 +95,19 @@ def response_metrics(
     candidate: tuple[torch.Tensor, torch.Tensor],
     reference: tuple[torch.Tensor, torch.Tensor],
 ) -> dict[str, torch.Tensor]:
+    from selector_bench.continual.drive_opd import bernoulli_mode_forward_kl
+
     response, logits = candidate
     reference_response, reference_logits = reference
+    elementwise_mode_kl = bernoulli_mode_forward_kl(
+        reference_logits, logits, reduction="none"
+    )
     return {
         "response_rmse": (response - reference_response).square().flatten(1).mean(1).sqrt(),
-        "mode_forward_kl": (
-            reference_logits.softmax(-1)
-            * (reference_logits.log_softmax(-1) - logits.log_softmax(-1))
-        ).sum(-1),
-        "mode_top1_changed": (
+        "mode_bernoulli_forward_kl": elementwise_mode_kl.flatten(1).mean(1),
+        # Argmax is retained only as a selected-anchor consistency audit; the
+        # underlying sigmoid scores are independent Bernoulli outputs.
+        "mode_selected_anchor_changed": (
             logits.argmax(-1) != reference_logits.argmax(-1)
         ).float(),
     }
@@ -200,7 +203,7 @@ def main() -> None:
         for metric in metric_names
     }
     result = {
-        "schema": "selector_bench.diffusiondrive_context_swap_audit.v1",
+        "schema": "selector_bench.diffusiondrive_context_swap_audit.v2",
         "teacher_checkpoint": str(args.teacher_checkpoint.resolve()),
         "teacher_sha256": sha256(args.teacher_checkpoint),
         "student_checkpoint": str(args.student_checkpoint.resolve()),
@@ -211,6 +214,7 @@ def main() -> None:
         "split": args.split,
         "sample_count": len(rows),
         "common_state": "gt_trajectory_plus_shared_noise_at_t10",
+        "mode_score_semantics": "independent_per_anchor_sigmoid_bernoulli",
         "reference": "teacher_perception_teacher_planner",
         "summary": summary,
         "rows": rows,

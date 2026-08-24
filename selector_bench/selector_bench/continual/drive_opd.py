@@ -114,6 +114,75 @@ def _zero_like(tensor: torch.Tensor) -> torch.Tensor:
     return tensor.sum() * 0.0
 
 
+def _reduce_bernoulli_mode_kl(
+    elementwise: torch.Tensor, reduction: str
+) -> torch.Tensor:
+    if reduction == "none":
+        return elementwise
+    if reduction == "mean":
+        return elementwise.mean()
+    if reduction == "sum":
+        return elementwise.sum()
+    raise DriveOPDError(f"unsupported Bernoulli mode-KL reduction: {reduction}")
+
+
+def bernoulli_mode_forward_kl(
+    teacher_logits: torch.Tensor,
+    student_logits: torch.Tensor,
+    *,
+    reduction: str = "mean",
+) -> torch.Tensor:
+    """KL(teacher || student) for independent sigmoid planning anchors.
+
+    DiffusionDrive supervises every planning anchor with sigmoid focal loss;
+    the anchor scores are not a categorical distribution.  The teacher is
+    therefore detached and converted to independent Bernoulli probabilities,
+    while the student remains in logit space.  The log-sigmoid form stays
+    finite for extreme logits and is exactly zero for identical logits.
+    """
+
+    if teacher_logits.shape != student_logits.shape:
+        raise DriveOPDError("teacher and student mode-logit shapes must match")
+    student = (
+        student_logits.float()
+        if student_logits.dtype in {torch.float16, torch.bfloat16}
+        else student_logits
+    )
+    teacher = teacher_logits.detach().to(device=student.device, dtype=student.dtype)
+    teacher_probability = teacher.sigmoid()
+    elementwise = teacher_probability * (
+        F.logsigmoid(teacher) - F.logsigmoid(student)
+    ) + (1.0 - teacher_probability) * (
+        F.logsigmoid(-teacher) - F.logsigmoid(-student)
+    )
+    return _reduce_bernoulli_mode_kl(elementwise.clamp_min(0.0), reduction)
+
+
+def bernoulli_mode_reverse_kl(
+    teacher_logits: torch.Tensor,
+    student_logits: torch.Tensor,
+    *,
+    reduction: str = "mean",
+) -> torch.Tensor:
+    """KL(student || detached teacher) for independent sigmoid anchors."""
+
+    if teacher_logits.shape != student_logits.shape:
+        raise DriveOPDError("teacher and student mode-logit shapes must match")
+    student = (
+        student_logits.float()
+        if student_logits.dtype in {torch.float16, torch.bfloat16}
+        else student_logits
+    )
+    teacher = teacher_logits.detach().to(device=student.device, dtype=student.dtype)
+    student_probability = student.sigmoid()
+    elementwise = student_probability * (
+        F.logsigmoid(student) - F.logsigmoid(teacher)
+    ) + (1.0 - student_probability) * (
+        F.logsigmoid(-student) - F.logsigmoid(-teacher)
+    )
+    return _reduce_bernoulli_mode_kl(elementwise.clamp_min(0.0), reduction)
+
+
 def _bernoulli_kl(teacher_probability: torch.Tensor, student_logit: torch.Tensor) -> torch.Tensor:
     epsilon = torch.finfo(student_logit.dtype).eps
     teacher = teacher_probability.to(student_logit.dtype).clamp(epsilon, 1.0 - epsilon)
@@ -241,7 +310,7 @@ def planning_distillation_loss(
     timesteps: Sequence[int],
     config: PlanningDistillationConfig,
 ) -> tuple[torch.Tensor, dict[str, float]]:
-    """Distil denoising response and mode probabilities at matched states."""
+    """Distil responses and independent sigmoid-anchor scores at matched states."""
 
     if not states or len(states) != len(timesteps):
         raise DriveOPDError("states and timesteps must be non-empty and aligned")
@@ -261,11 +330,7 @@ def planning_distillation_loss(
             F.mse_loss(student_response, teacher_response.detach())
         )
         mode_losses.append(
-            F.kl_div(
-                student_mode.log_softmax(dim=-1),
-                teacher_mode.detach().softmax(dim=-1),
-                reduction="batchmean",
-            ).clamp_min(0.0)
+            bernoulli_mode_forward_kl(teacher_mode, student_mode)
         )
         agreements.append(
             (student_mode.argmax(dim=-1) == teacher_mode.argmax(dim=-1)).float().mean()
@@ -275,8 +340,12 @@ def planning_distillation_loss(
     loss = config.response_weight * response + config.mode_kl_weight * mode
     return loss, {
         "planning_response_mse": float(response.detach().item()),
-        "planning_mode_forward_kl": float(mode.detach().item()),
-        "planning_mode_top1_agreement": float(torch.stack(agreements).mean().item()),
+        "planning_mode_bernoulli_forward_kl": float(mode.detach().item()),
+        # Argmax is retained only as selected-anchor agreement.  It is not a
+        # categorical-probability or calibration metric.
+        "planning_mode_selected_anchor_agreement": float(
+            torch.stack(agreements).mean().item()
+        ),
         "planning_query_states": float(len(states)),
     }
 
@@ -653,11 +722,7 @@ class DiffusionDriveOPDAdapter:
                 F.mse_loss(student_response, teacher_response.detach())
             )
             mode_losses.append(
-                F.kl_div(
-                    student_mode.log_softmax(dim=-1),
-                    teacher_mode.detach().softmax(dim=-1),
-                    reduction="batchmean",
-                ).clamp_min(0.0)
+                bernoulli_mode_forward_kl(teacher_mode, student_mode)
             )
             agreements.append(
                 (student_mode.argmax(-1) == teacher_mode.argmax(-1)).float().mean()
@@ -673,8 +738,12 @@ class DiffusionDriveOPDAdapter:
         loss = config.response_weight * response + config.mode_kl_weight * mode
         return loss, {
             "planning_response_mse": float(response.detach().item()),
-            "planning_mode_forward_kl": float(mode.detach().item()),
-            "planning_mode_top1_agreement": float(torch.stack(agreements).mean().item()),
+            "planning_mode_bernoulli_forward_kl": float(mode.detach().item()),
+            # Argmax is retained only as selected-anchor agreement.  It is
+            # not a categorical-probability or calibration metric.
+            "planning_mode_selected_anchor_agreement": float(
+                torch.stack(agreements).mean().item()
+            ),
             "planning_query_states": float(len(schedule.query_timesteps)),
             "student_denoiser_queries": float(len(schedule.query_timesteps)),
             "teacher_denoiser_queries": float(len(schedule.query_timesteps)),
@@ -783,8 +852,8 @@ class DiffusionDriveOPDAdapter:
             planning = _zero_like(student_context.ego_query)
             planning_metrics = {
                 "planning_response_mse": 0.0,
-                "planning_mode_forward_kl": 0.0,
-                "planning_mode_top1_agreement": 0.0,
+                "planning_mode_bernoulli_forward_kl": 0.0,
+                "planning_mode_selected_anchor_agreement": 0.0,
                 "planning_query_states": 0.0,
                 "student_denoiser_queries": 0.0,
                 "teacher_denoiser_queries": 0.0,

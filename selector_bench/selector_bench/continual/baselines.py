@@ -11,7 +11,12 @@ from typing import Callable, Iterable, Mapping, Sequence
 import torch
 import torch.nn.functional as F
 
-from selector_bench.continual.drive_opd import DriveOPDError, QueryFunction
+from selector_bench.continual.drive_opd import (
+    DriveOPDError,
+    QueryFunction,
+    bernoulli_mode_forward_kl,
+    bernoulli_mode_reverse_kl,
+)
 
 
 EWC_ESTIMATOR = "per_example_official_loss_gradient_second_moment_eval_mode"
@@ -305,11 +310,7 @@ def lora_orthogonality_penalty(model: torch.nn.Module) -> torch.Tensor:
 
 
 def _forward_mode_kl(teacher_logits: torch.Tensor, student_logits: torch.Tensor) -> torch.Tensor:
-    return F.kl_div(
-        student_logits.log_softmax(dim=-1),
-        teacher_logits.softmax(dim=-1),
-        reduction="batchmean",
-    )
+    return bernoulli_mode_forward_kl(teacher_logits, student_logits)
 
 
 def aler_adversarial_latent_search(
@@ -375,22 +376,17 @@ def aler_repair_loss(
     *,
     mode_weight: float = 1.0,
 ) -> tuple[torch.Tensor, dict[str, float]]:
-    """ALER-style repair: response MSE plus reverse mode KL on searched state."""
+    """ALER repair: response MSE plus reverse Bernoulli KL per anchor."""
 
     time = torch.full((state.shape[0],), timestep, dtype=torch.long, device=state.device)
     student_response, student_logits = student_query(state, time)
     with torch.no_grad():
         teacher_response, teacher_logits = teacher_query(state, time)
     response = F.mse_loss(student_response, teacher_response)
-    student_log_probability = student_logits.log_softmax(dim=-1)
-    student_probability = student_log_probability.exp()
-    teacher_log_probability = teacher_logits.log_softmax(dim=-1)
-    reverse_kl = (
-        student_probability * (student_log_probability - teacher_log_probability)
-    ).sum(dim=-1).mean()
+    reverse_kl = bernoulli_mode_reverse_kl(teacher_logits, student_logits)
     return response + mode_weight * reverse_kl, {
         "aler_repair_response_mse": float(response.detach().item()),
-        "aler_repair_mode_reverse_kl": float(reverse_kl.detach().item()),
+        "aler_repair_mode_bernoulli_reverse_kl": float(reverse_kl.detach().item()),
         "aler_teacher_queries": 1.0,
     }
 
@@ -424,11 +420,22 @@ def talr_scene_weights(
         teacher_trajectories[..., :2] - ground_truth[:, None, :, :2]
     ).square().mean(dim=(-1, -2))
     nearest = distances.argmin(dim=1)
-    confidence = teacher_mode_logits.softmax(dim=-1).gather(1, nearest[:, None]).squeeze(1)
+    # DiffusionDrive trains every anchor with sigmoid focal loss.  Confidence
+    # in the nearest trajectory is therefore that anchor's independent
+    # Bernoulli probability, not a softmax share across mutually exclusive
+    # modes.
+    confidence = (
+        teacher_mode_logits.detach()
+        .sigmoid()
+        .gather(1, nearest[:, None])
+        .squeeze(1)
+    )
     weights = confidence.clamp_min(minimum_weight)
     weights = weights / weights.mean().clamp_min(1e-12)
     return weights.detach(), {
-        "talr_teacher_confidence_mean": float(confidence.mean().item()),
+        "talr_teacher_selected_anchor_sigmoid_confidence_mean": float(
+            confidence.mean().item()
+        ),
         "talr_scene_weight_min": float(weights.min().item()),
         "talr_scene_weight_max": float(weights.max().item()),
     }
